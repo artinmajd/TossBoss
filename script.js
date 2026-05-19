@@ -101,8 +101,13 @@ function resetBall() {
 function resizeCanvas() {
     width = window.innerWidth;
     height = window.innerHeight;
-    canvas.width = width;
-    canvas.height = height;
+    
+    // High-DPI Display Support (Retina Screens)
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
     
     scale = Math.min(1, Math.max(0.4, height / 650));
     
@@ -356,6 +361,11 @@ function updatePhysics() {
 
 // Draw scene
 function draw() {
+    const dpr = window.devicePixelRatio || 1;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    
     ctx.clearRect(0, 0, width, height);
     
     const floorY = height * groundLevel;
@@ -551,7 +561,7 @@ function draw() {
         ctx.fillStyle = gradient;
         ctx.fill();
     } else {
-        // Basketball Image from Wiki
+        // Basketball Image
         if (basketballImg.complete && basketballImg.naturalHeight !== 0) {
             ctx.beginPath();
             ctx.arc(0, 0, ball.radius, 0, Math.PI * 2);
