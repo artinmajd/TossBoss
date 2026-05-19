@@ -162,7 +162,7 @@ function handlePointerMove(e) {
     let dx = pos.x - aimStart.x;
     let dy = pos.y - aimStart.y;
     const dragDist = Math.hypot(dx, dy);
-    const maxDrag = Math.min(width, height) * 0.4; // Cap drag to 40% of the screen dimension
+    const maxDrag = Math.min(width, height) * 0.3; // Cap drag to 30% of the screen dimension
     
     if (dragDist > maxDrag) {
         dx = (dx / dragDist) * maxDrag;
