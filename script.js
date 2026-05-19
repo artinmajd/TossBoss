@@ -4,6 +4,10 @@ const ctx = canvas.getContext('2d');
 let width, height;
 let scale = 1;
 
+// Load images
+const basketballImg = new Image();
+basketballImg.src = 'basketball.png';
+
 // Physics parameters
 const gravity = 9.8; 
 const pixelsPerMeter = 100; 
@@ -547,41 +551,29 @@ function draw() {
         ctx.fillStyle = gradient;
         ctx.fill();
     } else {
-        // Pure Canvas Vector Basketball
-        ctx.beginPath();
-        ctx.arc(0, 0, ball.radius, 0, Math.PI * 2);
-        
-        const gradient = ctx.createRadialGradient(-ball.radius*0.3, -ball.radius*0.3, ball.radius*0.1, 0, 0, ball.radius);
-        gradient.addColorStop(0, '#fb923c'); 
-        gradient.addColorStop(0.4, '#ea580c'); 
-        gradient.addColorStop(1, '#7c2d12'); 
-        ctx.fillStyle = gradient;
-        ctx.fill();
-        
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(0, 0, ball.radius, 0, Math.PI * 2);
-        ctx.clip(); 
-        
-        ctx.strokeStyle = '#431407';
-        ctx.lineWidth = ball.radius * 0.08;
-        
-        ctx.beginPath();
-        ctx.moveTo(0, -ball.radius * 1.1);
-        ctx.lineTo(0, ball.radius * 1.1);
-        ctx.moveTo(-ball.radius * 1.1, 0);
-        ctx.lineTo(ball.radius * 1.1, 0);
-        ctx.stroke();
-        
-        ctx.beginPath();
-        ctx.arc(-ball.radius * 0.6, 0, ball.radius * 0.8, -Math.PI/2.2, Math.PI/2.2);
-        ctx.stroke();
-        
-        ctx.beginPath();
-        ctx.arc(ball.radius * 0.6, 0, ball.radius * 0.8, Math.PI - Math.PI/2.2, Math.PI + Math.PI/2.2);
-        ctx.stroke();
-        
-        ctx.restore();
+        // Basketball Image from Wiki
+        if (basketballImg.complete && basketballImg.naturalHeight !== 0) {
+            ctx.beginPath();
+            ctx.arc(0, 0, ball.radius, 0, Math.PI * 2);
+            ctx.clip(); 
+            
+            const r = ball.radius * 1.05; 
+            ctx.drawImage(basketballImg, -r, -r, r * 2, r * 2);
+            
+            // Add a subtle volume shadow to the flat image to make it fit the 3D scene
+            const gradient = ctx.createRadialGradient(-ball.radius*0.35, -ball.radius*0.35, ball.radius*0.1, 0, 0, ball.radius);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+            gradient.addColorStop(0.6, 'rgba(255, 255, 255, 0)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.25)');
+            ctx.fillStyle = gradient;
+            ctx.fill();
+        } else {
+            // Fallback
+            ctx.beginPath();
+            ctx.arc(0, 0, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#ea580c';
+            ctx.fill();
+        }
     }
     ctx.restore();
     
