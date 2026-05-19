@@ -31,6 +31,7 @@ let scoredThisThrow = false;
 let fullscreenAttempted = false;
 let isResting = true; 
 let isBehindNet = false;
+let wasAboveRim = false;
 
 // Ball object
 const ball = {
@@ -101,6 +102,7 @@ function resetBall() {
     scoredThisThrow = false;
     isResting = true;
     isBehindNet = false;
+    wasAboveRim = false;
 }
 
 function resizeCanvas() {
@@ -143,6 +145,7 @@ function handlePointerDown(e) {
     
     isAiming = true;
     isResting = false;
+    wasAboveRim = false;
     aimStart = { x: pos.x, y: pos.y };
     aimCurrent = { x: pos.x, y: pos.y };
     ball.vx = 0;
@@ -286,7 +289,7 @@ function updatePhysics() {
     } else if (gameMode === 'basketball') {
         let hoopWidth = 140 * scale;
         const hoopRimY = height * 0.45; 
-        const backboardX = width - Math.max(20, width * 0.05);
+        const backboardX = width; // Flush against the right wall
         
         if (hoopImg.complete && hoopImg.naturalHeight !== 0) {
             const imgHeight = 320 * scale;
@@ -335,11 +338,17 @@ function updatePhysics() {
                 ball.vy -= gravity * pixelsPerMeter * dt * 0.5; // slow down the fall drastically
                 
                 if (!scoredThisThrow && ball.vy > 0 && ball.y > hoopRimY + ball.radius) {
-                    scoredThisThrow = true;
-                    score++;
-                    setTimeout(resetBall, 1500);
+                    if (wasAboveRim) {
+                        scoredThisThrow = true;
+                        score++;
+                        setTimeout(resetBall, 1500);
+                    }
                 }
             }
+        }
+        
+        if (ball.y + ball.radius < hoopRimY) {
+            wasAboveRim = true;
         }
         
         // Reset depth state if the ball exits the net area
@@ -450,7 +459,7 @@ function draw() {
         // Basketball backboard & back hoop
         let hoopWidth = 140 * scale;
         const hoopRimY = height * 0.45; 
-        const backboardX = width - Math.max(20, width * 0.05);
+        const backboardX = width; // Flush against right wall
         
         if (hoopImg.complete && hoopImg.naturalHeight !== 0) {
             const imgHeight = 320 * scale;
@@ -666,7 +675,7 @@ function draw() {
         // Basketball Front Net & Rim
         let hoopWidth = 140 * scale;
         const hoopRimY = height * 0.45; 
-        const backboardX = width - Math.max(20, width * 0.05);
+        const backboardX = width; // Flush against right wall
         
         if (hoopImg.complete && hoopImg.naturalHeight !== 0) {
             const imgHeight = 320 * scale;
