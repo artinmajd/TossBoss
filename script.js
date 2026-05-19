@@ -305,8 +305,9 @@ function updatePhysics() {
         const hoopRightRim = backboardX; 
         
         const distLeftRim = Math.hypot(ball.x - hoopLeftRim, ball.y - hoopRimY);
+        const distRightRim = Math.hypot(ball.x - hoopRightRim, ball.y - hoopRimY);
         
-        // Front rim bounce
+        // Front left rim bounce
         if (distLeftRim < ball.radius) {
             const overlap = ball.radius - distLeftRim;
             const nx = (ball.x - hoopLeftRim) / distLeftRim;
@@ -322,10 +323,28 @@ function updatePhysics() {
             }
         }
         
+        // Front right rim bounce
+        if (distRightRim < ball.radius) {
+            const overlap = ball.radius - distRightRim;
+            const nx = (ball.x - hoopRightRim) / distRightRim;
+            const ny = (ball.y - hoopRimY) / distRightRim;
+            
+            ball.x += nx * overlap;
+            ball.y += ny * overlap;
+            
+            const dot = ball.vx * nx + ball.vy * ny;
+            if (dot < 0) {
+                ball.vx = (ball.vx - 2 * dot * nx) * bounceFactor;
+                ball.vy = (ball.vy - 2 * dot * ny) * bounceFactor;
+            }
+        }
+        
         // Backboard collision
         if (ball.x + ball.radius > backboardX && ball.y > hoopRimY - 120 * scale && ball.y < hoopRimY + 40 * scale) {
             ball.x = backboardX - ball.radius;
-            ball.vx = -Math.abs(ball.vx) * bounceFactor;
+            if (ball.vx > 0) {
+                ball.vx = -ball.vx * bounceFactor;
+            }
         }
         
         // Net physics (going through the hole)
@@ -390,12 +409,12 @@ function updatePhysics() {
     }
     
     // Walls
-    if (ball.x + ball.radius >= width) {
+    if (ball.x + ball.radius > width) {
         ball.x = width - ball.radius;
-        ball.vx = -ball.vx * bounceFactor;
-    } else if (ball.x - ball.radius <= 0) {
+        if (ball.vx > 0) ball.vx = -ball.vx * bounceFactor;
+    } else if (ball.x - ball.radius < 0) {
         ball.x = ball.radius;
-        ball.vx = -ball.vx * bounceFactor;
+        if (ball.vx < 0) ball.vx = -ball.vx * bounceFactor;
     }
 }
 
