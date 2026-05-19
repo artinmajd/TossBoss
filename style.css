@@ -168,13 +168,49 @@ button:active {
 }
 
 .basketball-icon {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
-    background-image: url('basketball.png');
-    background-size: 112%;
-    background-position: center;
+    background: radial-gradient(circle at 35% 35%, #fb923c 0%, #ea580c 40%, #7c2d12 100%);
+    position: relative;
+    overflow: hidden;
     box-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+}
+
+.basketball-icon::before {
+    content: '';
+    position: absolute;
+    top: -5px; bottom: -5px; left: 50%;
+    width: 2px;
+    background: #431407;
+    transform: translateX(-50%);
+}
+
+.basketball-icon::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: -5px; right: -5px;
+    height: 2px;
+    background: #431407;
+    transform: translateY(-50%);
+}
+
+.basketball-curve-left, .basketball-curve-right {
+    position: absolute;
+    width: 18px;
+    height: 32px;
+    border: 2px solid #431407;
+    border-radius: 50%;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.basketball-curve-left {
+    left: -12px;
+}
+
+.basketball-curve-right {
+    right: -12px;
 }
 
 #simulation-canvas {
