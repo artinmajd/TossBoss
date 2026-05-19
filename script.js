@@ -664,12 +664,31 @@ function draw() {
             const imgHeight = 320 * scale;
             const S = imgHeight / hoopImg.naturalHeight;
             hoopWidth = (874 - 169) * S; 
-        }
-
-        const hoopLeftRim = backboardX - hoopWidth;
-        const hoopRightRim = backboardX; 
-        
-        if (!hoopImg.complete || hoopImg.naturalHeight === 0) {
+            
+            const hoopLeftRim = backboardX - hoopWidth;
+            const imgWidth = hoopImg.naturalWidth * S;
+            const xOffset = backboardX - 874 * S;
+            const yOffset = hoopRimY - 816 * S;
+            const rightRimY = hoopRimY - 267 * S;
+            
+            // 3D Depth Illusion: Redraw only the FRONT half of the hoop image over the ball!
+            ctx.save();
+            ctx.beginPath();
+            // Create a diagonal clipping mask that separates the front rim/net from the backboard/back rim
+            ctx.moveTo(hoopLeftRim - 50 * scale, hoopRimY + 8 * scale);
+            ctx.lineTo(backboardX + 50 * scale, rightRimY + 8 * scale);
+            ctx.lineTo(backboardX + 200 * scale, height);
+            ctx.lineTo(hoopLeftRim - 200 * scale, height);
+            ctx.closePath();
+            ctx.clip();
+            
+            ctx.drawImage(hoopImg, xOffset, yOffset, imgWidth, imgHeight);
+            ctx.restore();
+            
+        } else {
+            const hoopLeftRim = backboardX - hoopWidth;
+            const hoopRightRim = backboardX; 
+            
             // Front Rim
             ctx.beginPath();
             ctx.ellipse((hoopLeftRim + hoopRightRim)/2, hoopRimY, hoopWidth/2, 10 * scale, 0, 0, Math.PI);
