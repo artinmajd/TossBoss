@@ -30,6 +30,7 @@ let score = 0;
 let scoredThisThrow = false;
 let fullscreenAttempted = false;
 let isResting = true; 
+let isBehindNet = false;
 
 // Ball object
 const ball = {
@@ -99,6 +100,7 @@ function resetBall() {
     isAiming = false;
     scoredThisThrow = false;
     isResting = true;
+    isBehindNet = false;
 }
 
 function resizeCanvas() {
@@ -327,6 +329,7 @@ function updatePhysics() {
             const netRight = hoopRightRim - ((ball.y - hoopRimY)/(90*scale)) * (30*scale);
             
             if (ball.x > netLeft && ball.x < netRight) {
+                isBehindNet = true;
                 // Simulate drag of going through the net
                 ball.vx *= 0.95;
                 ball.vy -= gravity * pixelsPerMeter * dt * 0.5; // slow down the fall drastically
@@ -337,6 +340,11 @@ function updatePhysics() {
                     setTimeout(resetBall, 1500);
                 }
             }
+        }
+        
+        // Reset depth state if the ball exits the net area
+        if (ball.y > hoopRimY + 120 * scale || ball.y < hoopRimY || ball.x < hoopLeftRim || ball.x > hoopRightRim) {
+            isBehindNet = false;
         }
     }
     
@@ -671,19 +679,21 @@ function draw() {
             const yOffset = hoopRimY - 816 * S;
             const rightRimY = hoopRimY - 267 * S;
             
-            // 3D Depth Illusion: Redraw only the FRONT half of the hoop image over the ball!
-            ctx.save();
-            ctx.beginPath();
-            // Create a diagonal clipping mask that separates the front rim/net from the backboard/back rim
-            ctx.moveTo(hoopLeftRim - 50 * scale, hoopRimY + 8 * scale);
-            ctx.lineTo(backboardX + 50 * scale, rightRimY + 8 * scale);
-            ctx.lineTo(backboardX + 200 * scale, height);
-            ctx.lineTo(hoopLeftRim - 200 * scale, height);
-            ctx.closePath();
-            ctx.clip();
-            
-            ctx.drawImage(hoopImg, xOffset, yOffset, imgWidth, imgHeight);
-            ctx.restore();
+            if (isBehindNet) {
+                // 3D Depth Illusion: Redraw only the FRONT half of the hoop image over the ball!
+                ctx.save();
+                ctx.beginPath();
+                // Create a diagonal clipping mask that separates the front rim/net from the backboard/back rim
+                ctx.moveTo(hoopLeftRim - 50 * scale, hoopRimY + 8 * scale);
+                ctx.lineTo(backboardX + 50 * scale, rightRimY + 8 * scale);
+                ctx.lineTo(backboardX + 200 * scale, height);
+                ctx.lineTo(hoopLeftRim - 200 * scale, height);
+                ctx.closePath();
+                ctx.clip();
+                
+                ctx.drawImage(hoopImg, xOffset, yOffset, imgWidth, imgHeight);
+                ctx.restore();
+            }
             
         } else {
             const hoopLeftRim = backboardX - hoopWidth;
