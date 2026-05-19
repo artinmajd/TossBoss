@@ -8,6 +8,9 @@ let scale = 1;
 const basketballImg = new Image();
 basketballImg.src = 'basketball.png';
 
+const hoopImg = new Image();
+hoopImg.src = 'hoop_transparent.png';
+
 // Physics parameters
 const gravity = 9.8; 
 const pixelsPerMeter = 100; 
@@ -435,18 +438,24 @@ function draw() {
         const hoopLeftRim = backboardX - hoopWidth;
         const hoopRightRim = backboardX; 
         
-        ctx.fillStyle = 'rgba(248, 250, 252, 0.9)';
-        ctx.fillRect(backboardX, hoopRimY - 140 * scale, 12 * scale, 200 * scale);
-        
-        ctx.strokeStyle = '#dc2626';
-        ctx.lineWidth = 4 * scale;
-        ctx.strokeRect(backboardX - 4 * scale, hoopRimY - 60 * scale, 10 * scale, 60 * scale);
-        
-        ctx.beginPath();
-        ctx.ellipse((hoopLeftRim + hoopRightRim)/2, hoopRimY, hoopWidth/2, 10 * scale, 0, Math.PI, Math.PI * 2);
-        ctx.strokeStyle = '#ea580c';
-        ctx.lineWidth = 6 * scale;
-        ctx.stroke();
+        if (hoopImg.complete && hoopImg.naturalHeight !== 0) {
+            const imgHeight = 280 * scale;
+            const imgWidth = (hoopImg.naturalWidth / hoopImg.naturalHeight) * imgHeight;
+            ctx.drawImage(hoopImg, backboardX - imgWidth + 10 * scale, hoopRimY - imgHeight * 0.45, imgWidth, imgHeight);
+        } else {
+            ctx.fillStyle = 'rgba(248, 250, 252, 0.9)';
+            ctx.fillRect(backboardX, hoopRimY - 140 * scale, 12 * scale, 200 * scale);
+            
+            ctx.strokeStyle = '#dc2626';
+            ctx.lineWidth = 4 * scale;
+            ctx.strokeRect(backboardX - 4 * scale, hoopRimY - 60 * scale, 10 * scale, 60 * scale);
+            
+            ctx.beginPath();
+            ctx.ellipse((hoopLeftRim + hoopRightRim)/2, hoopRimY, hoopWidth/2, 10 * scale, 0, Math.PI, Math.PI * 2);
+            ctx.strokeStyle = '#ea580c';
+            ctx.lineWidth = 6 * scale;
+            ctx.stroke();
+        }
     }
 
     // Aiming visual
@@ -634,24 +643,26 @@ function draw() {
         const hoopLeftRim = backboardX - hoopWidth;
         const hoopRightRim = backboardX; 
         
-        // Front Rim
-        ctx.beginPath();
-        ctx.ellipse((hoopLeftRim + hoopRightRim)/2, hoopRimY, hoopWidth/2, 10 * scale, 0, 0, Math.PI);
-        ctx.strokeStyle = '#ea580c';
-        ctx.lineWidth = 6 * scale;
-        ctx.stroke();
-        
-        // Net
-        ctx.beginPath();
-        ctx.moveTo(hoopLeftRim, hoopRimY);
-        ctx.lineTo(hoopLeftRim + 30 * scale, hoopRimY + 90 * scale);
-        ctx.lineTo(hoopRightRim - 30 * scale, hoopRimY + 90 * scale);
-        ctx.lineTo(hoopRightRim, hoopRimY);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-        ctx.setLineDash([4 * scale, 6 * scale]);
-        ctx.lineWidth = 2 * scale;
-        ctx.stroke();
-        ctx.setLineDash([]);
+        if (!hoopImg.complete || hoopImg.naturalHeight === 0) {
+            // Front Rim
+            ctx.beginPath();
+            ctx.ellipse((hoopLeftRim + hoopRightRim)/2, hoopRimY, hoopWidth/2, 10 * scale, 0, 0, Math.PI);
+            ctx.strokeStyle = '#ea580c';
+            ctx.lineWidth = 6 * scale;
+            ctx.stroke();
+            
+            // Net
+            ctx.beginPath();
+            ctx.moveTo(hoopLeftRim, hoopRimY);
+            ctx.lineTo(hoopLeftRim + 30 * scale, hoopRimY + 90 * scale);
+            ctx.lineTo(hoopRightRim - 30 * scale, hoopRimY + 90 * scale);
+            ctx.lineTo(hoopRightRim, hoopRimY);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.setLineDash([4 * scale, 6 * scale]);
+            ctx.lineWidth = 2 * scale;
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
     }
     
     // Score
