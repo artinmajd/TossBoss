@@ -302,7 +302,8 @@ function updatePhysics() {
         }
 
         const hoopLeftRim = backboardX - hoopWidth;
-        const hoopRightRim = backboardX; 
+        // The rim has physical thickness and sticks out from the backboard.
+        const hoopRightRim = backboardX - 12 * scale; 
         
         const distLeftRim = Math.hypot(ball.x - hoopLeftRim, ball.y - hoopRimY);
         const distRightRim = Math.hypot(ball.x - hoopRightRim, ball.y - hoopRimY);
@@ -498,7 +499,7 @@ function draw() {
             hoopWidth = (874 - 169) * S; 
             
             const hoopLeftRim = backboardX - hoopWidth;
-            const hoopRightRim = backboardX;
+            const hoopRightRim = backboardX - 12 * scale;
             
             const imgWidth = hoopImg.naturalWidth * S;
             // Align physics backboardX with image pixel 874, and hoopRimY with the LEFT RIM pixel Y (816)
@@ -737,7 +738,7 @@ function draw() {
             
         } else {
             const hoopLeftRim = backboardX - hoopWidth;
-            const hoopRightRim = backboardX; 
+            const hoopRightRim = backboardX - 12 * scale; 
             
             // Front Rim
             ctx.beginPath();
