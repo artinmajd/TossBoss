@@ -282,9 +282,17 @@ function updatePhysics() {
             }
         }
     } else if (gameMode === 'basketball') {
-        const hoopWidth = 140 * scale;
+        let hoopWidth = 140 * scale;
         const hoopRimY = height * 0.45; 
         const backboardX = width - Math.max(20, width * 0.05);
+        
+        if (hoopImg.complete && hoopImg.naturalHeight !== 0) {
+            const imgHeight = 320 * scale;
+            const S = imgHeight / hoopImg.naturalHeight;
+            // Map the physics hoop width to the exact orange rim pixels (874 - 169)
+            hoopWidth = (874 - 169) * S; 
+        }
+
         const hoopLeftRim = backboardX - hoopWidth;
         const hoopRightRim = backboardX; 
         
@@ -432,17 +440,28 @@ function draw() {
         ctx.fill();
     } else {
         // Basketball backboard & back hoop
-        const hoopWidth = 140 * scale;
+        let hoopWidth = 140 * scale;
         const hoopRimY = height * 0.45; 
         const backboardX = width - Math.max(20, width * 0.05);
-        const hoopLeftRim = backboardX - hoopWidth;
-        const hoopRightRim = backboardX; 
         
         if (hoopImg.complete && hoopImg.naturalHeight !== 0) {
-            const imgHeight = 280 * scale;
-            const imgWidth = (hoopImg.naturalWidth / hoopImg.naturalHeight) * imgHeight;
-            ctx.drawImage(hoopImg, backboardX - imgWidth + 10 * scale, hoopRimY - imgHeight * 0.45, imgWidth, imgHeight);
+            const imgHeight = 320 * scale;
+            const S = imgHeight / hoopImg.naturalHeight;
+            hoopWidth = (874 - 169) * S; 
+            
+            const hoopLeftRim = backboardX - hoopWidth;
+            const hoopRightRim = backboardX;
+            
+            const imgWidth = hoopImg.naturalWidth * S;
+            // Align physics backboardX with image pixel 874, and hoopRimY with image pixel 580
+            const xOffset = backboardX - 874 * S;
+            const yOffset = hoopRimY - 580 * S;
+            
+            ctx.drawImage(hoopImg, xOffset, yOffset, imgWidth, imgHeight);
         } else {
+            const hoopLeftRim = backboardX - hoopWidth;
+            const hoopRightRim = backboardX;
+            
             ctx.fillStyle = 'rgba(248, 250, 252, 0.9)';
             ctx.fillRect(backboardX, hoopRimY - 140 * scale, 12 * scale, 200 * scale);
             
@@ -637,9 +656,16 @@ function draw() {
         ctx.stroke();
     } else {
         // Basketball Front Net & Rim
-        const hoopWidth = 140 * scale;
+        let hoopWidth = 140 * scale;
         const hoopRimY = height * 0.45; 
         const backboardX = width - Math.max(20, width * 0.05);
+        
+        if (hoopImg.complete && hoopImg.naturalHeight !== 0) {
+            const imgHeight = 320 * scale;
+            const S = imgHeight / hoopImg.naturalHeight;
+            hoopWidth = (874 - 169) * S; 
+        }
+
         const hoopLeftRim = backboardX - hoopWidth;
         const hoopRightRim = backboardX; 
         
