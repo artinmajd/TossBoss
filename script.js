@@ -158,7 +158,19 @@ function handlePointerDown(e) {
 function handlePointerMove(e) {
     if (!isAiming) return;
     const pos = getPointerPos(e);
-    aimCurrent = { x: pos.x, y: pos.y };
+    
+    let dx = pos.x - aimStart.x;
+    let dy = pos.y - aimStart.y;
+    const dragDist = Math.hypot(dx, dy);
+    const maxDrag = Math.min(width, height) * 0.4; // Cap drag to 40% of the screen dimension
+    
+    if (dragDist > maxDrag) {
+        dx = (dx / dragDist) * maxDrag;
+        dy = (dy / dragDist) * maxDrag;
+        aimCurrent = { x: aimStart.x + dx, y: aimStart.y + dy };
+    } else {
+        aimCurrent = { x: pos.x, y: pos.y };
+    }
 }
 
 function handlePointerUp(e) {
