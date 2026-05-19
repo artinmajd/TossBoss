@@ -557,12 +557,14 @@ function draw() {
             ctx.arc(0, 0, ball.radius, 0, Math.PI * 2);
             ctx.clip(); // Mask it so it remains perfectly round
             
-            ctx.drawImage(basketballImg, -ball.radius, -ball.radius, ball.radius * 2, ball.radius * 2);
+            const r = ball.radius * 1.05;
+            ctx.drawImage(basketballImg, -r, -r, r * 2, r * 2);
             
             // Add a subtle volume shadow to the flat image to make it fit the 3D scene
             const gradient = ctx.createRadialGradient(-ball.radius*0.35, -ball.radius*0.35, ball.radius*0.1, 0, 0, ball.radius);
-            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
-            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+            gradient.addColorStop(0.6, 'rgba(255, 255, 255, 0)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.25)');
             ctx.fillStyle = gradient;
             ctx.fill();
         } else {
