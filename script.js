@@ -32,6 +32,7 @@ let fullscreenAttempted = false;
 let isResting = true; 
 let isBehindNet = false;
 let wasAboveRim = false;
+let isDisqualified = false;
 
 // Ball object
 const ball = {
@@ -103,6 +104,7 @@ function resetBall() {
     isResting = true;
     isBehindNet = false;
     wasAboveRim = false;
+    isDisqualified = false;
 }
 
 function resizeCanvas() {
@@ -146,6 +148,7 @@ function handlePointerDown(e) {
     isAiming = true;
     isResting = false;
     wasAboveRim = false;
+    isDisqualified = false;
     aimStart = { x: pos.x, y: pos.y };
     aimCurrent = { x: pos.x, y: pos.y };
     ball.vx = 0;
@@ -333,11 +336,17 @@ function updatePhysics() {
             
             if (ball.x > netLeft && ball.x < netRight) {
                 isBehindNet = true;
+                
+                // If it enters the net from the bottom (never went above the rim first), disqualify it!
+                if (!wasAboveRim) {
+                    isDisqualified = true;
+                }
+                
                 // Simulate drag of going through the net
                 ball.vx *= 0.95;
                 ball.vy -= gravity * pixelsPerMeter * dt * 0.5; // slow down the fall drastically
                 
-                if (!scoredThisThrow && ball.vy > 0 && ball.y > hoopRimY + ball.radius) {
+                if (!scoredThisThrow && !isDisqualified && ball.vy > 0 && ball.y > hoopRimY + ball.radius) {
                     if (wasAboveRim) {
                         scoredThisThrow = true;
                         score++;
@@ -349,6 +358,9 @@ function updatePhysics() {
         
         if (ball.y + ball.radius < hoopRimY) {
             wasAboveRim = true;
+        }
+        if (ball.y > hoopRimY + 120 * scale) {
+            wasAboveRim = false;
         }
         
         // Reset depth state if the ball exits the net area
