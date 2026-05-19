@@ -1,6 +1,6 @@
 from PIL import Image
 
-img = Image.open('hoop_transparent.png')
+img = Image.open('../assets/hoop_transparent.png')
 pixels = img.load()
 width, height = img.size
 

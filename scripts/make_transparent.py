@@ -18,4 +18,4 @@ def remove_bg(img_path, out_path, bg_color, tolerance=30):
     img.putdata(new_data)
     img.save(out_path, "PNG")
 
-remove_bg("hoop.png", "hoop_transparent.png", (11, 28, 51), tolerance=50)
+remove_bg("../assets/hoop.png", "../assets/hoop_transparent.png", (11, 28, 51), tolerance=50)

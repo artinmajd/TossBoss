@@ -6,10 +6,10 @@ let scale = 1;
 
 // Load images
 const basketballImg = new Image();
-basketballImg.src = 'basketball.png';
+basketballImg.src = 'assets/basketball.png';
 
 const hoopImg = new Image();
-hoopImg.src = 'hoop_transparent.png';
+hoopImg.src = 'assets/hoop_transparent.png';
 
 // Physics parameters
 const gravity = 9.8; 
