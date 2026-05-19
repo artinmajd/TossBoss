@@ -453,9 +453,9 @@ function draw() {
             const hoopRightRim = backboardX;
             
             const imgWidth = hoopImg.naturalWidth * S;
-            // Align physics backboardX with image pixel 874, and hoopRimY with image pixel 580
+            // Align physics backboardX with image pixel 874, and hoopRimY with the LEFT RIM pixel Y (816)
             const xOffset = backboardX - 874 * S;
-            const yOffset = hoopRimY - 580 * S;
+            const yOffset = hoopRimY - 816 * S;
             
             ctx.drawImage(hoopImg, xOffset, yOffset, imgWidth, imgHeight);
         } else {
@@ -689,6 +689,8 @@ function draw() {
             ctx.stroke();
             ctx.setLineDash([]);
         }
+        
+
     }
     
     // Score
