@@ -4,21 +4,24 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 export const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export async function getHighScores() {
+    const empty = { pingpong: { score: 0, bestStreak: 0 }, basketball: { score: 0, bestStreak: 0 } };
     const { data, error } = await supabase
         .from('high_scores')
-        .select('mode, score');
-    if (error) return { pingpong: 0, basketball: 0 };
-    const scores = { pingpong: 0, basketball: 0 };
-    data.forEach(row => { scores[row.mode] = row.score; });
-    return scores;
+        .select('mode, score, best_streak');
+    if (error) return empty;
+    const result = { ...empty };
+    data.forEach(row => {
+        result[row.mode] = { score: row.score, bestStreak: row.best_streak || 0 };
+    });
+    return result;
 }
 
-export async function saveHighScore(mode, score) {
+export async function saveHighScore(mode, score, bestStreak) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const display_name = user.user_metadata?.name || user.email;
     await supabase.from('high_scores').upsert(
-        { user_id: user.id, mode, score, display_name },
+        { user_id: user.id, mode, score, best_streak: bestStreak, display_name },
         { onConflict: 'user_id,mode' }
     );
 }
@@ -26,7 +29,7 @@ export async function saveHighScore(mode, score) {
 export async function getLeaderboard(mode) {
     const { data, error } = await supabase
         .from('high_scores')
-        .select('display_name, score')
+        .select('display_name, score, best_streak')
         .eq('mode', mode)
         .order('score', { ascending: false })
         .limit(10);

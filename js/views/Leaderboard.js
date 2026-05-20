@@ -18,7 +18,8 @@ export default function Leaderboard() {
                 <div class="lb-table-header">
                     <span class="lb-col-rank">#</span>
                     <span class="lb-col-name">Player</span>
-                    <span class="lb-col-score">Best</span>
+                    <span class="lb-col-score">Best Score</span>
+                    <span class="lb-col-streak">Best Streak</span>
                 </div>
 
                 <div id="leaderboard-list"></div>

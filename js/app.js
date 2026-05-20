@@ -32,8 +32,11 @@ async function router() {
         let currentMode = 'pingpong';
         const renderList = async (mode) => {
             const list = document.getElementById('leaderboard-list');
-            list.innerHTML = '<div class="lb-loading">Loading...</div>';
+            const loadingTimer = setTimeout(() => {
+                list.innerHTML = '<div class="lb-loading">Loading...</div>';
+            }, 500);
             const rows = await getLeaderboard(mode);
+            clearTimeout(loadingTimer);
             if (rows.length === 0) {
                 list.innerHTML = '<div class="lb-loading">No scores yet.</div>';
                 return;
@@ -45,6 +48,7 @@ async function router() {
                     <span class="lb-rank">${i < 3 ? medalIcon[i] : i + 1}</span>
                     <span class="lb-name">${row.display_name}</span>
                     <span class="lb-score">${row.score}</span>
+                    <span class="lb-streak">${row.best_streak ?? '—'}</span>
                 </div>
             `).join('');
         };
@@ -88,7 +92,62 @@ async function router() {
             window.location.hash = '#home';
         });
 
-        const highScores = session ? await getHighScores() : { pingpong: 0, basketball: 0 };
+        const lbModal = document.getElementById('lb-modal');
+        const lbModalList = document.getElementById('lb-modal-list');
+        let lbModalMode = 'pingpong';
+
+        const renderModalList = async (mode) => {
+            const loadingTimer = setTimeout(() => {
+                lbModalList.innerHTML = '<div class="lb-loading">Loading...</div>';
+            }, 500);
+            const rows = await getLeaderboard(mode);
+            clearTimeout(loadingTimer);
+            if (rows.length === 0) {
+                lbModalList.innerHTML = '<div class="lb-loading">No scores yet.</div>';
+                return;
+            }
+            const medalClass = ['lb-gold', 'lb-silver', 'lb-bronze'];
+            const medalIcon  = ['🥇', '🥈', '🥉'];
+            lbModalList.innerHTML = rows.map((row, i) => `
+                <div class="lb-row ${medalClass[i] || ''}">
+                    <span class="lb-rank">${i < 3 ? medalIcon[i] : i + 1}</span>
+                    <span class="lb-name">${row.display_name}</span>
+                    <span class="lb-score">${row.score}</span>
+                    <span class="lb-streak">${row.best_streak ?? '—'}</span>
+                </div>
+            `).join('');
+        };
+
+        document.getElementById('btn-leaderboard-game').addEventListener('click', () => {
+            lbModal.style.display = 'flex';
+            renderModalList(lbModalMode);
+        });
+
+        document.getElementById('btn-lb-modal-close').addEventListener('click', () => {
+            lbModal.style.display = 'none';
+        });
+
+        lbModal.addEventListener('click', (e) => {
+            if (e.target === lbModal) lbModal.style.display = 'none';
+        });
+
+        document.getElementById('lb-modal-tab-pingpong').addEventListener('click', () => {
+            lbModalMode = 'pingpong';
+            document.getElementById('lb-modal-tab-pingpong').classList.add('active');
+            document.getElementById('lb-modal-tab-basketball').classList.remove('active');
+            renderModalList('pingpong');
+        });
+
+        document.getElementById('lb-modal-tab-basketball').addEventListener('click', () => {
+            lbModalMode = 'basketball';
+            document.getElementById('lb-modal-tab-basketball').classList.add('active');
+            document.getElementById('lb-modal-tab-pingpong').classList.remove('active');
+            renderModalList('basketball');
+        });
+
+        const highScores = session
+            ? await getHighScores()
+            : { pingpong: { score: 0, bestStreak: 0 }, basketball: { score: 0, bestStreak: 0 } };
 
         document.getElementById('btn-help').addEventListener('click', (e) => {
             e.stopPropagation();

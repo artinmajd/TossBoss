@@ -1,6 +1,6 @@
 import { saveHighScore } from './supabase.js';
 
-export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
+export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, basketball: { score: 0, bestStreak: 0 } }) {
     const canvas = document.getElementById('simulation-canvas');
     if (!canvas) return null;
     const ctx = canvas.getContext('2d');
@@ -13,9 +13,12 @@ export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
     // Load images
     const basketballImg = new Image();
     basketballImg.src = 'assets/basketball.png';
-    
+
     const hoopImg = new Image();
     hoopImg.src = 'assets/hoop_transparent.png';
+
+    const cupImg = new Image();
+    cupImg.src = 'assets/cup.webp';
     
     // Physics parameters
     const gravity = 9.8; 
@@ -33,13 +36,25 @@ export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
     
     // Game state
     let score = 0;
-    let highScores = { ...initialHighScores };
+    let highScores = { pingpong: initialData.pingpong.score, basketball: initialData.basketball.score };
+    let bestStreaks = { pingpong: initialData.pingpong.bestStreak, basketball: initialData.basketball.bestStreak };
+    let consecutiveHits = 0;
+    let consecutiveMisses = 0;
+    let wasThrown = false;
     let scoredThisThrow = false;
     let fullscreenAttempted = false;
-    let isResting = true; 
+    let isResting = true;
     let isBehindNet = false;
     let wasAboveRim = false;
     let isDisqualified = false;
+
+    // Return animation state
+    let ballReturning = false;
+    let returnT = 0;
+    const RETURN_DURATION = 0.35; // seconds
+    let returnFrom = { x: 0, y: 0 };
+    let returnCtrl = { x: 0, y: 0 };
+    let returnTo   = { x: 0, y: 0 };
     
     // Ball object
     const ball = {
@@ -62,6 +77,9 @@ export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
         gameMode = mode;
         score = 0;
         scoredThisThrow = false;
+        consecutiveHits = 0;
+        consecutiveMisses = 0;
+        wasThrown = false;
         
         document.getElementById('mode-pingpong').classList.remove('active');
         document.getElementById('mode-basketball').classList.remove('active');
@@ -79,10 +97,14 @@ export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
             friction = 0.97;
         }
         
+        const screen = document.getElementById('game-screen');
+        if (screen) screen.classList.toggle('bg-pingpong', mode === 'pingpong');
+
         resizeCanvas();
+        updateScoreDisplay();
     }
-    
-    
+
+
 
     function resetBall() {
         const minX = ball.radius * 2;
@@ -99,6 +121,29 @@ export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
         isDisqualified = false;
     }
     
+    function startReturn() {
+        const cupX = width * 0.85;
+        const cupRimY = height * groundLevel - 130 * scale;
+        const minX = ball.radius * 2;
+        const maxX = width * 0.65;
+        const targetX = minX + Math.random() * (maxX - minX);
+        const targetY = height * groundLevel - ball.radius;
+        returnFrom = { x: cupX, y: cupRimY - 10 * scale };
+        returnTo   = { x: targetX, y: targetY };
+        returnCtrl = {
+            x: (returnFrom.x + returnTo.x) / 2,
+            y: Math.min(returnFrom.y, returnTo.y) - height * 0.22
+        };
+        returnT = 0;
+        ballReturning = true;
+        scoredThisThrow = false;
+        isResting = false;
+        isAiming = false;
+        wasAboveRim = false;
+        isBehindNet = false;
+        isDisqualified = false;
+    }
+
     function resizeCanvas() {
         width = window.innerWidth;
         height = window.innerHeight;
@@ -130,7 +175,7 @@ export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
     }
     
     function handlePointerDown(e) {
-        if (e.target.closest('button') || scoredThisThrow) return;
+        if (e.target.closest('button') || scoredThisThrow || ballReturning) return;
         if (!isResting) return;
         
         const pos = getPointerPos(e);
@@ -166,25 +211,43 @@ export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
     function handlePointerUp(e) {
         if (!isAiming) return;
         isAiming = false;
-        
+
         const dx = aimStart.x - aimCurrent.x;
         const dy = aimStart.y - aimCurrent.y;
-        
+
         const powerMultiplier = 8;
         ball.vx = dx * powerMultiplier;
         ball.vy = dy * powerMultiplier;
-        
+
         const speed = Math.hypot(ball.vx, ball.vy);
         const maxSpeed = 4000;
         if (speed > maxSpeed) {
             ball.vx = (ball.vx / speed) * maxSpeed;
             ball.vy = (ball.vy / speed) * maxSpeed;
         }
+        wasThrown = true;
     }
     
     
     // Physics update
     function updatePhysics() {
+        if (ballReturning) {
+            returnT = Math.min(returnT + dt / RETURN_DURATION, 1);
+            // ease-out cubic — fast start, soft landing
+            const e = 1 - Math.pow(1 - returnT, 3);
+            const u = 1 - e;
+            ball.x = u*u*returnFrom.x + 2*u*e*returnCtrl.x + e*e*returnTo.x;
+            ball.y = u*u*returnFrom.y + 2*u*e*returnCtrl.y + e*e*returnTo.y;
+            if (returnT >= 1) {
+                ballReturning = false;
+                ball.x = returnTo.x;
+                ball.y = returnTo.y;
+                ball.vx = 0;
+                ball.vy = 0;
+                isResting = true;
+            }
+            return;
+        }
         if (isAiming || isResting) return;
         
         const floorY = height * groundLevel;
@@ -242,12 +305,9 @@ export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
                 if (ball.x > wallLeftX && ball.x < wallRightX) {
                     if (!scoredThisThrow && ball.y > cupRimY + ball.radius * 0.8) {
                         scoredThisThrow = true;
-                        score++;
-                        if (score > highScores[gameMode]) {
-                            highScores[gameMode] = score;
-                            saveHighScore(gameMode, score);
-                        }
-                        setTimeout(resetBall, 1500);
+                        wasThrown = false;
+                        handleScore();
+                        setTimeout(startReturn, 1400);
                     }
                     
                     if (ball.x - ball.radius < wallLeftX) {
@@ -360,12 +420,9 @@ export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
                     if (!scoredThisThrow && !isDisqualified && ball.vy > 0 && ball.y > hoopRimY + ball.radius) {
                         if (wasAboveRim) {
                             scoredThisThrow = true;
-                            score++;
-                            if (score > highScores[gameMode]) {
-                                highScores[gameMode] = score;
-                                saveHighScore(gameMode, score);
-                            }
-                            setTimeout(resetBall, 1500);
+                            wasThrown = false;
+                            handleScore();
+                            setTimeout(startReturn, 1400);
                         }
                     }
                 }
@@ -464,24 +521,47 @@ export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
             const cupLeftRim = cupX - cupWidthTop / 2;
             const cupRightRim = cupX + cupWidthTop / 2;
             
+            // shadow
             ctx.beginPath();
-            ctx.ellipse(cupX, floorY, cupWidthBottom / 2 * 1.2, 8 * scale, 0, 0, Math.PI * 2);
+            ctx.ellipse(cupX, floorY - 3 * scale, cupWidthBottom / 2 * 0.9, 6 * scale, 0, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(0,0,0,0.6)';
             ctx.fill();
-    
-            ctx.beginPath();
-            ctx.moveTo(cupLeftRim, cupRimY);
-            ctx.lineTo(cupX - cupWidthBottom / 2, cupY);
-            ctx.lineTo(cupX + cupWidthBottom / 2, cupY);
-            ctx.lineTo(cupRightRim, cupRimY);
-            ctx.closePath();
-            ctx.fillStyle = '#7f1d1d';
-            ctx.fill();
-    
-            ctx.beginPath();
-            ctx.ellipse(cupX, cupRimY, cupWidthTop / 2, 12 * scale, 0, 0, Math.PI * 2);
-            ctx.fillStyle = '#450a0a';
-            ctx.fill();
+
+            // cup image: content bbox in source is (218,110)→(1036,1155), image is 1254×1254
+            if (cupImg.complete && cupImg.naturalHeight !== 0) {
+                const sx = cupWidthTop / 818;   // scale so content width = cupWidthTop
+                const sy = cupHeight / 1045;    // scale so content height = cupHeight
+                const imgW = 1254 * sx;
+                const imgH = 1254 * sy;
+                const drawX = cupLeftRim - 218 * sx;
+                const drawY = cupRimY - 110 * sy;
+                ctx.drawImage(cupImg, drawX, drawY, imgW, imgH);
+                // full rim opening, drawn behind the ball so the ball appears
+                // to sit *inside* the cup. The front lip is redrawn on top in
+                // the foreground pass.
+                const rimY = cupRimY + cupHeight * 0.06 + 1;
+                ctx.beginPath();
+                ctx.ellipse(cupX, rimY, cupWidthTop / 2, 10 * scale, 0, 0, Math.PI * 2);
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(cupX, rimY, cupWidthTop / 2 - 4 * scale, 7 * scale, 0, 0, Math.PI * 2);
+                ctx.fillStyle = '#c0392b';
+                ctx.fill();
+            } else {
+                ctx.beginPath();
+                ctx.moveTo(cupLeftRim, cupRimY);
+                ctx.lineTo(cupX - cupWidthBottom / 2, cupY);
+                ctx.lineTo(cupX + cupWidthBottom / 2, cupY);
+                ctx.lineTo(cupRightRim, cupRimY);
+                ctx.closePath();
+                ctx.fillStyle = '#7f1d1d';
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(cupX, cupRimY, cupWidthTop / 2, 12 * scale, 0, 0, Math.PI * 2);
+                ctx.fillStyle = '#450a0a';
+                ctx.fill();
+            }
         } else {
             // Basketball backboard & back hoop
             let hoopWidth = 140 * scale;
@@ -599,8 +679,8 @@ export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
         if (ball.y < floorY + 50 && !isOverCup) {
             const distToGround = Math.max(0, floorY - ball.y);
             const shadowScale = Math.max(0, 1 - distToGround / 200);
-            const shadowWidth = ball.radius * 1.2 * shadowScale; 
-            const shadowHeight = ball.radius * 0.25 * shadowScale;
+            const shadowWidth = ball.radius * 0.9 * shadowScale;
+            const shadowHeight = ball.radius * 0.18 * shadowScale;
             
             if (shadowScale > 0) {
                 ctx.beginPath();
@@ -610,10 +690,36 @@ export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
             }
         }
         
+        // Clip the ball so it never renders inside the cup below the front rim
+        // — once it drops in it's hidden behind the cup. The hole is a trapezoid
+        // matching the cup's taper, so a ball resting *beside* the narrow base
+        // is not clipped.
+        let ballClipped = false;
+        if (gameMode === 'pingpong') {
+            const cwTop = 110 * scale;
+            const cwBottom = 70 * scale;
+            const cHeight = 130 * scale;
+            const cX = width * 0.85;
+            const cY = floorY;
+            const cRimY = cY - cHeight;
+            const mouthY = cRimY + cHeight * 0.06 + 1 + 10 * scale;
+            const mouthHalfW = cwTop / 2 - ((mouthY - cRimY) / cHeight) * ((cwTop - cwBottom) / 2);
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(0, 0, width, height);
+            ctx.moveTo(cX - mouthHalfW, mouthY);
+            ctx.lineTo(cX - cwBottom / 2, cY);
+            ctx.lineTo(cX + cwBottom / 2, cY);
+            ctx.lineTo(cX + mouthHalfW, mouthY);
+            ctx.closePath();
+            ctx.clip('evenodd');
+            ballClipped = true;
+        }
+
         // Draw ball
         ctx.save();
         ctx.translate(ball.x, ball.y);
-        
+
         const rotation = ball.x / ball.radius;
         ctx.rotate(rotation);
         
@@ -658,7 +764,8 @@ export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
             }
         }
         ctx.restore();
-        
+        if (ballClipped) ctx.restore();
+
         // Foreground Targets
         if (gameMode === 'pingpong') {
             const cupWidthTop = 110 * scale;
@@ -669,35 +776,40 @@ export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
             const cupRimY = cupY - cupHeight;
             const cupLeftRim = cupX - cupWidthTop / 2;
             const cupRightRim = cupX + cupWidthTop / 2;
-            
-            const cupGradient = ctx.createLinearGradient(cupLeftRim, 0, cupRightRim, 0);
-            cupGradient.addColorStop(0, 'rgba(220, 38, 38, 0.85)');
-            cupGradient.addColorStop(0.5, 'rgba(239, 68, 68, 0.85)');
-            cupGradient.addColorStop(1, 'rgba(185, 28, 28, 0.85)');
-            
-            ctx.beginPath();
-            ctx.moveTo(cupLeftRim, cupRimY);
-            ctx.lineTo(cupX - cupWidthBottom / 2, cupY);
-            ctx.lineTo(cupX + cupWidthBottom / 2, cupY);
-            ctx.lineTo(cupRightRim, cupRimY);
-            ctx.closePath();
-            ctx.fillStyle = cupGradient;
-            ctx.fill();
+
+            if (cupImg.complete && cupImg.naturalHeight !== 0) {
+                // Only the front lip (lower half of the rim ring) is drawn here,
+                // on top of the ball — so a ball dropping in passes behind the
+                // near edge of the cup and reads as going *inside* it.
+                const rimY = cupRimY + cupHeight * 0.06 + 1;
+                ctx.beginPath();
+                ctx.ellipse(cupX, rimY, cupWidthTop / 2, 10 * scale, 0, 0, Math.PI);
+                ctx.ellipse(cupX, rimY, cupWidthTop / 2 - 4 * scale, 7 * scale, 0, Math.PI, 0, true);
+                ctx.closePath();
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fill();
+            } else {
+                const cupGradient = ctx.createLinearGradient(cupLeftRim, 0, cupRightRim, 0);
+                cupGradient.addColorStop(0, 'rgba(220, 38, 38, 0.85)');
+                cupGradient.addColorStop(0.5, 'rgba(239, 68, 68, 0.85)');
+                cupGradient.addColorStop(1, 'rgba(185, 28, 28, 0.85)');
+                ctx.beginPath();
+                ctx.moveTo(cupLeftRim, cupRimY);
+                ctx.lineTo(cupX - cupWidthBottom / 2, cupY);
+                ctx.lineTo(cupX + cupWidthBottom / 2, cupY);
+                ctx.lineTo(cupRightRim, cupRimY);
+                ctx.closePath();
+                ctx.fillStyle = cupGradient;
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(cupX, cupRimY, cupWidthTop / 2, 12 * scale, 0, 0, Math.PI);
+                ctx.fillStyle = '#f8fafc';
+                ctx.fill();
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = 3 * scale;
+                ctx.stroke();
+            }
     
-            ctx.beginPath();
-            ctx.ellipse(cupX, cupRimY, cupWidthTop / 2, 12 * scale, 0, 0, Math.PI);
-            ctx.fillStyle = '#f8fafc';
-            ctx.fill();
-            ctx.strokeStyle = '#cbd5e1';
-            ctx.lineWidth = 3 * scale;
-            ctx.stroke();
-    
-            ctx.beginPath();
-            ctx.moveTo(cupLeftRim + (4 * scale), cupRimY + (25 * scale));
-            ctx.lineTo(cupRightRim - (4 * scale), cupRimY + (25 * scale));
-            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-            ctx.lineWidth = 2 * scale;
-            ctx.stroke();
         } else {
             // Basketball Front Net & Rim
             let hoopWidth = 140 * scale;
@@ -758,21 +870,117 @@ export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
     
         }
         
-        // Score (updated via DOM)
-        const scoreEl = document.getElementById('score-current');
-        const bestEl = document.getElementById('score-best');
-        if (scoreEl) scoreEl.textContent = `Score: ${score}`;
-        if (bestEl) bestEl.textContent = `Best: ${highScores[gameMode]}`;
-        
-        if (scoredThisThrow) {
-            ctx.fillStyle = '#4ade80';
-            ctx.font = `bold ${Math.floor(54 * scale)}px Inter, sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('SCORE!', width / 2, height / 3);
-        }
     }
     
+    function showToast(message, type) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = `game-toast toast-${type}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 1000);
+    }
+
+    function updateScoreDisplay() {
+        const scoreEl      = document.getElementById('score-current');
+        const bestEl       = document.getElementById('score-best');
+        const streakEl     = document.getElementById('score-streak');
+        const bonusEl      = document.getElementById('score-bonus');
+        const bestStreakEl = document.getElementById('score-best-streak');
+
+        if (scoreEl) scoreEl.textContent = score;
+        if (bestEl)  bestEl.textContent  = highScores[gameMode];
+
+        if (streakEl) {
+            streakEl.textContent = `streak ${consecutiveHits}`;
+        }
+
+        if (bonusEl) {
+            const bonus = Math.floor(consecutiveHits / 3);
+            bonusEl.textContent = bonus > 0 ? `(+${1 + bonus} per shot)` : '';
+        }
+
+        if (bestStreakEl) {
+            bestStreakEl.textContent = `streak ${bestStreaks[gameMode]}`;
+        }
+    }
+
+    function handleScore() {
+        const prevBonus = Math.floor(consecutiveHits / 3);
+        const points = 1 + prevBonus;
+        score += points;
+        consecutiveHits++;
+        consecutiveMisses = 0;
+        const newBonus = Math.floor(consecutiveHits / 3);
+
+        const streakImproved = consecutiveHits > bestStreaks[gameMode];
+        const scoreImproved = score > highScores[gameMode];
+        if (streakImproved) bestStreaks[gameMode] = consecutiveHits;
+        if (scoreImproved) highScores[gameMode] = score;
+        if (streakImproved || scoreImproved) {
+            saveHighScore(gameMode, highScores[gameMode], bestStreaks[gameMode]);
+        }
+
+        // Flash score box
+        const box = document.getElementById('score-area');
+        if (box) {
+            box.classList.remove('flash-score', 'flash-bonus-up');
+            void box.offsetWidth;
+            box.classList.add(newBonus > prevBonus ? 'flash-bonus-up' : 'flash-score');
+            setTimeout(() => box.classList.remove('flash-score', 'flash-bonus-up'), 600);
+        }
+
+        if (newBonus > prevBonus) {
+            showToast(`+${newBonus + 1} BONUS UNLOCKED!`, 'bonus-up');
+        } else if (prevBonus > 0) {
+            showToast(`+${points} 🔥`, 'bonus-score');
+        } else {
+            showToast(`+1`, 'score');
+        }
+
+        updateScoreDisplay();
+    }
+
+    function handleMiss() {
+        wasThrown = false;
+        const hadBonus = consecutiveHits >= 3;
+        consecutiveHits = 0;
+
+        const box = document.getElementById('score-area');
+
+        if (hadBonus) {
+            // Bonus-loss miss doesn't count toward the reset counter — full 2 chances from scratch
+            consecutiveMisses = 0;
+            showToast('💔 Bonus Lost', 'bonus-lost');
+            if (box) {
+                box.classList.remove('flash-bonus-lost');
+                void box.offsetWidth;
+                box.classList.add('flash-bonus-lost');
+                setTimeout(() => box.classList.remove('flash-bonus-lost'), 600);
+            }
+            updateScoreDisplay();
+            return;
+        }
+
+        consecutiveMisses++;
+
+        if (consecutiveMisses >= 2) {
+            const wasZero = score === 0;
+            score = 0;
+            consecutiveMisses = 0;
+            if (!wasZero) showToast('💥 RESET!', 'reset');
+            if (!wasZero && box) {
+                box.classList.remove('flash-reset');
+                void box.offsetWidth;
+                box.classList.add('flash-reset');
+                setTimeout(() => box.classList.remove('flash-reset'), 800);
+            }
+        }
+
+        updateScoreDisplay();
+    }
+
     function animate() {
         // Fast-forward physics simulation when space is held down
         const steps = (isSpaceDown && !isResting && !isAiming) ? 15 : 1;
@@ -844,19 +1052,28 @@ export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     window.addEventListener('touchend', handlePointerUp);
 
-    // Override the animate function slightly to capture animationId
-    const originalAnimate = animate;
+    // Override the animate function to capture animationId and detect misses
     animate = function() {
+        const wasResting = isResting;
         const steps = (isSpaceDown && !isResting && !isAiming) ? 15 : 1;
         for (let i = 0; i < steps; i++) {
             updatePhysics();
-            if (isResting) break; 
+            if (isResting) break;
+        }
+        // Ball just came to rest after a throw without scoring = miss
+        if (!wasResting && isResting && wasThrown && !scoredThisThrow) {
+            handleMiss();
         }
         draw();
         animationId = requestAnimationFrame(animate);
     }
 
-    resizeCanvas(); // This triggers animate() indirectly? No it triggers resetBall
+    // Set initial background
+    const screen = document.getElementById('game-screen');
+    if (screen) screen.classList.add('bg-pingpong');
+
+    resizeCanvas();
+    updateScoreDisplay();
 
     // start loop
     animationId = requestAnimationFrame(animate);
