@@ -127,15 +127,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         const maxX = width * 0.65;
         const targetX = minX + Math.random() * (maxX - minX);
         const targetY = height * groundLevel - ball.radius;
-        if (gameMode === 'basketball') {
-            const hoopRimY = height * 0.45;
-            const hoopCenterX = width - (140 * scale) / 2 - 6 * scale;
-            returnFrom = { x: hoopCenterX, y: hoopRimY };
-        } else {
-            const cupX = width * 0.85;
-            const cupRimY = height * groundLevel - 130 * scale;
-            returnFrom = { x: cupX, y: cupRimY - 10 * scale };
-        }
+        returnFrom = { x: ball.x, y: ball.y };
         returnTo   = { x: targetX, y: targetY };
         returnCtrl = {
             x: (returnFrom.x + returnTo.x) / 2,
