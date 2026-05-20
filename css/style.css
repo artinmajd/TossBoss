@@ -551,10 +551,20 @@ button:active {
     #score-area.score-open #score-display  { padding: 0.5rem 0.75rem; }
     #score-area.score-open #score-current  { font-size: 1.4rem; }
     #score-area.score-open #score-best     { font-size: 1.4rem; }
-    #score-area.score-open #best-display   { padding: 0; min-width: 0; border-radius: 0.9rem; }
-    #score-area.score-open .best-content   { padding: 0.5rem 0.75rem; }
+    #score-area.score-open #best-display   { padding: 0; min-width: 0; border-radius: 0.9rem; flex-direction: column; }
+    #score-area.score-open .best-content   { padding: 0.5rem 0.75rem 0.3rem; }
     #score-area.score-open #score-best-streak { font-size: 0.65rem; }
-    #score-area.score-open #all-time-pane  { border-radius: 0 0.9rem 0.9rem 0; }
+    #score-area.score-open #all-time-pane  {
+        width: auto; height: 1.2rem;
+        border-left: none; border-top: 1px solid var(--border-color);
+        border-radius: 0 0 0.9rem 0.9rem;
+        flex-direction: row;
+    }
+    #score-area.score-open #all-time-pane span {
+        writing-mode: horizontal-tb;
+        transform: none;
+        font-size: 0.5rem;
+    }
 }
 
 /* Hide button when in fullscreen */
