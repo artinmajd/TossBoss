@@ -1,8 +1,9 @@
 import Home from './views/Home.js';
 import Game from './views/Game.js';
 import Auth from './views/Auth.js';
+import Leaderboard from './views/Leaderboard.js';
 import { initGame } from './engine.js';
-import { supabase, getHighScores } from './supabase.js';
+import { supabase, getHighScores, getLeaderboard } from './supabase.js';
 
 let destroyGame = null;
 
@@ -23,10 +24,53 @@ async function router() {
         return;
     }
 
+    if (hash === '#leaderboard') {
+        app.innerHTML = Leaderboard();
+        document.getElementById('btn-lb-back').addEventListener('click', () => {
+            window.location.hash = '#home';
+        });
+        let currentMode = 'pingpong';
+        const renderList = async (mode) => {
+            const list = document.getElementById('leaderboard-list');
+            list.innerHTML = '<div class="lb-loading">Loading...</div>';
+            const rows = await getLeaderboard(mode);
+            if (rows.length === 0) {
+                list.innerHTML = '<div class="lb-loading">No scores yet.</div>';
+                return;
+            }
+            const medalClass = ['lb-gold', 'lb-silver', 'lb-bronze'];
+            const medalIcon  = ['🥇', '🥈', '🥉'];
+            list.innerHTML = rows.map((row, i) => `
+                <div class="lb-row ${medalClass[i] || ''}">
+                    <span class="lb-rank">${i < 3 ? medalIcon[i] : i + 1}</span>
+                    <span class="lb-name">${row.display_name}</span>
+                    <span class="lb-score">${row.score}</span>
+                </div>
+            `).join('');
+        };
+        document.getElementById('tab-pingpong').addEventListener('click', () => {
+            currentMode = 'pingpong';
+            document.getElementById('tab-pingpong').classList.add('active');
+            document.getElementById('tab-basketball').classList.remove('active');
+            renderList('pingpong');
+        });
+        document.getElementById('tab-basketball').addEventListener('click', () => {
+            currentMode = 'basketball';
+            document.getElementById('tab-basketball').classList.add('active');
+            document.getElementById('tab-pingpong').classList.remove('active');
+            renderList('basketball');
+        });
+        renderList(currentMode);
+        return;
+    }
+
     if (hash === '#home') {
         app.innerHTML = Home(session);
         document.getElementById('btn-play-game').addEventListener('click', () => {
             window.location.hash = '#game';
+        });
+        document.getElementById('btn-leaderboard').addEventListener('click', () => {
+            window.location.hash = '#leaderboard';
         });
         if (session) {
             document.getElementById('btn-logout')?.addEventListener('click', async () => {

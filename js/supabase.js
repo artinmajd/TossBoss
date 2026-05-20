@@ -16,8 +16,20 @@ export async function getHighScores() {
 export async function saveHighScore(mode, score) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    const display_name = user.user_metadata?.name || user.email;
     await supabase.from('high_scores').upsert(
-        { user_id: user.id, mode, score },
+        { user_id: user.id, mode, score, display_name },
         { onConflict: 'user_id,mode' }
     );
+}
+
+export async function getLeaderboard(mode) {
+    const { data, error } = await supabase
+        .from('high_scores')
+        .select('display_name, score')
+        .eq('mode', mode)
+        .order('score', { ascending: false })
+        .limit(10);
+    if (error) return [];
+    return data;
 }
