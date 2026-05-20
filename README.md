@@ -1,37 +1,75 @@
-# TossBoss 🏀🏓
+# TossBoss
 
-**TossBoss** is a 2D physics-based web game built entirely from scratch using Vanilla JavaScript and HTML5 Canvas. No physics libraries were used—all kinematic equations, bounce restitutions, and friction variables were hand-coded to create a highly satisfying tossing experience!
+**TossBoss** is a 2D physics-based arcade web game built with Vanilla JavaScript and HTML5 Canvas — no physics libraries, no frameworks. All kinematics, collision detection, bounce restitution, and friction are hand-coded.
+
+## Play
+
+**[tossboss.app](https://tossboss.app)** — works in any modern browser. On iOS, use *Add to Home Screen* in Safari for a fullscreen native-app experience.
+
+---
 
 ## Features
 
-* **Custom Physics Engine:** Realistic Euler integration handling gravity, air resistance, bounce factors, and friction.
-* **Virtual Joystick Aiming:** Tap anywhere on the screen and pull back to throw. Features a dynamically calculated trajectory prediction arc to help you aim.
-* **Two Play Modes:**
-  * **Ping Pong:** Throw a lightweight ping pong ball into a red solo cup. Watch out for the rim—the physics are unforgiving!
-  * **Basketball:** Toss a heavier, less bouncy basketball into a wall-mounted backboard and hoop. Features custom "net drag" physics when the ball passes through the net.
-* **Mobile & Touch Friendly:** Fully responsive with specific mobile layout scaling. Built-in orientation detection requiring landscape play on phones, and disables native touch-scrolling for flawless slingshot controls.
-* **Standalone Web App:** Safari users can use "Add to Home Screen" on iOS to play it in a completely native, fullscreen app experience.
+### Two game modes
+- **Ping Pong** — throw a lightweight ball into a red solo cup. The rim is unforgiving; only clean drops score.
+- **Basketball** — toss a heavier ball through a wall-mounted hoop. Includes custom net-drag physics as the ball passes through.
 
-## Tech Stack
+### Physics engine (hand-coded)
+- Euler integration with gravity, air resistance, and surface friction
+- Per-mode ball weight, bounce restitution, and drag coefficients
+- Accurate rim collision on both modes
 
-* **HTML5** (Canvas API)
-* **CSS3** (Responsive design, Glassmorphism UI, Media Queries)
-* **Vanilla JavaScript** (Physics engine, Game loop, Event listeners)
+### Scoring & streaks
+- Consecutive makes increase a multiplier: +2/shot at 3 in a row, +3 at 6, climbing forever
+- Two consecutive misses reset your score
+- Missing on a bonus round drops the multiplier but keeps your base score
 
-## How to Play locally
+### Leaderboard (Supabase)
+- Sign up / sign in to save scores
+- Global leaderboard for each mode, sortable by **Best Score** or **Best Streak**
+- Accessible from the home screen and as an in-game overlay (no game state lost)
 
-There are no build steps, frameworks, or dependencies required.
-Simply clone the repository and open `index.html` in your favorite web browser!
+### Mobile-first design
+- Landscape-only gameplay with orientation warning in portrait
+- Collapsible HUD on mobile: hamburger button hides nav/mode controls; score area collapses to just the current number
+- Swipe-style drag-to-aim with minimum drag threshold to prevent accidental throws on double-tap
+- Safe-area insets for notched devices
+- Fullscreen button (hidden automatically when already in fullscreen)
+
+### Smooth ball return
+- After scoring, the ball arcs back to a random starting position via a quadratic Bézier ease-out animation instead of snapping
+
+---
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Rendering | HTML5 Canvas API |
+| Language | Vanilla JavaScript (ES modules) |
+| Routing | Hash-based SPA (`#home`, `#game`, `#auth`, `#leaderboard`) |
+| Auth & DB | Supabase (email/password auth, PostgreSQL) |
+| Fonts | Inter, Orbitron (Google Fonts) |
+| Styling | CSS3 — glassmorphism, CSS custom properties, media queries |
+
+---
+
+## Run locally
+
+No build step or package manager required.
 
 ```bash
 git clone https://github.com/artinmajd/TossBoss.git
 cd TossBoss
-open index.html # On Mac
+open index.html   # macOS — or just drag index.html into any browser
 ```
 
-## How to Play
+---
 
-1. **Aim:** Tap/click anywhere on the screen and drag backward.
-2. **Throw:** Release to toss the ball!
-3. **Wait:** The ball must come to a complete physical stop before you can grab it again.
-4. **Switch Modes:** Use the circular icons at the top left to swap between Ping Pong and Basketball.
+## How to play
+
+1. **Aim** — tap/click anywhere and drag backward from the ball
+2. **Throw** — release to launch
+3. **Score** — land it cleanly in the cup or through the hoop
+4. **Switch modes** — use the mode icons in the top-left menu
+5. **Leaderboard** — tap the bar-chart icon to see global rankings mid-game
