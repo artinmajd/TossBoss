@@ -546,13 +546,15 @@ button:active {
         display: flex;
         animation: hud-pop-in 0.15s ease forwards;
     }
-    #score-area.score-open .score-label { display: block; font-size: 0.55rem; }
-    #score-area.score-open #score-bonus { display: block; font-size: 0.6rem; }
-    #score-area.score-open #score-display { padding: 0.5rem 0.75rem; }
-    #score-area.score-open #score-current { font-size: 1.4rem; }
-    #score-area.score-open #score-best   { font-size: 1.4rem; }
-    #score-area.score-open #best-display { padding: 0.5rem 0; min-width: 4rem; }
+    #score-area.score-open .score-label    { display: block; font-size: 0.55rem; }
+    #score-area.score-open #score-bonus    { display: block; font-size: 0.6rem; }
+    #score-area.score-open #score-display  { padding: 0.5rem 0.75rem; }
+    #score-area.score-open #score-current  { font-size: 1.4rem; }
+    #score-area.score-open #score-best     { font-size: 1.4rem; }
+    #score-area.score-open #best-display   { padding: 0; min-width: 0; border-radius: 0.9rem; }
+    #score-area.score-open .best-content   { padding: 0.5rem 0.75rem; }
     #score-area.score-open #score-best-streak { font-size: 0.65rem; }
+    #score-area.score-open #all-time-pane  { border-radius: 0 0.9rem 0.9rem 0; }
 }
 
 /* Hide button when in fullscreen */
