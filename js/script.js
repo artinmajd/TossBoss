@@ -95,7 +95,9 @@ function tryFullscreen() {
 }
 
 function resetBall() {
-    ball.x = width * 0.15;
+    const minX = ball.radius * 2;
+    const maxX = width * 0.65;
+    ball.x = minX + Math.random() * (maxX - minX);
     ball.y = height * groundLevel - ball.radius;
     ball.vx = 0;
     ball.vy = 0;
@@ -128,6 +130,13 @@ window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
 resetBtn.addEventListener('click', resetBall);
+
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        e.preventDefault();
+        resetBall();
+    }
+});
 
 // Pointer Events
 function getPointerPos(e) {
