@@ -808,15 +808,14 @@ button:active {
     color: var(--text-primary);
 }
 
-.lb-sort-arrow {
-    display: inline-block;
+.lb-sortable::after {
+    content: ' ▼';
     font-size: 0.6rem;
     opacity: 0;
-    margin-left: 0.15rem;
     transition: opacity 0.15s;
 }
 
-.lb-sort-arrow.active-sort {
+.lb-sortable.active-sort::after {
     opacity: 1;
 }
 

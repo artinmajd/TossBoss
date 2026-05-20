@@ -33,10 +33,8 @@ async function router() {
         let lbSortBy = 'score';
 
         const updateLbSortHeaders = () => {
-            const scoreArrow  = document.querySelector('#lb-sort-score .lb-sort-arrow');
-            const streakArrow = document.querySelector('#lb-sort-streak .lb-sort-arrow');
-            scoreArrow.classList.toggle('active-sort', lbSortBy === 'score');
-            streakArrow.classList.toggle('active-sort', lbSortBy === 'best_streak');
+            document.getElementById('lb-sort-score').classList.toggle('active-sort', lbSortBy === 'score');
+            document.getElementById('lb-sort-streak').classList.toggle('active-sort', lbSortBy === 'best_streak');
         };
 
         const renderList = async (mode) => {
@@ -120,10 +118,8 @@ async function router() {
         let lbModalSortBy = 'score';
 
         const updateModalSortHeaders = () => {
-            const scoreArrow  = document.querySelector('#lb-modal-sort-score .lb-sort-arrow');
-            const streakArrow = document.querySelector('#lb-modal-sort-streak .lb-sort-arrow');
-            scoreArrow.classList.toggle('active-sort', lbModalSortBy === 'score');
-            streakArrow.classList.toggle('active-sort', lbModalSortBy === 'best_streak');
+            document.getElementById('lb-modal-sort-score').classList.toggle('active-sort', lbModalSortBy === 'score');
+            document.getElementById('lb-modal-sort-streak').classList.toggle('active-sort', lbModalSortBy === 'best_streak');
         };
 
         const renderModalList = async (mode) => {
