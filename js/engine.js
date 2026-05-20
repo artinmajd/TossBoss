@@ -215,6 +215,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         const dx = aimStart.x - aimCurrent.x;
         const dy = aimStart.y - aimCurrent.y;
 
+        if (Math.hypot(dx, dy) < 12) {
+            isResting = true;
+            return;
+        }
+
         const powerMultiplier = 8;
         ball.vx = dx * powerMultiplier;
         ball.vy = dy * powerMultiplier;
