@@ -218,6 +218,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     }
     
     function handlePointerUp(e) {
+        clearTimeout(touchHoldTimer);
         isTouchHeld = false;
         if (!isAiming) return;
         isAiming = false;
@@ -1061,10 +1062,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         }
     };
     
+    let touchHoldTimer = null;
     const handleTouchStart = (e) => {
         if (e.target.closest('button')) return;
         e.preventDefault();
-        isTouchHeld = true;
+        touchHoldTimer = setTimeout(() => { isTouchHeld = true; }, 500);
         handlePointerDown(e);
     };
     
