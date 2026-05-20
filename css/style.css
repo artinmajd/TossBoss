@@ -575,6 +575,10 @@ button:active {
     display: none !important;
 }
 
+@media screen and (max-width: 900px) {
+    #fullscreen-btn { display: none !important; }
+}
+
 /* Mobile Adjustments */
 @media screen and (max-width: 900px) and (orientation: portrait) {
     #orientation-warning {
