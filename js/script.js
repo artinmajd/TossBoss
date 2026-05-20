@@ -83,16 +83,24 @@ function setMode(mode) {
 document.getElementById('mode-pingpong').addEventListener('click', () => setMode('pingpong'));
 document.getElementById('mode-basketball').addEventListener('click', () => setMode('basketball'));
 
-function tryFullscreen() {
-    if (fullscreenAttempted) return;
-    fullscreenAttempted = true;
+const fullscreenBtn = document.getElementById('fullscreen-btn');
+
+fullscreenBtn.addEventListener('click', () => {
     const docElm = document.documentElement;
-    if (docElm.requestFullscreen) {
-        docElm.requestFullscreen().catch(e => console.log(e));
-    } else if (docElm.webkitRequestFullscreen) {
-        docElm.webkitRequestFullscreen();
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (docElm.requestFullscreen) {
+            docElm.requestFullscreen().catch(e => console.log(e));
+        } else if (docElm.webkitRequestFullscreen) {
+            docElm.webkitRequestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
     }
-}
+});
 
 function resetBall() {
     const minX = ball.radius * 2;
@@ -147,8 +155,6 @@ function getPointerPos(e) {
 }
 
 function handlePointerDown(e) {
-    tryFullscreen(); 
-    
     if (e.target.closest('button') || scoredThisThrow) return;
     if (!isResting) return;
     
