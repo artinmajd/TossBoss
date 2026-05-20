@@ -177,6 +177,13 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     function handlePointerDown(e) {
         if (e.target.closest('button') || scoredThisThrow || ballReturning) return;
         if (!isResting) return;
+        // Close open mobile HUDs; block throw on this tap so it only dismisses the menu
+        const _topLeft   = document.getElementById('top-left');
+        const _scoreArea = document.getElementById('score-area');
+        const anyOpen = _topLeft?.classList.contains('menu-open') || _scoreArea?.classList.contains('score-open');
+        _topLeft?.classList.remove('menu-open');
+        _scoreArea?.classList.remove('score-open');
+        if (anyOpen) return;
         
         const pos = getPointerPos(e);
         
@@ -1004,6 +1011,23 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
     document.getElementById('mode-pingpong')?.addEventListener('click', () => setMode('pingpong'));
     document.getElementById('mode-basketball')?.addEventListener('click', () => setMode('basketball'));
+
+    // Mobile HUD toggles
+    const topLeft     = document.getElementById('top-left');
+    const scoreArea   = document.getElementById('score-area');
+    const menuToggle  = document.getElementById('menu-toggle');
+
+    menuToggle?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        topLeft?.classList.toggle('menu-open');
+        scoreArea?.classList.remove('score-open');
+    });
+
+    scoreArea?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        scoreArea.classList.toggle('score-open');
+        topLeft?.classList.remove('menu-open');
+    });
     
     const fullscreenBtn = document.getElementById('fullscreen-btn');
     const toggleFullscreen = () => {
