@@ -37,7 +37,8 @@ export default function Game() {
                         </div>
                         <div class="help-divider"></div>
                         <div class="help-section">
-                            <div class="help-row"><span class="help-key"><kbd>Space</kbd></span><span>fast-forward</span></div>
+                            <div class="help-row help-desktop-only"><span class="help-key"><kbd>Space</kbd></span><span>fast-forward</span></div>
+                            <div class="help-row help-mobile-only"><span class="help-key">Hold finger</span><span>fast-forward</span></div>
                         </div>
                     </div>
                 </div>

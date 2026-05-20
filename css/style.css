@@ -133,6 +133,13 @@ html, body {
     margin: 0.6rem 0;
 }
 
+.help-mobile-only { display: none; }
+
+@media (hover: none) and (pointer: coarse) {
+    .help-desktop-only { display: none; }
+    .help-mobile-only  { display: flex; }
+}
+
 #help-bubble kbd {
     background: rgba(255,255,255,0.1);
     border: 1px solid var(--border-color);
