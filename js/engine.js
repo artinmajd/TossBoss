@@ -1,4 +1,6 @@
-export function initGame() {
+import { saveHighScore } from './supabase.js';
+
+export function initGame(initialHighScores = { pingpong: 0, basketball: 0 }) {
     const canvas = document.getElementById('simulation-canvas');
     if (!canvas) return null;
     const ctx = canvas.getContext('2d');
@@ -31,6 +33,7 @@ export function initGame() {
     
     // Game state
     let score = 0;
+    let highScores = { ...initialHighScores };
     let scoredThisThrow = false;
     let fullscreenAttempted = false;
     let isResting = true; 
@@ -58,15 +61,11 @@ export function initGame() {
         
         gameMode = mode;
         score = 0;
+        scoredThisThrow = false;
         
         document.getElementById('mode-pingpong').classList.remove('active');
         document.getElementById('mode-basketball').classList.remove('active');
         document.getElementById(`mode-${mode}`).classList.add('active');
-        
-        const title = document.getElementById('game-title');
-        if (title) {
-            title.innerText = mode === 'pingpong' ? 'Ping Pong Physics' : 'Basketball Physics';
-        }
         
         if (mode === 'pingpong') {
             baseRadius = 18;
@@ -244,7 +243,11 @@ export function initGame() {
                     if (!scoredThisThrow && ball.y > cupRimY + ball.radius * 0.8) {
                         scoredThisThrow = true;
                         score++;
-                        setTimeout(resetBall, 1500); 
+                        if (score > highScores[gameMode]) {
+                            highScores[gameMode] = score;
+                            saveHighScore(gameMode, score);
+                        }
+                        setTimeout(resetBall, 1500);
                     }
                     
                     if (ball.x - ball.radius < wallLeftX) {
@@ -358,6 +361,10 @@ export function initGame() {
                         if (wasAboveRim) {
                             scoredThisThrow = true;
                             score++;
+                            if (score > highScores[gameMode]) {
+                                highScores[gameMode] = score;
+                                saveHighScore(gameMode, score);
+                            }
                             setTimeout(resetBall, 1500);
                         }
                     }
@@ -751,13 +758,11 @@ export function initGame() {
     
         }
         
-        // Score
-        ctx.fillStyle = '#f8fafc';
-        ctx.font = `bold ${Math.floor(36 * scale)}px Inter, sans-serif`;
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'top';
-        const padding = Math.max(20, width * 0.05);
-        ctx.fillText(`Score: ${score}`, width - padding, padding);
+        // Score (updated via DOM)
+        const scoreEl = document.getElementById('score-current');
+        const bestEl = document.getElementById('score-best');
+        if (scoreEl) scoreEl.textContent = `Score: ${score}`;
+        if (bestEl) bestEl.textContent = `Best: ${highScores[gameMode]}`;
         
         if (scoredThisThrow) {
             ctx.fillStyle = '#4ade80';
@@ -799,9 +804,6 @@ export function initGame() {
         }
     };
     if (fullscreenBtn) fullscreenBtn.addEventListener('click', toggleFullscreen);
-
-    const resetBtn = document.getElementById('reset-btn');
-    if (resetBtn) resetBtn.addEventListener('click', resetBall);
 
     window.addEventListener('resize', resizeCanvas);
     
