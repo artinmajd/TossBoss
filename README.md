@@ -4,7 +4,7 @@
 
 ## Play
 
-**[tossboss.app](https://tossboss.app)** — works in any modern browser. On iOS, use *Add to Home Screen* in Safari for a fullscreen native-app experience.
+**[tossboss.artinmajd.com](https://tossboss.artinmajd.com)** — works in any modern browser. On iOS, use *Add to Home Screen* in Safari for a fullscreen native-app experience.
 
 ---
 
