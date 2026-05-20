@@ -30,12 +30,21 @@ async function router() {
             window.location.hash = '#home';
         });
         let currentMode = 'pingpong';
+        let lbSortBy = 'score';
+
+        const updateLbSortHeaders = () => {
+            const scoreArrow  = document.querySelector('#lb-sort-score .lb-sort-arrow');
+            const streakArrow = document.querySelector('#lb-sort-streak .lb-sort-arrow');
+            scoreArrow.classList.toggle('active-sort', lbSortBy === 'score');
+            streakArrow.classList.toggle('active-sort', lbSortBy === 'best_streak');
+        };
+
         const renderList = async (mode) => {
             const list = document.getElementById('leaderboard-list');
             const loadingTimer = setTimeout(() => {
                 list.innerHTML = '<div class="lb-loading">Loading...</div>';
             }, 500);
-            const rows = await getLeaderboard(mode);
+            const rows = await getLeaderboard(mode, lbSortBy);
             clearTimeout(loadingTimer);
             if (rows.length === 0) {
                 list.innerHTML = '<div class="lb-loading">No scores yet.</div>';
@@ -52,6 +61,19 @@ async function router() {
                 </div>
             `).join('');
         };
+
+        document.getElementById('lb-sort-score').addEventListener('click', () => {
+            lbSortBy = 'score';
+            updateLbSortHeaders();
+            renderList(currentMode);
+        });
+
+        document.getElementById('lb-sort-streak').addEventListener('click', () => {
+            lbSortBy = 'best_streak';
+            updateLbSortHeaders();
+            renderList(currentMode);
+        });
+
         document.getElementById('tab-pingpong').addEventListener('click', () => {
             currentMode = 'pingpong';
             document.getElementById('tab-pingpong').classList.add('active');
@@ -95,12 +117,20 @@ async function router() {
         const lbModal = document.getElementById('lb-modal');
         const lbModalList = document.getElementById('lb-modal-list');
         let lbModalMode = 'pingpong';
+        let lbModalSortBy = 'score';
+
+        const updateModalSortHeaders = () => {
+            const scoreArrow  = document.querySelector('#lb-modal-sort-score .lb-sort-arrow');
+            const streakArrow = document.querySelector('#lb-modal-sort-streak .lb-sort-arrow');
+            scoreArrow.classList.toggle('active-sort', lbModalSortBy === 'score');
+            streakArrow.classList.toggle('active-sort', lbModalSortBy === 'best_streak');
+        };
 
         const renderModalList = async (mode) => {
             const loadingTimer = setTimeout(() => {
                 lbModalList.innerHTML = '<div class="lb-loading">Loading...</div>';
             }, 500);
-            const rows = await getLeaderboard(mode);
+            const rows = await getLeaderboard(mode, lbModalSortBy);
             clearTimeout(loadingTimer);
             if (rows.length === 0) {
                 lbModalList.innerHTML = '<div class="lb-loading">No scores yet.</div>';
@@ -129,6 +159,18 @@ async function router() {
 
         lbModal.addEventListener('click', (e) => {
             if (e.target === lbModal) lbModal.style.display = 'none';
+        });
+
+        document.getElementById('lb-modal-sort-score').addEventListener('click', () => {
+            lbModalSortBy = 'score';
+            updateModalSortHeaders();
+            renderModalList(lbModalMode);
+        });
+
+        document.getElementById('lb-modal-sort-streak').addEventListener('click', () => {
+            lbModalSortBy = 'best_streak';
+            updateModalSortHeaders();
+            renderModalList(lbModalMode);
         });
 
         document.getElementById('lb-modal-tab-pingpong').addEventListener('click', () => {

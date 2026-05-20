@@ -26,12 +26,13 @@ export async function saveHighScore(mode, score, bestStreak) {
     );
 }
 
-export async function getLeaderboard(mode) {
+export async function getLeaderboard(mode, sortBy = 'score') {
+    const col = sortBy === 'best_streak' ? 'best_streak' : 'score';
     const { data, error } = await supabase
         .from('high_scores')
         .select('display_name, score, best_streak')
         .eq('mode', mode)
-        .order('score', { ascending: false })
+        .order(col, { ascending: false })
         .limit(10);
     if (error) return [];
     return data;

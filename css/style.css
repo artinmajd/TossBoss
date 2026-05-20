@@ -794,6 +794,28 @@ button:active {
     text-align: right;
 }
 
+.lb-sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s;
+}
+
+.lb-sortable:hover {
+    color: var(--text-primary);
+}
+
+.lb-sort-arrow {
+    display: inline-block;
+    font-size: 0.6rem;
+    opacity: 0;
+    margin-left: 0.15rem;
+    transition: opacity 0.15s;
+}
+
+.lb-sort-arrow.active-sort {
+    opacity: 1;
+}
+
 #leaderboard-list {
     display: flex;
     flex-direction: column;
