@@ -44,6 +44,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     let scoredThisThrow = false;
     let fullscreenAttempted = false;
     let isResting = true;
+    let isTouchHeld = false;
     let isBehindNet = false;
     let wasAboveRim = false;
     let isDisqualified = false;
@@ -204,7 +205,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         let dx = pos.x - aimStart.x;
         let dy = pos.y - aimStart.y;
         const dragDist = Math.hypot(dx, dy);
-        const maxDrag = Math.min(width, height) * 0.3; // Cap drag to 30% of the screen dimension
+        const dragCoeff = Math.min(width, height) < 500 ? 0.36 : 0.30;
+        const maxDrag = Math.min(width, height) * dragCoeff;
         
         if (dragDist > maxDrag) {
             dx = (dx / dragDist) * maxDrag;
@@ -216,6 +218,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     }
     
     function handlePointerUp(e) {
+        isTouchHeld = false;
         if (!isAiming) return;
         isAiming = false;
 
@@ -995,7 +998,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
     function animate() {
         // Fast-forward physics simulation when space is held down
-        const steps = (isSpaceDown && !isResting && !isAiming) ? 15 : 1;
+        const steps = ((isSpaceDown || isTouchHeld) && !isResting && !isAiming) ? 15 : 1;
         
         for (let i = 0; i < steps; i++) {
             updatePhysics();
@@ -1058,10 +1061,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         }
     };
     
-    const handleTouchStart = (e) => { 
+    const handleTouchStart = (e) => {
         if (e.target.closest('button')) return;
-        e.preventDefault(); 
-        handlePointerDown(e); 
+        e.preventDefault();
+        isTouchHeld = true;
+        handlePointerDown(e);
     };
     
     const handleTouchMove = (e) => { 
@@ -1084,7 +1088,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     // Override the animate function to capture animationId and detect misses
     animate = function() {
         const wasResting = isResting;
-        const steps = (isSpaceDown && !isResting && !isAiming) ? 15 : 1;
+        const steps = ((isSpaceDown || isTouchHeld) && !isResting && !isAiming) ? 15 : 1;
         for (let i = 0; i < steps; i++) {
             updatePhysics();
             if (isResting) break;
