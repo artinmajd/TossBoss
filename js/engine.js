@@ -199,15 +199,6 @@ export function initGame() {
     }
     
     
-        if (e.target.closest('button')) return; // Allow button clicks naturally
-        e.preventDefault(); 
-        handlePointerDown(e); 
-    }, { passive: false });
-        if (e.target.closest('button')) return;
-        e.preventDefault(); 
-        handlePointerMove(e); 
-    }, { passive: false });
-    
     // Physics update
     function updatePhysics() {
         if (isAiming || isResting) return;
