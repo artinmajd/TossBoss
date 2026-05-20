@@ -5,9 +5,12 @@ export const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON
 
 export async function getHighScores() {
     const empty = { pingpong: { score: 0, bestStreak: 0 }, basketball: { score: 0, bestStreak: 0 } };
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return empty;
     const { data, error } = await supabase
         .from('high_scores')
-        .select('mode, score, best_streak');
+        .select('mode, score, best_streak')
+        .eq('user_id', user.id);
     if (error) return empty;
     const result = { ...empty };
     data.forEach(row => {
@@ -20,10 +23,11 @@ export async function saveHighScore(mode, score, bestStreak) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const display_name = user.user_metadata?.name || user.email;
-    await supabase.from('high_scores').upsert(
+    const { error } = await supabase.from('high_scores').upsert(
         { user_id: user.id, mode, score, best_streak: bestStreak, display_name },
         { onConflict: 'user_id,mode' }
     );
+    if (error) console.error('saveHighScore failed:', error.message);
 }
 
 export async function getLeaderboard(mode, sortBy = 'score') {
