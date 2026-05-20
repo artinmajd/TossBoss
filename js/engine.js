@@ -135,19 +135,7 @@ export function initGame() {
     resizeCanvas();
     
     
-    let isSpaceDown = false;
-    
-        if (e.code === 'Space') {
-            e.preventDefault();
-            isSpaceDown = true;
-        }
-    });
-    
-        if (e.code === 'Space') {
-            e.preventDefault();
-            isSpaceDown = false;
-        }
-    });
+
     
     // Pointer Events
     function getPointerPos(e) {
