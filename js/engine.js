@@ -3,6 +3,7 @@ export function initGame() {
     if (!canvas) return null;
     const ctx = canvas.getContext('2d');
     let animationId;
+    let isSpaceDown = false;
     
     let width, height;
     let scale = 1;
