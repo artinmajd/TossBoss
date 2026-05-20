@@ -780,8 +780,10 @@ button:active {
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    width: 3rem;
+    width: 5.5rem;
     text-align: right;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .lb-col-streak {
@@ -790,8 +792,10 @@ button:active {
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    width: 4.5rem;
+    width: 5.5rem;
     text-align: right;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .lb-sortable {
@@ -908,8 +912,9 @@ button:active {
     font-weight: 800;
     color: #38bdf8;
     text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
-    width: 3rem;
+    width: 5.5rem;
     text-align: right;
+    flex-shrink: 0;
 }
 
 .lb-streak {
@@ -917,8 +922,9 @@ button:active {
     font-weight: 800;
     color: #f472b6;
     text-shadow: 0 0 8px rgba(244, 114, 182, 0.4);
-    width: 4.5rem;
+    width: 5.5rem;
     text-align: right;
+    flex-shrink: 0;
 }
 
 /* Auth Screen */
