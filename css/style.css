@@ -271,3 +271,61 @@ button:active {
         box-shadow: 0 4px 14px rgba(0,0,0,0.5);
     }
 }
+
+/* View Management */
+.view-screen {
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    top: 0; left: 0;
+}
+
+/* Home Screen */
+#home-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--bg-color-1), var(--bg-color-2));
+    z-index: 10;
+}
+
+.home-content {
+    background: var(--surface-color);
+    backdrop-filter: blur(16px);
+    padding: 3rem;
+    border-radius: 1.5rem;
+    border: 1px solid var(--border-color);
+    text-align: center;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    max-width: 400px;
+    width: 90%;
+}
+
+.logo-title {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #e0f2fe, #38bdf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -1px;
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+.play-btn {
+    width: 100%;
+    font-size: 1.25rem;
+    padding: 1rem;
+}
+
+.home-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
