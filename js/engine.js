@@ -83,23 +83,7 @@ export function initGame() {
     }
     
     
-    
-        const docElm = document.documentElement;
-        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-            if (docElm.requestFullscreen) {
-                docElm.requestFullscreen().catch(e => console.log(e));
-            } else if (docElm.webkitRequestFullscreen) {
-                docElm.webkitRequestFullscreen();
-            }
-        } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            }
-        }
-    });
-    
+
     function resetBall() {
         const minX = ball.radius * 2;
         const maxX = width * 0.65;
