@@ -144,17 +144,23 @@ async function router() {
             `).join('');
         };
 
-        document.getElementById('btn-leaderboard-game').addEventListener('click', () => {
-            lbModal.style.display = 'flex';
+        const lbBtn = document.getElementById('btn-leaderboard-game');
+        const setLbModal = (open) => {
+            lbModal.style.display = open ? 'flex' : 'none';
+            lbBtn.classList.toggle('selected', open);
+        };
+
+        lbBtn.addEventListener('click', () => {
+            setLbModal(true);
             renderModalList(lbModalMode);
         });
 
         document.getElementById('btn-lb-modal-close').addEventListener('click', () => {
-            lbModal.style.display = 'none';
+            setLbModal(false);
         });
 
         lbModal.addEventListener('click', (e) => {
-            if (e.target === lbModal) lbModal.style.display = 'none';
+            if (e.target === lbModal) setLbModal(false);
         });
 
         document.getElementById('lb-modal-sort-score').addEventListener('click', () => {
@@ -187,14 +193,17 @@ async function router() {
             ? await getHighScores()
             : { pingpong: { score: 0, bestStreak: 0 }, basketball: { score: 0, bestStreak: 0 } };
 
-        document.getElementById('btn-help').addEventListener('click', (e) => {
+        const helpBtn = document.getElementById('btn-help');
+        helpBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const bubble = document.getElementById('help-bubble');
             bubble.classList.toggle('visible');
+            helpBtn.classList.toggle('selected', bubble.classList.contains('visible'));
         });
 
         document.addEventListener('click', () => {
             document.getElementById('help-bubble')?.classList.remove('visible');
+            helpBtn.classList.remove('selected');
         });
 
         requestAnimationFrame(() => {

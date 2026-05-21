@@ -221,14 +221,12 @@ button:active {
     }
 }
 
-/* Menu toggle shows the blue highlight only while the menu is open */
-#top-left.menu-open #menu-toggle {
-    background: linear-gradient(135deg, #7dd3fc, #38bdf8);
-    transform: scale(1.1);
-}
-
-/* Help button shows the blue highlight only while instructions are open */
-#nav-bar:has(#help-bubble.visible) #btn-help {
+/* Toggle buttons (menu, help, leaderboard, …) show the blue highlight
+   while their panel is open. Add the `selected` class in JS when the
+   button's panel opens, and remove it when the panel closes. Any future
+   toggle button gets this behaviour just by having the `mode-btn` class
+   and having its `selected` class managed alongside its panel. */
+.mode-btn.selected {
     background: linear-gradient(135deg, #7dd3fc, #38bdf8);
     transform: scale(1.1);
 }
