@@ -602,8 +602,8 @@ button:active {
         min-width: 0;
         opacity: 0;
         border-radius: 0.9rem;
-        transition: max-width 0.32s cubic-bezier(0.4, 0, 0.2, 1),
-                    opacity 0.25s ease;
+        transition: max-width 0.22s ease-in,
+                    opacity 0.18s ease;
     }
 
     /* All Time label: smaller on mobile so the pane needs less vertical space */

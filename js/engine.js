@@ -1106,7 +1106,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         if (scoreArea.classList.contains('score-open') && !scoreArea.classList.contains('score-closing')) {
             // Animate close: keep score-display expanded while best-display slides out
             scoreArea.classList.add('score-closing');
-            setTimeout(() => scoreArea.classList.remove('score-open', 'score-closing'), 350);
+            setTimeout(() => scoreArea.classList.remove('score-open', 'score-closing'), 240);
         } else if (!scoreArea.classList.contains('score-open')) {
             scoreArea.classList.add('score-open');
         }
