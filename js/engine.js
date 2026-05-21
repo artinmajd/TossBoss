@@ -113,6 +113,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         if (screen) screen.classList.toggle('bg-pingpong', mode === 'pingpong');
 
         resizeCanvas();
+        resetBall();
         updateScoreDisplay();
     }
 
@@ -165,6 +166,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         canvas.style.width = winW + 'px';
         canvas.style.height = winH + 'px';
 
+        // Save relative position before the coordinate space changes.
+        const prevW = width;
+        const prevH = height;
+
         if (window.matchMedia('(pointer: coarse)').matches) {
             // Touch devices (phones): the playfield IS the screen — the look
             // is unchanged. A phone screen can't be resized, so it is already
@@ -186,12 +191,20 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         }
 
         scale = Math.min(1, Math.max(0.4, height / 650));
-
         ball.radius = baseRadius * scale;
-        resetBall();
+
+        // Preserve the ball's relative position across resizes.
+        // resetBall() is called explicitly for initial placement and mode changes.
+        if (prevW > 0 && prevH > 0) {
+            ball.x = (ball.x / prevW) * width;
+            ball.y = (ball.y / prevH) * height;
+            ball.x = Math.max(ball.radius, Math.min(width - ball.radius, ball.x));
+            ball.y = Math.max(ball.radius, Math.min(height * groundLevel - ball.radius, ball.y));
+        }
     }
-    
+
     resizeCanvas();
+    resetBall();
     
     
 
