@@ -1101,9 +1101,15 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
     scoreArea?.addEventListener('click', (e) => {
         e.stopPropagation();
-        scoreArea.classList.toggle('score-open');
         topLeft?.classList.remove('menu-open');
         menuToggle?.classList.remove('selected');
+        if (scoreArea.classList.contains('score-open') && !scoreArea.classList.contains('score-closing')) {
+            // Animate close: keep score-display expanded while best-display slides out
+            scoreArea.classList.add('score-closing');
+            setTimeout(() => scoreArea.classList.remove('score-open', 'score-closing'), 350);
+        } else if (!scoreArea.classList.contains('score-open')) {
+            scoreArea.classList.add('score-open');
+        }
     });
     
     const fullscreenBtn = document.getElementById('fullscreen-btn');
