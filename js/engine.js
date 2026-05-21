@@ -9,6 +9,12 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     
     let width, height;
     let scale = 1;
+
+    // View transform: maps the virtual playfield onto the real canvas.
+    // Step 1: identity (virtual == window), so nothing changes yet.
+    let viewScale = 1;
+    let viewOffsetX = 0;
+    let viewOffsetY = 0;
     
     // Load images
     const basketballImg = new Image();
@@ -144,18 +150,26 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     }
 
     function resizeCanvas() {
-        width = window.innerWidth;
-        height = window.innerHeight;
-        
-        // High-DPI Display Support (Retina Screens)
+        const winW = window.innerWidth;
+        const winH = window.innerHeight;
+
+        // High-DPI support — the backing store covers the whole window.
         const dpr = window.devicePixelRatio || 1;
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
-        canvas.style.width = width + 'px';
-        canvas.style.height = height + 'px';
-        
+        canvas.width = winW * dpr;
+        canvas.height = winH * dpr;
+        canvas.style.width = winW + 'px';
+        canvas.style.height = winH + 'px';
+
+        // Virtual playfield. Step 1: identical to the window, so the view
+        // transform stays the identity and nothing changes yet.
+        width = winW;
+        height = winH;
+        viewScale = 1;
+        viewOffsetX = 0;
+        viewOffsetY = 0;
+
         scale = Math.min(1, Math.max(0.4, height / 650));
-        
+
         ball.radius = baseRadius * scale;
         resetBall();
     }
@@ -167,10 +181,13 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     
     // Pointer Events
     function getPointerPos(e) {
-        if (e.touches) {
-            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        }
-        return { x: e.clientX, y: e.clientY };
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        // Convert screen coordinates into virtual playfield coordinates.
+        return {
+            x: (clientX - viewOffsetX) / viewScale,
+            y: (clientY - viewOffsetY) / viewScale,
+        };
     }
     
     function handlePointerDown(e) {
@@ -489,10 +506,17 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     // Draw scene
     function draw() {
         const dpr = window.devicePixelRatio || 1;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        // Clear the whole canvas, then map virtual coordinates onto the
+        // (centered) playfield via the view transform.
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.setTransform(dpr * viewScale, 0, 0, dpr * viewScale,
+                         dpr * viewOffsetX, dpr * viewOffsetY);
+
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
-        
+
         ctx.clearRect(0, 0, width, height);
         
         const floorY = height * groundLevel;
