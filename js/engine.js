@@ -1232,6 +1232,17 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     let lastTime = 0;
     const prevBall = { x: ball.x, y: ball.y };
 
+    // DEBUG: temporary on-screen FPS readout — remove once calibration is settled.
+    const fpsEl = document.createElement('div');
+    fpsEl.id = 'fps-debug';
+    fpsEl.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999;' +
+        'font:bold 14px monospace;color:#0f0;background:rgba(0,0,0,0.7);' +
+        'padding:3px 7px;border-radius:5px;pointer-events:none;';
+    fpsEl.textContent = '… fps';
+    document.body.appendChild(fpsEl);
+    let fpsFrames = 0;
+    let fpsLast = 0;
+
     animate = function(timestamp) {
         if (!lastTime) lastTime = timestamp;
         let frameTime = (timestamp - lastTime) / 1000;   // real seconds elapsed
@@ -1276,6 +1287,16 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             draw();
         }
 
+        // DEBUG: measure the real requestAnimationFrame rate.
+        fpsFrames++;
+        if (!fpsLast) fpsLast = timestamp;
+        if (timestamp - fpsLast >= 500) {
+            const fps = Math.round((fpsFrames * 1000) / (timestamp - fpsLast));
+            fpsEl.textContent = fps + ' fps';
+            fpsFrames = 0;
+            fpsLast = timestamp;
+        }
+
         animationId = requestAnimationFrame(animate);
     }
 
@@ -1291,6 +1312,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
     return function destroyGame() {
         cancelAnimationFrame(animationId);
+        fpsEl.remove();   // DEBUG: temporary FPS readout
         window.removeEventListener('resize', resizeCanvas);
         window.removeEventListener('keydown', handleKeyDown);
         window.removeEventListener('keyup', handleKeyUp);
