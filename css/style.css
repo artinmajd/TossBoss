@@ -571,13 +571,13 @@ button:active {
         animation: hud-pop-in 0.15s ease forwards;
     }
 
-    /* ── Right score: collapsed = number only ── */
+    /* ── Right score: collapsed = current score only ── */
     #score-area {
         top: max(0.5rem, env(safe-area-inset-top, 0.5rem));
         right: max(0.75rem, env(safe-area-inset-right, 0.75rem));
         gap: 0.3rem;
-        flex-direction: column;
-        align-items: flex-end;
+        flex-direction: row;
+        align-items: stretch;
         cursor: pointer;
     }
 
@@ -585,39 +585,38 @@ button:active {
         padding: 0.3rem 0.65rem;
         min-width: 0;
         border-radius: 0.9rem;
+        transition: padding 0.3s ease;
     }
 
-    .score-label       { display: none; }
-    #score-bonus       { display: none; }
-    #best-display      { display: none; }
+    .score-label { display: none; }
+    #score-bonus  { display: none; }
+
+    /* best-display: hidden with zero width; slides in horizontally */
+    #best-display {
+        max-width: 0;
+        min-width: 0;
+        opacity: 0;
+        border-radius: 0.9rem;
+        transition: max-width 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                    opacity 0.25s ease;
+    }
 
     #score-current { font-size: 1.5rem; }
     #score-streak  { font-size: 0.6rem; min-height: 0.75rem; }
 
-    /* Expanded score */
+    /* ── Expanded: best-display slides in to the right ── */
     #score-area.score-open #best-display {
-        display: flex;
-        animation: hud-pop-in 0.15s ease forwards;
+        max-width: 200px;
+        opacity: 1;
     }
-    #score-area.score-open .score-label    { display: block; font-size: 0.55rem; }
-    #score-area.score-open #score-bonus    { display: block; font-size: 0.6rem; }
-    #score-area.score-open #score-display  { padding: 0.5rem 0.75rem; }
-    #score-area.score-open #score-current  { font-size: 1.4rem; }
-    #score-area.score-open #score-best     { font-size: 1.4rem; }
-    #score-area.score-open #best-display   { padding: 0; min-width: 0; border-radius: 0.9rem; flex-direction: column; }
-    #score-area.score-open .best-content   { padding: 0.5rem 0.75rem 0.3rem; }
+    #score-area.score-open .score-label       { display: block; font-size: 0.55rem; }
+    #score-area.score-open #score-bonus       { display: block; font-size: 0.6rem; }
+    #score-area.score-open #score-display     { padding: 0.5rem 0.75rem; }
+    #score-area.score-open #score-current     { font-size: 1.4rem; }
+    #score-area.score-open #score-best        { font-size: 1.4rem; }
     #score-area.score-open #score-best-streak { font-size: 0.65rem; }
-    #score-area.score-open #all-time-pane  {
-        width: auto; height: 1.2rem;
-        border-left: none; border-top: 1px solid var(--border-color);
-        border-radius: 0 0 0.9rem 0.9rem;
-        flex-direction: row;
-    }
-    #score-area.score-open #all-time-pane span {
-        writing-mode: horizontal-tb;
-        transform: none;
-        font-size: 0.5rem;
-    }
+    #score-area.score-open .best-content      { padding: 0.5rem 0.75rem 0.3rem; }
+    /* #all-time-pane stays vertical (writing-mode from base CSS — no override) */
 }
 
 /* Hide button when in fullscreen */
