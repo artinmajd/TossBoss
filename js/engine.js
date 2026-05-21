@@ -11,10 +11,15 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     let scale = 1;
 
     // View transform: maps the virtual playfield onto the real canvas.
-    // Step 1: identity (virtual == window), so nothing changes yet.
     let viewScale = 1;
     let viewOffsetX = 0;
     let viewOffsetY = 0;
+
+    // Fixed desktop playfield (16:10, Mac-friendly). On desktop the window
+    // letterboxes this instead of stretching the field, so resizing the
+    // window never changes difficulty and windowed == fullscreen.
+    const DESKTOP_W = 1440;
+    const DESKTOP_H = 900;
     
     // Load images
     const basketballImg = new Image();
@@ -160,13 +165,25 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         canvas.style.width = winW + 'px';
         canvas.style.height = winH + 'px';
 
-        // Virtual playfield. Step 1: identical to the window, so the view
-        // transform stays the identity and nothing changes yet.
-        width = winW;
-        height = winH;
-        viewScale = 1;
-        viewOffsetX = 0;
-        viewOffsetY = 0;
+        if (window.matchMedia('(pointer: coarse)').matches) {
+            // Touch devices (phones): the playfield IS the screen — the look
+            // is unchanged. A phone screen can't be resized, so it is already
+            // consistent and needs no fixed resolution.
+            width = winW;
+            height = winH;
+            viewScale = 1;
+            viewOffsetX = 0;
+            viewOffsetY = 0;
+        } else {
+            // Desktop: a fixed playfield, centered with contain-fit. Resizing
+            // the window only changes the display scale, never the gameplay,
+            // so a windowed game plays identically to a fullscreen one.
+            width = DESKTOP_W;
+            height = DESKTOP_H;
+            viewScale = Math.min(winW / width, winH / height);
+            viewOffsetX = (winW - width * viewScale) / 2;
+            viewOffsetY = (winH - height * viewScale) / 2;
+        }
 
         scale = Math.min(1, Math.max(0.4, height / 650));
 
@@ -908,9 +925,27 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             
     
         }
-        
+
+        // Mask the letterbox margins so the playfield reads as a framed
+        // screen. No-op on touch devices, where there are no margins.
+        if (viewOffsetX > 0.5 || viewOffsetY > 0.5) {
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.fillStyle = '#060608';
+            const mx = viewOffsetX * dpr;
+            const my = viewOffsetY * dpr;
+            const pw = width * viewScale * dpr;
+            const ph = height * viewScale * dpr;
+            if (mx > 0.5) {
+                ctx.fillRect(0, 0, mx, canvas.height);
+                ctx.fillRect(mx + pw, 0, canvas.width - mx - pw, canvas.height);
+            }
+            if (my > 0.5) {
+                ctx.fillRect(0, 0, canvas.width, my);
+                ctx.fillRect(0, my + ph, canvas.width, canvas.height - my - ph);
+            }
+        }
     }
-    
+
     function showToast(message, type) {
         const container = document.getElementById('toast-container');
         if (!container) return;
