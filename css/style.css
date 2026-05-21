@@ -591,9 +591,10 @@ button:active {
     .score-label { display: none; }
     #score-bonus  { display: none; }
 
-    /* best-display: hidden with zero width; slides in horizontally */
+    /* best-display: hidden with zero width/height; slides in horizontally */
     #best-display {
         max-width: 0;
+        max-height: 0;
         min-width: 0;
         opacity: 0;
         border-radius: 0.9rem;
@@ -610,6 +611,7 @@ button:active {
     /* ── Expanded: best-display slides in to the right ── */
     #score-area.score-open #best-display {
         max-width: 200px;
+        max-height: 200px;
         opacity: 1;
     }
     #score-area.score-open .score-label       { display: block; font-size: 0.48rem; }
