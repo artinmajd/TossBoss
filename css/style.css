@@ -599,23 +599,36 @@ button:active {
     #score-best-streak { font-size: 0.52rem; }
     .best-content      { padding: 0.28rem 0.6rem 0.18rem; }
 
-    /* Collapse transition: max-height snap is delayed until after width finishes,
-       so the layout jump happens when the box is already gone, not at the start. */
+    /* Collapse: shorter & snappier. max-height snap delayed until width finishes. */
     #best-display {
         max-width: 0;
         max-height: 0;
         min-width: 0;
         opacity: 0;
         border-radius: 0.9rem;
-        transition: max-width 0.32s cubic-bezier(0.4, 0, 0.2, 1),
-                    max-height 0s 0.32s,
-                    opacity 0.25s ease;
+        transition: max-width 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+                    max-height 0s 0.22s,
+                    opacity 0.18s ease;
     }
 
-    /* All Time label: smaller on mobile so the pane needs less vertical space */
-    #all-time-pane span { font-size: 0.4rem; letter-spacing: 0.06em; }
+    /* All Time label: absolutely positioned so it doesn't inflate the pane's
+       layout height (which would make #best-display taller than #score-display
+       and cause #score-display to jump in height during the animation). */
+    #all-time-pane {
+        position: relative;
+        overflow: hidden;
+    }
+    #all-time-pane span {
+        writing-mode: horizontal-tb;
+        transform: translate(-50%, -50%) rotate(-90deg);
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        font-size: 0.4rem;
+        letter-spacing: 0.06em;
+    }
 
-    /* Expand transition: max-height snaps instantly (no delay), width and opacity animate */
+    /* Expand: smooth. max-height snaps instantly so there's no height animation. */
     #score-area.score-open #best-display {
         max-width: 200px;
         max-height: 200px;
@@ -626,7 +639,6 @@ button:active {
     }
     #score-area.score-open #score-bonus       { display: block; font-size: 0.52rem; min-height: 0; }
     #score-area.score-open #score-bonus:empty { display: none; }
-    /* #all-time-pane stays vertical (writing-mode from base CSS — no override) */
 }
 
 /* Hide button when in fullscreen */
