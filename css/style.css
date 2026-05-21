@@ -592,10 +592,15 @@ button:active {
         border-radius: 0.9rem;
     }
 
-    #score-current { font-size: 1.15rem; }
-    #score-streak  { font-size: 0.52rem; min-height: 0; }
+    #score-current     { font-size: 1.15rem; }
+    #score-streak      { font-size: 0.52rem; min-height: 0; }
+    /* Keep best-display content at mobile sizes always so nothing snaps mid-animation */
+    #score-best        { font-size: 1.15rem; }
+    #score-best-streak { font-size: 0.52rem; }
+    .best-content      { padding: 0.28rem 0.6rem 0.18rem; }
 
-    /* best-display: hidden with zero width/height; slides in horizontally */
+    /* Collapse transition: max-height snap is delayed until after width finishes,
+       so the layout jump happens when the box is already gone, not at the start. */
     #best-display {
         max-width: 0;
         max-height: 0;
@@ -603,23 +608,24 @@ button:active {
         opacity: 0;
         border-radius: 0.9rem;
         transition: max-width 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                    max-height 0s 0.32s,
                     opacity 0.25s ease;
     }
 
     /* All Time label: smaller on mobile so the pane needs less vertical space */
     #all-time-pane span { font-size: 0.4rem; letter-spacing: 0.06em; }
 
-    /* ── Expanded ── */
+    /* Expand transition: max-height snaps instantly (no delay), width and opacity animate */
     #score-area.score-open #best-display {
         max-width: 200px;
         max-height: 200px;
         opacity: 1;
+        transition: max-width 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                    max-height 0s,
+                    opacity 0.25s ease;
     }
     #score-area.score-open #score-bonus       { display: block; font-size: 0.52rem; min-height: 0; }
     #score-area.score-open #score-bonus:empty { display: none; }
-    #score-area.score-open #score-best        { font-size: 1.15rem; }
-    #score-area.score-open #score-best-streak { font-size: 0.52rem; }
-    #score-area.score-open .best-content      { padding: 0.28rem 0.6rem 0.18rem; }
     /* #all-time-pane stays vertical (writing-mode from base CSS — no override) */
 }
 
