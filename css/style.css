@@ -614,13 +614,15 @@ button:active {
         max-height: 200px;
         opacity: 1;
     }
-    #score-area.score-open .score-label       { display: block; font-size: 0.48rem; }
-    #score-area.score-open #score-bonus       { display: block; font-size: 0.52rem; }
-    #score-area.score-open #score-display     { padding: 0.28rem 0.6rem; }
-    #score-area.score-open #score-current     { font-size: 1.15rem; }
-    #score-area.score-open #score-best        { font-size: 1.15rem; }
-    #score-area.score-open #score-best-streak { font-size: 0.52rem; }
-    #score-area.score-open .best-content      { padding: 0.28rem 0.6rem 0.18rem; }
+    #score-area.score-open .score-label        { display: block; font-size: 0.48rem; }
+    #score-area.score-open #score-bonus        { display: block; font-size: 0.52rem; min-height: 0; }
+    #score-area.score-open #score-bonus:empty  { display: none; }
+    #score-area.score-open #score-display      { padding: 0.28rem 0.6rem; }
+    #score-area.score-open #score-current      { font-size: 1.15rem; }
+    #score-area.score-open #score-best         { font-size: 1.15rem; }
+    #score-area.score-open #score-streak       { font-size: 0.52rem; }
+    #score-area.score-open #score-best-streak  { font-size: 0.52rem; }
+    #score-area.score-open .best-content       { padding: 0.28rem 0.6rem 0.18rem; }
     /* #all-time-pane stays vertical (writing-mode from base CSS — no override) */
 }
 
