@@ -602,8 +602,8 @@ button:active {
         min-width: 0;
         opacity: 0;
         border-radius: 0.9rem;
-        transition: max-width 0.22s ease-in,
-                    opacity 0.18s ease;
+        transition: max-width 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                    opacity 0.25s ease;
     }
 
     /* All Time label: smaller on mobile so the pane needs less vertical space */
@@ -620,13 +620,6 @@ button:active {
     #score-area.score-open #score-best        { font-size: 1.15rem; }
     #score-area.score-open #score-best-streak { font-size: 0.52rem; }
     #score-area.score-open .best-content      { padding: 0.28rem 0.6rem 0.18rem; }
-
-    /* ── Closing: collapse best-display while score-display stays put ── */
-    #score-area.score-open.score-closing #best-display {
-        max-width: 0;
-        max-height: 0;
-        opacity: 0;
-    }
     /* #all-time-pane stays vertical (writing-mode from base CSS — no override) */
 }
 
