@@ -308,6 +308,33 @@ button:active {
     opacity: 0.8;
 }
 
+/* Decorative hearts — bottom-right, sitting just left of the fullscreen button.
+   54px = fullscreen button width; when that button is hidden the hearts slide
+   into its place (see :fullscreen and the max-width:900px media query). */
+#heart-decor {
+    position: absolute;
+    bottom: max(1.5rem, env(safe-area-inset-bottom, 1.5rem));
+    right: calc(max(1.5rem, env(safe-area-inset-right, 1.5rem)) + 54px + 0.6rem);
+    height: 54px;
+    z-index: 99;
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
+    pointer-events: none;
+}
+
+#heart-decor img {
+    width: 62px;
+    height: 62px;
+    display: block;
+}
+
+/* Fullscreen mode hides the fullscreen button — hearts take its spot */
+:fullscreen #heart-decor,
+:-webkit-full-screen #heart-decor {
+    right: max(1.5rem, env(safe-area-inset-right, 1.5rem));
+}
+
 /* Score Display */
 #score-area {
     position: absolute;
@@ -653,6 +680,12 @@ button:active {
 
 @media screen and (max-width: 900px) {
     #fullscreen-btn { display: none !important; }
+    /* No fullscreen button on mobile — hearts take the rightmost spot */
+    #heart-decor {
+        right: max(1.5rem, env(safe-area-inset-right, 1.5rem));
+        height: 44px;
+    }
+    #heart-decor img { width: 50px; height: 50px; }
 }
 
 /* Mobile Adjustments */
