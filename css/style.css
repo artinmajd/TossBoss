@@ -510,17 +510,19 @@ button:active {
     #top-left {
         top: max(0.5rem, env(safe-area-inset-top, 0.5rem));
         left: max(0.75rem, env(safe-area-inset-left, 0.75rem));
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row;
+        align-items: center;
         gap: 0.35rem;
     }
 
-    #nav-bar, #mode-bar {
+    #nav-bar {
         display: none;
+        position: absolute;
+        top: calc(100% + 0.4rem);
+        left: 0;
     }
 
-    #top-left.menu-open #nav-bar,
-    #top-left.menu-open #mode-bar {
+    #top-left.menu-open #nav-bar {
         display: flex;
         animation: hud-pop-in 0.15s ease forwards;
     }
