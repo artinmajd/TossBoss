@@ -102,8 +102,8 @@ export default function Game() {
             </div>
 
             <div id="heart-decor" aria-hidden="true">
-                <img src="assets/heart.webp" alt="">
-                <img src="assets/heart.webp" alt="">
+                <img src="assets/heart.webp?v=2" alt="">
+                <img src="assets/heart.webp?v=2" alt="">
             </div>
 
             <button id="fullscreen-btn" aria-label="Toggle Fullscreen">

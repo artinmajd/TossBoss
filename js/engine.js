@@ -114,6 +114,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
         resizeCanvas();
         resetBall();
+        updateLives();
+        updateStreakFire();
         updateScoreDisplay();
     }
 
@@ -192,6 +194,18 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
         scale = Math.min(1, Math.max(0.4, height / 650));
         ball.radius = baseRadius * scale;
+
+        // Expose playfield edges + the visual scale (same factor the cup and
+        // ball are drawn at) as CSS vars so DOM overlays can anchor to the bg
+        // and scale with the screen.
+        const gameScreen = document.getElementById('game-screen');
+        if (gameScreen) {
+            const bgBottom = winH - (viewOffsetY + height * viewScale);
+            gameScreen.style.setProperty('--bg-left', viewOffsetX + 'px');
+            gameScreen.style.setProperty('--bg-right', viewOffsetX + 'px');
+            gameScreen.style.setProperty('--bg-bottom', bgBottom + 'px');
+            gameScreen.style.setProperty('--game-scale', (scale * viewScale).toFixed(4));
+        }
 
         // Preserve the ball's relative position across resizes.
         // resetBall() is called explicitly for initial placement and mode changes.
@@ -993,6 +1007,49 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         }
     }
 
+    // --- Lives / hearts ---------------------------------------------------
+    function getHearts() {
+        return document.querySelectorAll('#heart-decor img');
+    }
+
+    // Sync the hearts to the current life count (2 - consecutiveMisses).
+    // Hearts are lost right-to-left: the right heart dims on the 1st miss.
+    function updateLives() {
+        const lives = 2 - consecutiveMisses;   // 2, 1, or 0
+        getHearts().forEach((h, i) => {
+            const lit = i === 0 ? lives >= 1 : lives >= 2;
+            h.classList.remove('heart-refill');
+            h.classList.toggle('heart-dim', !lit);
+        });
+    }
+
+    // Both hearts flare back to full with a pop-and-glow animation.
+    function refillLives() {
+        getHearts().forEach(h => {
+            h.classList.remove('heart-refill', 'heart-dim');
+            void h.offsetWidth;   // restart the animation
+            h.classList.add('heart-refill');
+            setTimeout(() => h.classList.remove('heart-refill'), 600);
+        });
+    }
+
+    // Hearts catch fire while a scoring streak (bonus tier) is active.
+    // When the streak breaks, the flame dies down gradually rather than
+    // cutting out at once.
+    function updateStreakFire() {
+        const onFire = consecutiveHits >= 3;
+        getHearts().forEach(h => {
+            if (onFire) {
+                h.classList.remove('heart-fire-out');
+                h.classList.add('heart-fire');
+            } else if (h.classList.contains('heart-fire')) {
+                h.classList.remove('heart-fire');
+                h.classList.add('heart-fire-out');
+                setTimeout(() => h.classList.remove('heart-fire-out'), 600);
+            }
+        });
+    }
+
     function handleScore() {
         const prevBonus = Math.floor(consecutiveHits / 3);
         const points = 1 + prevBonus;
@@ -1026,6 +1083,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             showToast(`+1`, 'score');
         }
 
+        updateLives();   // a successful shot restores any lost chance
+        updateStreakFire();
         updateScoreDisplay();
     }
 
@@ -1033,6 +1092,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         wasThrown = false;
         const hadBonus = consecutiveHits >= 3;
         consecutiveHits = 0;
+        updateStreakFire();   // streak broken — put the hearts out
 
         const box = document.getElementById('score-area');
 
@@ -1063,6 +1123,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                 box.classList.add('flash-reset');
                 setTimeout(() => box.classList.remove('flash-reset'), 800);
             }
+            // Last life lost: dim the final heart, then flare both back to full.
+            getHearts().forEach(h => h.classList.add('heart-dim'));
+            setTimeout(refillLives, 280);
+        } else {
+            updateLives();   // first miss: dim one heart
         }
 
         updateScoreDisplay();
