@@ -213,7 +213,14 @@ button:active {
     transform: scale(1.05);
 }
 
-.mode-btn:hover {
+@media (hover: hover) {
+    .mode-btn:hover {
+        transform: scale(1.1);
+    }
+}
+
+/* Menu toggle uses the hover style only while the menu is open */
+#top-left.menu-open #menu-toggle {
     transform: scale(1.1);
 }
 
