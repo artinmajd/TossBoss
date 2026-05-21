@@ -515,6 +515,11 @@ button:active {
         gap: 0.35rem;
     }
 
+    #mode-bar .mode-btn {
+        width: 36px;
+        height: 36px;
+    }
+
     #nav-bar {
         display: none;
         position: absolute;
