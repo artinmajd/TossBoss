@@ -368,6 +368,7 @@ button:active {
     letter-spacing: 0.1em;
     color: #f472b6;
     opacity: 0.8;
+    white-space: nowrap;
 }
 
 .score-label {
