@@ -224,6 +224,8 @@ button:active {
 @media (hover: hover) {
     .mode-btn:hover {
         transform: scale(1.1);
+        /* Match the icon color of the active/selected state */
+        color: #0f172a;
     }
 }
 
