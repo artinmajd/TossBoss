@@ -597,7 +597,9 @@ button:active {
     /* Keep best-display content at mobile sizes always so nothing snaps mid-animation */
     #score-best        { font-size: 1.15rem; }
     #score-best-streak { font-size: 0.52rem; }
-    .best-content      { padding: 0.28rem 0.6rem 0.18rem; }
+    /* Match score-display padding exactly so both boxes have identical natural
+       heights — container never changes size when best-display appears/disappears */
+    .best-content      { padding: 0.28rem 0.6rem; }
 
     /* Collapse: shorter & snappier. max-height snap delayed until width finishes. */
     #best-display {
@@ -606,9 +608,9 @@ button:active {
         min-width: 0;
         opacity: 0;
         border-radius: 0.9rem;
-        transition: max-width 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-                    max-height 0s 0.22s,
-                    opacity 0.18s ease;
+        transition: max-width 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+                    max-height 0s 0.18s,
+                    opacity 0.15s ease;
     }
 
     /* All Time label: absolutely positioned so it doesn't inflate the pane's
