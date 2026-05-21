@@ -215,6 +215,12 @@ button:active {
     transform: scale(1.05);
 }
 
+/* Inactive (not-selected) button icons are neon blue. The selected state
+   keeps its own icon color, so this never touches the toggle logic. */
+.mode-btn:not(.selected) {
+    color: #38bdf8;
+}
+
 @media (hover: hover) {
     .mode-btn:hover {
         transform: scale(1.1);
