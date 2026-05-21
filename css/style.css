@@ -227,6 +227,12 @@ button:active {
     transform: scale(1.1);
 }
 
+/* Help button shows the blue highlight only while instructions are open */
+#nav-bar:has(#help-bubble.visible) #btn-help {
+    background: linear-gradient(135deg, #7dd3fc, #38bdf8);
+    transform: scale(1.1);
+}
+
 .pingpong-icon {
     width: 28px;
     height: 28px;
