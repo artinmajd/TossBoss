@@ -537,9 +537,26 @@ button:active {
         gap: 0.35rem;
     }
 
-    #mode-bar .mode-btn {
-        width: 36px;
+    /* Shrink the mode box to the same height as the menu button (36px) */
+    #mode-bar {
         height: 36px;
+        padding: 0 0.3rem;
+        gap: 0.25rem;
+    }
+
+    #mode-bar .mode-btn {
+        width: 28px;
+        height: 28px;
+    }
+
+    #mode-bar .pingpong-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    #mode-bar .basketball-icon {
+        width: 24px;
+        height: 24px;
     }
 
     #nav-bar {
