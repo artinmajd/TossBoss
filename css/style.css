@@ -180,10 +180,12 @@ button {
     box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);
 }
 
-button:hover {
-    background: linear-gradient(135deg, #7dd3fc, #38bdf8);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(56, 189, 248, 0.5);
+@media (hover: hover) {
+    button:hover {
+        background: linear-gradient(135deg, #7dd3fc, #38bdf8);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(56, 189, 248, 0.5);
+    }
 }
 
 button:active {
@@ -219,8 +221,9 @@ button:active {
     }
 }
 
-/* Menu toggle uses the hover style only while the menu is open */
+/* Menu toggle shows the blue highlight only while the menu is open */
 #top-left.menu-open #menu-toggle {
+    background: linear-gradient(135deg, #7dd3fc, #38bdf8);
     transform: scale(1.1);
 }
 
