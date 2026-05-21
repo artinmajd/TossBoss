@@ -32,11 +32,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     cupImg.src = 'assets/cup.webp';
     
     // Physics parameters
-    const gravity = 9.8; 
-    const pixelsPerMeter = 100; 
-    const frameRate = 60;
-    const dt = 1 / frameRate; 
-    const groundLevel = 0.85; 
+    const gravity = 9.8;
+    const pixelsPerMeter = 100;
+    const frameRate = 60;       // physics ticks per simulated second
+    const dt = 1 / frameRate;   // fixed timestep — see the fixed-step loop in animate()
+    const groundLevel = 0.85;
     
     // Dynamic mode parameters
     let gameMode = 'pingpong'; 
@@ -1223,19 +1223,59 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     window.addEventListener('touchend', handlePointerUp);
 
-    // Override the animate function to capture animationId and detect misses
-    animate = function() {
+    // Fixed-timestep loop. Physics always advances in fixed `dt` increments —
+    // as many as needed to match the real time elapsed since the last frame —
+    // so the game runs at the same speed on any display, regardless of its
+    // refresh rate. The rendered ball is interpolated between the last two
+    // physics ticks so motion stays smooth on high-refresh (90/120Hz) screens.
+    let accumulator = 0;
+    let lastTime = 0;
+    const prevBall = { x: ball.x, y: ball.y };
+
+    animate = function(timestamp) {
+        if (!lastTime) lastTime = timestamp;
+        let frameTime = (timestamp - lastTime) / 1000;   // real seconds elapsed
+        lastTime = timestamp;
+        // A hitch or a backgrounded tab must not fast-forward the simulation.
+        if (frameTime > 0.25) frameTime = 0.25;
+
+        // Holding space / touch fast-forwards by feeding the accumulator faster.
+        const fastForward = (isSpaceDown || isTouchHeld) && !isResting && !isAiming;
+        const speedMul = fastForward ? 15 : 1;
+        accumulator += frameTime * speedMul;
+
         const wasResting = isResting;
-        const steps = ((isSpaceDown || isTouchHeld) && !isResting && !isAiming) ? 15 : 1;
-        for (let i = 0; i < steps; i++) {
+        const maxSteps = 8 * speedMul;   // catch-up cap — guards against a spiral
+        let stepsRan = 0;
+        while (accumulator >= dt && stepsRan < maxSteps) {
+            prevBall.x = ball.x;
+            prevBall.y = ball.y;
             updatePhysics();
-            if (isResting) break;
+            accumulator -= dt;
+            stepsRan++;
+            if (isResting) { accumulator = 0; break; }
         }
+        // Too far behind to catch up (very low FPS) — drop the backlog.
+        if (accumulator > dt) accumulator = 0;
+
         // Ball just came to rest after a throw without scoring = miss
         if (!wasResting && isResting && wasThrown && !scoredThisThrow) {
             handleMiss();
         }
-        draw();
+
+        if (!isResting && !isAiming) {
+            // Draw the ball interpolated between its last two physics ticks.
+            const alpha = accumulator / dt;
+            const tx = ball.x, ty = ball.y;
+            ball.x = prevBall.x + (ball.x - prevBall.x) * alpha;
+            ball.y = prevBall.y + (ball.y - prevBall.y) * alpha;
+            draw();
+            ball.x = tx;
+            ball.y = ty;
+        } else {
+            draw();
+        }
+
         animationId = requestAnimationFrame(animate);
     }
 
