@@ -239,10 +239,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         if (!isResting) return;
         // Close open mobile HUDs; block throw on this tap so it only dismisses the menu
         const _topLeft   = document.getElementById('top-left');
-        const _scoreArea = document.getElementById('score-area');
-        const anyOpen = _topLeft?.classList.contains('menu-open') || _scoreArea?.classList.contains('score-open');
+        const anyOpen = _topLeft?.classList.contains('menu-open');
         _topLeft?.classList.remove('menu-open');
-        _scoreArea?.classList.remove('score-open');
         document.getElementById('menu-toggle')?.classList.remove('selected');
         if (anyOpen) return;
         
