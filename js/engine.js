@@ -9,18 +9,19 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     
     let width, height;
     let scale = 1;
-    let timeScale = 1;   // physics speed factor — see DESKTOP_TIME_SCALE
 
     // View transform: maps the virtual playfield onto the real canvas.
     let viewScale = 1;
     let viewOffsetX = 0;
     let viewOffsetY = 0;
 
-    // Fixed desktop playfield (16:10, Mac-friendly). On desktop the window
-    // letterboxes this instead of stretching the field, so resizing the
-    // window never changes difficulty and windowed == fullscreen.
-    const DESKTOP_W = 1440;
-    const DESKTOP_H = 900;
+    // Fixed desktop playfield = iPhone 17 landscape viewport (874x402). The
+    // physics constants are in absolute pixels, so running the desktop in the
+    // exact same coordinate space as the phone makes the gameplay identical —
+    // same gravity feel, same speed, same arcs. The desktop window letterboxes
+    // and scales this up; resizing the window never changes difficulty.
+    const DESKTOP_W = 874;
+    const DESKTOP_H = 402;
     
     // Load images
     const basketballImg = new Image();
@@ -39,13 +40,6 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     const dt = 1 / frameRate;   // fixed timestep — see the fixed-step loop in animate()
     const groundLevel = 0.85;
 
-    // The desktop playfield (1440x900) is a much larger coordinate space than
-    // a phone screen, and physics constants are in absolute pixels — so the
-    // same gravity/throw covers far less of the desktop's tall field per
-    // second, making it feel slow. The phone is the reference (1.0); the
-    // desktop simulation runs faster by this factor to match its feel.
-    const DESKTOP_TIME_SCALE = 1.4;
-    
     // Dynamic mode parameters
     let gameMode = 'pingpong'; 
     let baseRadius = 18;
@@ -189,7 +183,6 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             viewScale = 1;
             viewOffsetX = 0;
             viewOffsetY = 0;
-            timeScale = 1;   // phone is the reference speed
         } else {
             // Desktop: a fixed playfield, centered with contain-fit. Resizing
             // the window only changes the display scale, never the gameplay,
@@ -199,7 +192,6 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             viewScale = Math.min(winW / width, winH / height);
             viewOffsetX = (winW - width * viewScale) / 2;
             viewOffsetY = (winH - height * viewScale) / 2;
-            timeScale = DESKTOP_TIME_SCALE;   // speed up to match the phone's feel
         }
 
         scale = Math.min(1, Math.max(0.4, height / 650));
@@ -1242,17 +1234,6 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     let lastTime = 0;
     const prevBall = { x: ball.x, y: ball.y };
 
-    // DEBUG: temporary on-screen FPS readout — remove once calibration is settled.
-    const fpsEl = document.createElement('div');
-    fpsEl.id = 'fps-debug';
-    fpsEl.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999;' +
-        'font:bold 14px monospace;color:#0f0;background:rgba(0,0,0,0.7);' +
-        'padding:3px 7px;border-radius:5px;pointer-events:none;';
-    fpsEl.textContent = '… fps';
-    document.body.appendChild(fpsEl);
-    let fpsFrames = 0;
-    let fpsLast = 0;
-
     animate = function(timestamp) {
         if (!lastTime) lastTime = timestamp;
         let frameTime = (timestamp - lastTime) / 1000;   // real seconds elapsed
@@ -1263,8 +1244,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // Holding space / touch fast-forwards by feeding the accumulator faster.
         const fastForward = (isSpaceDown || isTouchHeld) && !isResting && !isAiming;
         const speedMul = fastForward ? 15 : 1;
-        // timeScale normalises game speed across coordinate spaces (see above).
-        accumulator += frameTime * speedMul * timeScale;
+        accumulator += frameTime * speedMul;
 
         const wasResting = isResting;
         const maxSteps = 8 * speedMul;   // catch-up cap — guards against a spiral
@@ -1298,16 +1278,6 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             draw();
         }
 
-        // DEBUG: measure the real requestAnimationFrame rate.
-        fpsFrames++;
-        if (!fpsLast) fpsLast = timestamp;
-        if (timestamp - fpsLast >= 500) {
-            const fps = Math.round((fpsFrames * 1000) / (timestamp - fpsLast));
-            fpsEl.textContent = fps + ' fps';
-            fpsFrames = 0;
-            fpsLast = timestamp;
-        }
-
         animationId = requestAnimationFrame(animate);
     }
 
@@ -1323,7 +1293,6 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
     return function destroyGame() {
         cancelAnimationFrame(animationId);
-        fpsEl.remove();   // DEBUG: temporary FPS readout
         window.removeEventListener('resize', resizeCanvas);
         window.removeEventListener('keydown', handleKeyDown);
         window.removeEventListener('keyup', handleKeyUp);
