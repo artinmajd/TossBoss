@@ -892,6 +892,69 @@ button:active {
     text-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
 }
 
+/* Add-to-Home-Screen hint — rendered only for mobile users (see Home.js) */
+#install-hint {
+    position: absolute;
+    bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: min(90vw, 460px);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.65rem 1.1rem;
+    background: var(--surface-color);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-color);
+    border-radius: 0.9rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    z-index: 15;
+}
+
+.install-hint-title {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #7dd3fc;
+}
+
+.install-hint-body {
+    font-size: 0.78rem;
+    line-height: 1.7;
+    color: var(--text-primary);
+}
+
+/* Inline browser-UI icon (Share / menu) used inside the hint */
+.ui-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.2em;
+    height: 1.2em;
+    vertical-align: -0.25em;
+    color: #7dd3fc;
+}
+
+.ui-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* Pill standing in for the actual menu item the user looks for */
+.ui-chip {
+    display: inline-block;
+    padding: 0.05rem 0.4rem;
+    background: rgba(56, 189, 248, 0.16);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: 0.4rem;
+    color: #7dd3fc;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 .play-btn {
     width: 100%;
     font-size: 1.25rem;
