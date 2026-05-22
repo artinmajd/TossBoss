@@ -71,8 +71,95 @@ Mode buttons (`#mode-pingpong`, `#mode-basketball`) are a separate case —
 they use the `active` class with a distinct green selection style. Leave
 that as-is; do not give them `selected`.
 
+## Modifier system — challenges & powerups (`js/modifiers/`)
+
+Challenges and powerups are both **"modifiers"**: a unit that activates,
+runs, hooks into game events, and deactivates. They share one interface and
+one manager. `engine.js` never references a specific challenge or powerup.
+
+### Files
+
+- `js/modifiers/manager.js` — `createModifierManager()`. Holds the active
+  modifiers; fans engine hooks out to them. **Stacking is supported** — any
+  number of modifiers can be active at once.
+- `js/modifiers/context.js` — `createGameContext()`. The controlled state
+  surface modifiers may read/touch — the firewall between engine and modifiers.
+- `js/modifiers/director.js` — `createDirector()`. The trigger brain: decides
+  *when* to activate challenges / offer powerups. Currently a no-op.
+- `js/modifiers/registry.js` — `modifierRegistry`, the array of every modifier
+  factory. Currently empty.
+- `js/modifiers/challenges/` and `powerups/` — one file per modifier
+  (not created yet).
+
+### The golden rule — dependency direction
+
+`engine.js → manager → context`. A modifier file imports **only** from
+`context` — **never `engine.js`**. Modifiers read/change game state solely
+through the `gameCtx` object. So a modifier stays isolated: adding or removing
+one touches exactly two files (its own file + one line in `registry.js`).
+
+### The modifier interface
+
+A modifier is created by a **factory function** (each activation gets fresh
+state). It returns an object; all hooks optional:
+
+```js
+export default function myModifier() {
+    let state = 0;                    // per-activation state
+    return {
+        id: 'my-modifier',
+        type: 'challenge',            // 'challenge' | 'powerup'
+        name: 'My Modifier', icon: '…', weight: 3,
+        onActivate(ctx) {}, onDeactivate(ctx) {},
+        onUpdate(ctx, dt) {},         // per physics tick
+        onDraw(ctx) {},               // per frame, in playfield coords
+        onScore(ctx) {}, onMiss(ctx) {}, onThrow(ctx) {},
+    };
+}
+```
+
+### Adding a modifier
+
+1. Create `js/modifiers/challenges/<name>.js` (or `powerups/`), default-export
+   the factory.
+2. Import it in `registry.js` and add it to `modifierRegistry`.
+3. Done — `engine.js` does not change.
+
+### `gameCtx` — the context object
+
+**Naming warning:** in `engine.js`, `ctx` is the **canvas 2D context**;
+`gameCtx` is the **modifier context**. Do not confuse them. A modifier draws
+via `gameCtx.ctx2d`.
+
+`syncContext()` in `engine.js` refreshes `gameCtx`'s read fields from live
+engine state every frame: `score, streak, misses, lives, gameMode, width,
+height, scale, dt, floorY`. Stable reference fields: `ball`, `ctx2d`.
+
+When a modifier needs to *change* something or call an *action* (move the
+cup, grant a life, spawn a target…), add that field/method to `context.js`
+and wire it in `engine.js`. The context grows as modifiers need it.
+
+### Engine hook points (all in `engine.js`)
+
+- `modifiers.update(gameCtx, dt)` — in the physics step loop in `animate`.
+- `modifiers.draw(gameCtx)` — in `draw()`, **before the letterbox mask**, so
+  modifiers draw in the same playfield/virtual coordinate space as the cup.
+- `modifiers.emit('score'|'miss'|'throw', gameCtx)` — in `handleScore`,
+  `handleMiss` (both exit paths), and `handlePointerUp`.
+- `director.tick(gameCtx, modifiers)` — once per frame in `animate`.
+- `modifiers.clear(gameCtx)` — in `destroyGame`.
+
+Note: `modifiers.update` runs per fixed physics tick — fewer times per frame
+while the ball is resting/aiming. A modifier needing steady real-time motion
+should account for that (or drive motion from `onDraw`).
+
+### Status
+
+Scaffold only — wired as a verified no-op. No challenges or powerups exist
+yet; `registry.js` is empty.
+
 ## Workflow
 
 - This is a git repo; remote is `https://github.com/artinmajd/TossBoss`.
-- Commit and push when the user asks. End commit messages with the
-  `Co-Authored-By` trailer.
+- Commit after each meaningful change. Push **only** when the user
+  explicitly asks. End commit messages with the `Co-Authored-By` trailer.
