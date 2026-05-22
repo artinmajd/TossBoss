@@ -3,7 +3,7 @@ export default function Auth() {
         <div id="auth-screen" class="view-screen">
             <div class="home-content">
                 <h1 class="logo-title">TossBoss</h1>
-                <p class="subtitle">A Physics Arcade Simulation</p>
+                <p class="subtitle">Sink Shots. Stack Streaks.</p>
 
                 <div id="auth-error" class="auth-error" style="display:none;"></div>
 
