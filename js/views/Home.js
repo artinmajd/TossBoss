@@ -16,6 +16,7 @@ export default function Home(session) {
         <div id="home-screen" class="view-screen">
             <div class="home-content">
                 <h1 class="logo-title">TossBoss</h1>
+                <p class="subtitle">Sink Shots. Stack Streaks.</p>
                 ${userSection}
             </div>
         </div>
