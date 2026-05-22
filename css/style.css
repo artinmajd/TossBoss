@@ -755,6 +755,67 @@ button:active {
     }
     #score-area.score-open #score-bonus       { display: block; font-size: 0.52rem; min-height: 0; }
     #score-area.score-open #score-bonus:empty { display: none; }
+
+    /* ── Home / Auth menu: compact layout for short landscape screens ── */
+    /* Reserve bottom space so the centred card never collides with the hint */
+    #home-screen,
+    #auth-screen {
+        padding-bottom: 5rem;
+    }
+
+    .home-content {
+        padding: 0.9rem 1.5rem;
+        max-width: 360px;
+        border-radius: 1rem;
+    }
+
+    .logo-title {
+        font-size: 1.6rem;
+        margin-bottom: 0.1rem;
+        /* contained glow — the full-size animated neon would bleed past the card */
+        animation: none;
+        text-shadow:
+            0 0 3px #fff,
+            0 0 8px #38bdf8,
+            0 0 16px #0ea5e9;
+    }
+
+    .subtitle {
+        font-size: 0.62rem;
+        margin-bottom: 0.7rem;
+    }
+
+    .user-email {
+        font-size: 0.6rem;
+        margin-top: -0.1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .play-btn {
+        font-size: 0.85rem;
+        padding: 0.5rem;
+        margin-top: 0.4rem;
+    }
+
+    #auth-screen input {
+        padding: 0.5rem 0.8rem;
+        margin-bottom: 0.45rem;
+        font-size: 0.85rem;
+    }
+
+    .auth-error {
+        padding: 0.45rem 0.8rem;
+        font-size: 0.78rem;
+    }
+
+    #install-hint {
+        bottom: max(0.5rem, env(safe-area-inset-bottom, 0.5rem));
+        padding: 0.45rem 0.9rem;
+        max-width: min(94vw, 430px);
+    }
+
+    .install-hint-title { font-size: 0.52rem; }
+    .install-hint-body  { font-size: 0.66rem; line-height: 1.6; }
 }
 
 /* Hide button when in fullscreen */
