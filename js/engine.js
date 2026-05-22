@@ -3,7 +3,7 @@ import { createModifierManager } from './modifiers/manager.js';
 import { createGameContext } from './modifiers/context.js';
 import { createDirector } from './modifiers/director.js';
 
-export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, basketball: { score: 0, bestStreak: 0 } }) {
+export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, basketball: { score: 0, bestStreak: 0 } }, testerRules = null) {
     const canvas = document.getElementById('simulation-canvas');
     if (!canvas) return null;
     const ctx = canvas.getContext('2d');
@@ -83,7 +83,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     };
 
     // --- Modifier system: challenges + powerups (see js/modifiers/) ---
-    const gameCtx = createGameContext({ ball, ctx2d: ctx });
+    const gameCtx = createGameContext({ ball, ctx2d: ctx, tester: testerRules });
     const modifiers = createModifierManager();
     const director = createDirector();
 
@@ -110,6 +110,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
     // Aiming state
     let isAiming = false;
+    let isCarryingBall = false;   // test user: dragging the ball to reposition it
     let aimStart = { x: 0, y: 0 };
     let aimCurrent = { x: 0, y: 0 };
     
@@ -281,7 +282,14 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         if (anyOpen) return;
         
         const pos = getPointerPos(e);
-        
+
+        // Test user: press on the ball to pick it up and drag it anywhere.
+        if (gameCtx.tester?.freeBallPlacement &&
+            Math.hypot(pos.x - ball.x, pos.y - ball.y) <= ball.radius * 1.8) {
+            isCarryingBall = true;
+            return;
+        }
+
         isAiming = true;
         isResting = false;
         wasAboveRim = false;
@@ -293,6 +301,12 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     }
     
     function handlePointerMove(e) {
+        if (isCarryingBall) {
+            const pos = getPointerPos(e);
+            ball.x = Math.max(ball.radius, Math.min(width - ball.radius, pos.x));
+            ball.y = Math.max(ball.radius, Math.min(height * groundLevel - ball.radius, pos.y));
+            return;
+        }
         if (!isAiming) return;
         const pos = getPointerPos(e);
         
@@ -314,6 +328,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     function handlePointerUp(e) {
         clearTimeout(touchHoldTimer);
         isTouchHeld = false;
+        if (isCarryingBall) {
+            isCarryingBall = false;
+            return;
+        }
         if (!isAiming) return;
         isAiming = false;
 
@@ -1103,7 +1121,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         const scoreImproved = score > highScores[gameMode];
         if (streakImproved) bestStreaks[gameMode] = consecutiveHits;
         if (scoreImproved) highScores[gameMode] = score;
-        if (streakImproved || scoreImproved) {
+        // Test-user scores are kept off the leaderboard.
+        if ((streakImproved || scoreImproved) && !gameCtx.tester) {
             saveHighScore(gameMode, highScores[gameMode], bestStreaks[gameMode]);
         }
 

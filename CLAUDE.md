@@ -173,6 +173,15 @@ One modifier exists: the **black hole** (`elements/blackHole.js`) — a timed
 neutral element triggered by the director after 10 un-reset shots. No
 challenges or powerups exist yet.
 
+## Tester config (`js/tester_config.js`)
+
+Custom rules that apply only when the test user is logged in. `app.js`
+detects them via `isTestUser(session)` and passes `testerConfig` (or `null`)
+into `initGame`, which stores it on `gameCtx.tester`. Any engine, director,
+or modifier code branches on `gameCtx.tester` / `ctx.tester` (e.g.
+`ctx.tester?.blackHoleShotThreshold ?? 10`). Test-user scores are never
+saved to the leaderboard. Edit `testerConfig` to tweak the test rules.
+
 ## Workflow
 
 - This is a git repo; remote is `https://github.com/artinmajd/TossBoss`.

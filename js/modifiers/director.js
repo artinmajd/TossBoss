@@ -28,8 +28,10 @@ export function createDirector() {
         notify(event, ctx, manager) {
             if (event === 'throw') {
                 shotsSinceReset++;
-                // Black hole: 10 shots into an un-reset run with a live score.
-                if (!blackHoleActive && shotsSinceReset >= 10 && ctx.score > 0) {
+                // Black hole spawns this many shots into an un-reset run.
+                // The test user can shorten it via tester_config.
+                const threshold = ctx.tester?.blackHoleShotThreshold ?? 10;
+                if (!blackHoleActive && shotsSinceReset >= threshold && ctx.score > 0) {
                     manager.add(blackHole(), ctx);
                     blackHoleActive = true;
                 }

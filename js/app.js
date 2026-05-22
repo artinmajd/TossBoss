@@ -4,6 +4,7 @@ import Auth from './views/Auth.js';
 import Leaderboard from './views/Leaderboard.js';
 import { initGame } from './engine.js';
 import { supabase, getHighScores, getLeaderboard } from './supabase.js';
+import { isTestUser, testerConfig } from './tester_config.js';
 
 let destroyGame = null;
 
@@ -193,6 +194,9 @@ async function router() {
             ? await getHighScores()
             : { pingpong: { score: 0, bestStreak: 0 }, basketball: { score: 0, bestStreak: 0 } };
 
+        // Custom test-user rules (see js/tester_config.js); null for everyone else.
+        const testerRules = isTestUser(session) ? testerConfig : null;
+
         const helpBtn = document.getElementById('btn-help');
         helpBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -207,7 +211,7 @@ async function router() {
         });
 
         requestAnimationFrame(() => {
-            destroyGame = initGame(highScores);
+            destroyGame = initGame(highScores, testerRules);
         });
     }
 }

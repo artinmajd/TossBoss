@@ -8,7 +8,7 @@
 // Action methods (grantLife, addMultiplier, spawnTarget, …) will be added here
 // as the modifiers that need them are built.
 
-export function createGameContext({ ball, ctx2d }) {
+export function createGameContext({ ball, ctx2d, tester = null }) {
     return {
         // --- read-only game state (refreshed by the engine each frame) ---
         score: 0,
@@ -26,5 +26,6 @@ export function createGameContext({ ball, ctx2d }) {
         // --- stable references ---
         ball,             // the live ball object { x, y, vx, vy, radius }
         ctx2d,            // the canvas 2D rendering context (for onDraw)
+        tester,           // tester_config object when the test user is logged in, else null
     };
 }
