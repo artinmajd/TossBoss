@@ -21,6 +21,7 @@ export function createGameContext({ ball, ctx2d }) {
         scale: 1,         // visual scale factor used for cup/ball/hoop sizes
         dt: 1 / 60,       // fixed physics timestep
         floorY: 0,        // y of the floor line
+        target: null,     // active cup/hoop as { x, y, r } — r is a keep-clear radius
 
         // --- stable references ---
         ball,             // the live ball object { x, y, vx, vy, radius }

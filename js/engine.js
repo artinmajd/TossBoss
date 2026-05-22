@@ -99,6 +99,13 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         gameCtx.scale = scale;
         gameCtx.dt = dt;
         gameCtx.floorY = height * groundLevel;
+        // The active target (cup / hoop) with a keep-clear radius — used by
+        // modifiers that must not spawn on top of it.
+        if (gameMode === 'pingpong') {
+            gameCtx.target = { x: width * 0.85, y: height * groundLevel - 65 * scale, r: 150 * scale };
+        } else {
+            gameCtx.target = { x: width - 80 * scale, y: height * 0.45, r: 170 * scale };
+        }
     }
 
     // Aiming state
@@ -326,6 +333,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         wasThrown = true;
         syncContext();
         modifiers.emit('throw', gameCtx);
+        director.notify('throw', gameCtx, modifiers);
     }
     
     
@@ -1116,6 +1124,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         updateScoreDisplay();
         syncContext();
         modifiers.emit('score', gameCtx);
+        director.notify('score', gameCtx, modifiers);
     }
 
     function handleMiss() {
@@ -1139,6 +1148,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             updateScoreDisplay();
             syncContext();
             modifiers.emit('miss', gameCtx);
+            director.notify('miss', gameCtx, modifiers);
             return;
         }
 
@@ -1165,6 +1175,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         updateScoreDisplay();
         syncContext();
         modifiers.emit('miss', gameCtx);
+        director.notify('miss', gameCtx, modifiers);
     }
 
     function animate() {
