@@ -1,4 +1,7 @@
 import { saveHighScore } from './supabase.js';
+import { createModifierManager } from './modifiers/manager.js';
+import { createGameContext } from './modifiers/context.js';
+import { createDirector } from './modifiers/director.js';
 
 export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, basketball: { score: 0, bestStreak: 0 } }) {
     const canvas = document.getElementById('simulation-canvas');
@@ -72,13 +75,32 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     
     // Ball object
     const ball = {
-        x: 0, 
-        y: 0,      
+        x: 0,
+        y: 0,
         vx: 0,
         vy: 0,
         radius: 18,
     };
-    
+
+    // --- Modifier system: challenges + powerups (see js/modifiers/) ---
+    const gameCtx = createGameContext({ ball, ctx2d: ctx });
+    const modifiers = createModifierManager();
+    const director = createDirector();
+
+    // Refresh the modifier context from live engine state (called each frame).
+    function syncContext() {
+        gameCtx.score = score;
+        gameCtx.streak = consecutiveHits;
+        gameCtx.misses = consecutiveMisses;
+        gameCtx.lives = 2 - consecutiveMisses;
+        gameCtx.gameMode = gameMode;
+        gameCtx.width = width;
+        gameCtx.height = height;
+        gameCtx.scale = scale;
+        gameCtx.dt = dt;
+        gameCtx.floorY = height * groundLevel;
+    }
+
     // Aiming state
     let isAiming = false;
     let aimStart = { x: 0, y: 0 };
@@ -302,6 +324,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             ball.vy = (ball.vy / speed) * maxSpeed;
         }
         wasThrown = true;
+        syncContext();
+        modifiers.emit('throw', gameCtx);
     }
     
     
@@ -953,6 +977,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     
         }
 
+        // Modifier visuals (challenges / powerups) draw in playfield
+        // coordinates, before the letterbox mask is applied on top.
+        modifiers.draw(gameCtx);
+
         // Mask the letterbox margins so the playfield reads as a framed
         // screen. No-op on touch devices, where there are no margins.
         if (viewOffsetX > 0.5 || viewOffsetY > 0.5) {
@@ -1086,6 +1114,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         updateLives();   // a successful shot restores any lost chance
         updateStreakFire();
         updateScoreDisplay();
+        syncContext();
+        modifiers.emit('score', gameCtx);
     }
 
     function handleMiss() {
@@ -1107,6 +1137,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                 setTimeout(() => box.classList.remove('flash-bonus-lost'), 600);
             }
             updateScoreDisplay();
+            syncContext();
+            modifiers.emit('miss', gameCtx);
             return;
         }
 
@@ -1131,6 +1163,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         }
 
         updateScoreDisplay();
+        syncContext();
+        modifiers.emit('miss', gameCtx);
     }
 
     function animate() {
@@ -1235,6 +1269,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     const prevBall = { x: ball.x, y: ball.y };
 
     animate = function(timestamp) {
+        syncContext();
         if (!lastTime) lastTime = timestamp;
         let frameTime = (timestamp - lastTime) / 1000;   // real seconds elapsed
         lastTime = timestamp;
@@ -1253,6 +1288,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             prevBall.x = ball.x;
             prevBall.y = ball.y;
             updatePhysics();
+            modifiers.update(gameCtx, dt);
             accumulator -= dt;
             stepsRan++;
             if (isResting) { accumulator = 0; break; }
@@ -1278,6 +1314,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             draw();
         }
 
+        director.tick(gameCtx, modifiers);
         animationId = requestAnimationFrame(animate);
     }
 
@@ -1293,6 +1330,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
     return function destroyGame() {
         cancelAnimationFrame(animationId);
+        modifiers.clear(gameCtx);
         window.removeEventListener('resize', resizeCanvas);
         window.removeEventListener('keydown', handleKeyDown);
         window.removeEventListener('keyup', handleKeyUp);
