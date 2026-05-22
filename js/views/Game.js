@@ -1,6 +1,6 @@
 export default function Game() {
     return `
-        <div id="game-screen" class="view-screen">
+        <div id="game-screen" class="view-screen bg-pingpong">
             <div id="orientation-warning">
                 <div class="warning-content">
                     <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
