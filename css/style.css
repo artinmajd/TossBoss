@@ -883,9 +883,13 @@ button:active {
 }
 
 .subtitle {
-    font-size: 1.1rem;
-    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #7dd3fc;
     margin-bottom: 2rem;
+    text-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
 }
 
 .play-btn {
@@ -1254,9 +1258,20 @@ button:active {
 }
 
 .user-email {
-    font-size: 0.9rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
     color: var(--text-secondary);
     margin-bottom: 1rem;
     margin-top: -1rem;
     word-break: break-all;
+}
+
+.user-name {
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 700;
+    color: #7dd3fc;
+    text-shadow: 0 0 10px rgba(56, 189, 248, 0.45);
 }

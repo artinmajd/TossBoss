@@ -4,7 +4,7 @@ export default function Home(session) {
         : null;
 
     const userSection = session
-        ? `<p class="user-email">Welcome, ${displayName}</p>
+        ? `<p class="user-email">Welcome, <span class="user-name">${displayName}</span></p>
            <button id="btn-play-game" class="play-btn">Play</button>
            <button id="btn-leaderboard" class="play-btn secondary-btn">Leaderboard</button>
            <button id="btn-logout" class="play-btn secondary-btn">Sign Out</button>`
