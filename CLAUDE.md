@@ -71,11 +71,18 @@ Mode buttons (`#mode-pingpong`, `#mode-basketball`) are a separate case —
 they use the `active` class with a distinct green selection style. Leave
 that as-is; do not give them `selected`.
 
-## Modifier system — challenges & powerups (`js/modifiers/`)
+## Modifier system — challenges, powerups & elements (`js/modifiers/`)
 
-Challenges and powerups are both **"modifiers"**: a unit that activates,
-runs, hooks into game events, and deactivates. They share one interface and
-one manager. `engine.js` never references a specific challenge or powerup.
+A **"modifier"** is a unit that activates, runs, hooks into game events, and
+deactivates. There are three kinds, by `type`:
+
+- **challenge** — makes the game harder.
+- **powerup** — helps the player.
+- **element** — a neutral game element, neither help nor hindrance
+  (e.g. the black hole).
+
+They all share one interface and one manager. `engine.js` never references a
+specific modifier.
 
 ### Files
 
@@ -88,8 +95,8 @@ one manager. `engine.js` never references a specific challenge or powerup.
   *when* to activate challenges / offer powerups. Currently a no-op.
 - `js/modifiers/registry.js` — `modifierRegistry`, the array of every modifier
   factory. Currently empty.
-- `js/modifiers/challenges/` and `powerups/` — one file per modifier
-  (not created yet).
+- `js/modifiers/challenges/`, `powerups/`, `elements/` — one file per
+  modifier, in the folder matching its `type`.
 
 ### The golden rule — dependency direction
 
@@ -108,7 +115,7 @@ export default function myModifier() {
     let state = 0;                    // per-activation state
     return {
         id: 'my-modifier',
-        type: 'challenge',            // 'challenge' | 'powerup'
+        type: 'challenge',            // 'challenge' | 'powerup' | 'element'
         name: 'My Modifier', icon: '…', weight: 3,
         onActivate(ctx) {}, onDeactivate(ctx) {},
         onUpdate(ctx, dt) {},         // per physics tick
@@ -127,8 +134,8 @@ switch.
 
 ### Adding a modifier
 
-1. Create `js/modifiers/challenges/<name>.js` (or `powerups/`), default-export
-   the factory.
+1. Create `js/modifiers/<challenges|powerups|elements>/<name>.js`,
+   default-export the factory.
 2. Import it in `registry.js` and add it to `modifierRegistry`.
 3. Done — `engine.js` does not change.
 
@@ -162,8 +169,9 @@ should account for that (or drive motion from `onDraw`).
 
 ### Status
 
-Scaffold only — wired as a verified no-op. No challenges or powerups exist
-yet; `registry.js` is empty.
+One modifier exists: the **black hole** (`elements/blackHole.js`) — a timed
+neutral element triggered by the director after 10 un-reset shots. No
+challenges or powerups exist yet.
 
 ## Workflow
 

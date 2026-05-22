@@ -2,7 +2,7 @@
 // game state and events. Modifiers define WHAT happens; the director defines
 // WHEN. It receives game events via notify() and a per-frame tick().
 
-import blackHole from './challenges/blackHole.js';
+import blackHole from './elements/blackHole.js';
 
 export function createDirector() {
     let shotsSinceReset = 0;   // throws since the last score reset

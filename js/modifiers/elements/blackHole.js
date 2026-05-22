@@ -48,7 +48,7 @@ export default function blackHole() {
 
     return {
         id: 'black-hole',
-        type: 'challenge',
+        type: 'element',
         name: 'Black Hole',
 
         onActivate(ctx) {
