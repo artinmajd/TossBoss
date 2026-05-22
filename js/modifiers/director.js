@@ -7,17 +7,21 @@ import blackHole from './challenges/blackHole.js';
 export function createDirector() {
     let shotsSinceReset = 0;   // throws since the last score reset
     let prevScore = 0;         // score seen on the previous frame
-    let blackHoleSpawned = false;
+    let blackHoleActive = false;
 
     return {
-        // Once per frame. Watches for a score reset (score dropping to 0 —
-        // covers both a 2-miss reset and a mode switch) and restarts the
-        // shot counter.
-        tick(ctx /* , manager */) {
-            if (prevScore > 0 && ctx.score === 0) {
+        // Once per frame.
+        tick(ctx, manager) {
+            // A score reset (2-miss reset or mode switch) restarts the count.
+            if (prevScore > 0 && ctx.score === 0) shotsSinceReset = 0;
+            prevScore = ctx.score;
+
+            // The black hole finished its life and was pruned by the manager
+            // — re-arm so another can be earned after 10 more shots.
+            if (blackHoleActive && !manager.active.some(m => m.id === 'black-hole')) {
+                blackHoleActive = false;
                 shotsSinceReset = 0;
             }
-            prevScore = ctx.score;
         },
 
         // A game event from the engine: 'throw' | 'score' | 'miss'.
@@ -25,18 +29,19 @@ export function createDirector() {
             if (event === 'throw') {
                 shotsSinceReset++;
                 // Black hole: 10 shots into an un-reset run with a live score.
-                if (!blackHoleSpawned && shotsSinceReset >= 10 && ctx.score > 0) {
+                if (!blackHoleActive && shotsSinceReset >= 10 && ctx.score > 0) {
                     manager.add(blackHole(), ctx);
-                    blackHoleSpawned = true;
+                    blackHoleActive = true;
                 }
             }
         },
 
-        // Reset director state (for a fresh run).
+        // Reset director state — called on a mode switch (each game has its
+        // own modifier lifecycle).
         reset() {
             shotsSinceReset = 0;
             prevScore = 0;
-            blackHoleSpawned = false;
+            blackHoleActive = false;
         },
     };
 }

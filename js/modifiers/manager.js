@@ -27,9 +27,16 @@ export function createModifierManager() {
             modifier.onDeactivate?.(ctx);
         },
 
-        // Per-physics-tick update — called once per fixed timestep.
+        // Per-physics-tick update — called once per fixed timestep. Also
+        // prunes modifiers that have run their course (isExpired() → true).
         update(ctx, dt) {
             for (const m of active) m.onUpdate?.(ctx, dt);
+            for (let i = active.length - 1; i >= 0; i--) {
+                if (active[i].isExpired?.()) {
+                    const m = active.splice(i, 1)[0];
+                    m.onDeactivate?.(ctx);
+                }
+            }
         },
 
         // Per-frame draw — called once per rendered frame.

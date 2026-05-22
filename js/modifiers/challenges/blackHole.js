@@ -1,31 +1,46 @@
-// Black Hole — a small swirling neon-red void that appears somewhere on the
-// playfield once the player has sustained a scoring run (the trigger lives in
-// director.js). Works in both ping pong and basketball modes.
+// Black Hole — a small swirling neon-red void that appears on the playfield
+// once the player sustains a scoring run (the trigger lives in director.js).
 //
-// For now it is purely a visual element: it spawns, swirls, and stays. It has
-// no effect on the ball yet.
+// It belongs to a single game (mode) and is cleared on a mode switch.
+// Lifecycle: expands in, holds, then shrinks out — 8 seconds on screen.
+// Purely visual for now: no effect on the ball.
+
+const LIFETIME = 8;      // seconds on screen
+const EXPAND   = 0.32;   // grow-in duration (s)
+const SHRINK   = 0.45;   // shrink-out duration (s)
 
 export default function blackHole() {
     let x = 0;
     let y = 0;
     let radius = 0;
+    let spawnTime = 0;
 
-    // Pick a random spot on the playfield, kept clear of the active target
-    // (cup / hoop) so it never blocks a clean shot.
+    const elapsed = () => (performance.now() - spawnTime) / 1000;
+
+    // Animation scale 0..1 — ease-out expand, hold, ease-in shrink.
+    function animScale() {
+        const e = elapsed();
+        if (e < EXPAND) {
+            const p = e / EXPAND;
+            return 1 - Math.pow(1 - p, 3);              // ease-out grow
+        }
+        if (e > LIFETIME - SHRINK) {
+            const p = (e - (LIFETIME - SHRINK)) / SHRINK;
+            return Math.max(0, 1 - p * p * p);          // ease-in shrink
+        }
+        return 1;
+    }
+
+    // Random spot on the playfield, clear of the active target (cup / hoop).
     function pickSpot(ctx) {
-        const minX = ctx.width * 0.12;
-        const maxX = ctx.width * 0.90;
-        const minY = ctx.height * 0.20;
-        const maxY = ctx.height * 0.78;
+        const minX = ctx.width * 0.12, maxX = ctx.width * 0.90;
+        const minY = ctx.height * 0.20, maxY = ctx.height * 0.78;
         const t = ctx.target;
         const clear = (t ? t.r : 0) + radius + 10;
-
         for (let i = 0; i < 50; i++) {
             const px = minX + Math.random() * (maxX - minX);
             const py = minY + Math.random() * (maxY - minY);
-            if (!t || Math.hypot(px - t.x, py - t.y) > clear) {
-                return { x: px, y: py };
-            }
+            if (!t || Math.hypot(px - t.x, py - t.y) > clear) return { x: px, y: py };
         }
         // Fallback: left-of-centre — always far from the right-side target.
         return { x: ctx.width * 0.3, y: ctx.height * 0.5 };
@@ -38,26 +53,35 @@ export default function blackHole() {
 
         onActivate(ctx) {
             radius = 38 * ctx.scale;
+            spawnTime = performance.now();
             const spot = pickSpot(ctx);
             x = spot.x;
             y = spot.y;
         },
 
+        // The manager removes the modifier once this returns true.
+        isExpired() {
+            return elapsed() >= LIFETIME;
+        },
+
         onDraw(ctx) {
+            const s = animScale();
+            if (s <= 0.001) return;
             const c = ctx.ctx2d;
+            const r = radius * s;
             const time = performance.now() / 1000;
 
             c.save();
             c.translate(x, y);
 
-            // Event horizon — a black core fading to deep red at the edge.
-            const core = c.createRadialGradient(0, 0, radius * 0.08, 0, 0, radius);
+            // Event horizon — black core fading to deep red at the edge.
+            const core = c.createRadialGradient(0, 0, r * 0.08, 0, 0, r);
             core.addColorStop(0, '#000000');
             core.addColorStop(0.7, '#0b0007');
             core.addColorStop(1, 'rgba(35, 0, 12, 0.92)');
             c.fillStyle = core;
             c.beginPath();
-            c.arc(0, 0, radius, 0, Math.PI * 2);
+            c.arc(0, 0, r, 0, Math.PI * 2);
             c.fill();
 
             // Two arms spiralling inward, rotating over time = the swirl.
@@ -70,7 +94,7 @@ export default function blackHole() {
                 c.lineWidth = 2;
                 c.beginPath();
                 for (let a = 0; a <= Math.PI * 2.6; a += 0.18) {
-                    const rr = radius * (0.95 - a / (Math.PI * 3.1));
+                    const rr = r * (0.95 - a / (Math.PI * 3.1));
                     const px = Math.cos(a) * rr;
                     const py = Math.sin(a) * rr;
                     if (a === 0) c.moveTo(px, py);
@@ -81,11 +105,11 @@ export default function blackHole() {
 
             // Neon-red glowing rim — the outline, drawn on top.
             c.shadowColor = '#ff1f44';
-            c.shadowBlur = 14;
+            c.shadowBlur = 14 * s;
             c.strokeStyle = '#ff1f44';
             c.lineWidth = 2.5;
             c.beginPath();
-            c.arc(0, 0, radius, 0, Math.PI * 2);
+            c.arc(0, 0, r, 0, Math.PI * 2);
             c.stroke();
 
             c.restore();

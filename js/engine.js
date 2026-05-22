@@ -148,6 +148,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         updateLives();
         updateStreakFire();
         updateScoreDisplay();
+
+        // A modifier (e.g. the black hole) belongs to a single game — clear
+        // it and re-arm the director when switching modes.
+        modifiers.clear(gameCtx);
+        director.reset();
     }
 
 

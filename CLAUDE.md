@@ -114,9 +114,16 @@ export default function myModifier() {
         onUpdate(ctx, dt) {},         // per physics tick
         onDraw(ctx) {},               // per frame, in playfield coords
         onScore(ctx) {}, onMiss(ctx) {}, onThrow(ctx) {},
+        isExpired() { return false; }, // manager removes it when true
     };
 }
 ```
+
+Timed modifiers expose `isExpired()` (real wall-clock time, not accumulated
+`dt`). The manager prunes any modifier whose `isExpired()` returns true. A
+modifier also belongs to one game mode — `setMode()` calls
+`modifiers.clear()` + `director.reset()`, so nothing carries across a mode
+switch.
 
 ### Adding a modifier
 

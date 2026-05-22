@@ -10,6 +10,7 @@
 //     onActivate(ctx), onDeactivate(ctx),
 //     onUpdate(ctx, dt), onDraw(ctx),
 //     onScore(ctx), onMiss(ctx), onThrow(ctx),
+//     isExpired(): boolean   — manager removes the modifier when this is true
 //   }
 //
 // Note: scripted triggers in director.js may import a modifier factory
