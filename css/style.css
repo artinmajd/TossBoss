@@ -755,67 +755,6 @@ button:active {
     }
     #score-area.score-open #score-bonus       { display: block; font-size: 0.52rem; min-height: 0; }
     #score-area.score-open #score-bonus:empty { display: none; }
-
-    /* ── Home / Auth menu: compact layout for short landscape screens ── */
-    /* Reserve bottom space so the centred card never collides with the hint */
-    #home-screen,
-    #auth-screen {
-        padding-bottom: 5rem;
-    }
-
-    .home-content {
-        padding: 0.9rem 1.5rem;
-        max-width: 360px;
-        border-radius: 1rem;
-    }
-
-    .logo-title {
-        font-size: 1.6rem;
-        margin-bottom: 0.1rem;
-        /* contained glow — the full-size animated neon would bleed past the card */
-        animation: none;
-        text-shadow:
-            0 0 3px #fff,
-            0 0 8px #38bdf8,
-            0 0 16px #0ea5e9;
-    }
-
-    .subtitle {
-        font-size: 0.62rem;
-        margin-bottom: 0.7rem;
-    }
-
-    .user-email {
-        font-size: 0.6rem;
-        margin-top: -0.1rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .play-btn {
-        font-size: 0.85rem;
-        padding: 0.5rem;
-        margin-top: 0.4rem;
-    }
-
-    #auth-screen input {
-        padding: 0.5rem 0.8rem;
-        margin-bottom: 0.45rem;
-        font-size: 0.85rem;
-    }
-
-    .auth-error {
-        padding: 0.45rem 0.8rem;
-        font-size: 0.78rem;
-    }
-
-    #install-hint {
-        bottom: max(0.5rem, env(safe-area-inset-bottom, 0.5rem));
-        padding: 0.45rem 0.9rem;
-        max-width: min(94vw, 430px);
-    }
-
-    .install-hint-title { font-size: 0.52rem; }
-    .install-hint-body  { font-size: 0.66rem; line-height: 1.6; }
 }
 
 /* Hide button when in fullscreen */
@@ -886,36 +825,42 @@ button:active {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding: clamp(0.5rem, 2vmin, 1.3rem);
     background: linear-gradient(rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.45)), url('../assets/main_bg.webp') center/cover no-repeat;
     z-index: 10;
 }
 
+/* The card centres itself via auto margins; with the install hint present
+   the hint is pushed to the bottom and the two can never overlap. All sizes
+   scale with vmin so the whole menu shrinks to fit short/landscape screens. */
 .home-content {
     background: var(--surface-color);
     backdrop-filter: blur(16px);
-    padding: 3rem;
-    border-radius: 1.5rem;
+    padding: clamp(1rem, 5.9vmin, 3rem) clamp(1.2rem, 6vw, 3rem);
+    border-radius: clamp(0.9rem, 3vmin, 1.5rem);
     border: 1px solid var(--border-color);
     text-align: center;
     box-shadow: 0 15px 35px rgba(0,0,0,0.5);
     max-width: 400px;
     width: 90%;
+    margin: auto 0;
 }
 
 .logo-title {
     font-family: 'Orbitron', sans-serif;
-    font-size: clamp(2rem, 7vw, 2.75rem);
+    font-size: clamp(1.6rem, 5.4vmin, 2.75rem);
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 2px;
-    margin-bottom: 0.7rem;
+    margin-bottom: clamp(0.25rem, 1.2vmin, 0.7rem);
     color: #f0f9ff;
+    /* glow in em so it scales with the responsive title size */
     text-shadow:
-        0 0 4px #fff,
-        0 0 12px #7dd3fc,
-        0 0 24px #38bdf8,
-        0 0 46px #0ea5e9,
-        0 0 80px #0284c7;
+        0 0 0.09em #fff,
+        0 0 0.27em #7dd3fc,
+        0 0 0.55em #38bdf8,
+        0 0 1.05em #0ea5e9,
+        0 0 1.82em #0284c7;
     animation: neon-flicker 3.2s ease-in-out infinite;
 }
 
@@ -923,19 +868,19 @@ button:active {
 @keyframes neon-flicker {
     0%, 100% {
         text-shadow:
-            0 0 4px #fff,
-            0 0 12px #7dd3fc,
-            0 0 24px #38bdf8,
-            0 0 46px #0ea5e9,
-            0 0 80px #0284c7;
+            0 0 0.09em #fff,
+            0 0 0.27em #7dd3fc,
+            0 0 0.55em #38bdf8,
+            0 0 1.05em #0ea5e9,
+            0 0 1.82em #0284c7;
     }
     50% {
         text-shadow:
-            0 0 4px #fff,
-            0 0 9px #7dd3fc,
-            0 0 18px #38bdf8,
-            0 0 33px #0ea5e9,
-            0 0 58px #0284c7;
+            0 0 0.09em #fff,
+            0 0 0.2em #7dd3fc,
+            0 0 0.41em #38bdf8,
+            0 0 0.75em #0ea5e9,
+            0 0 1.32em #0284c7;
     }
 }
 
@@ -944,26 +889,25 @@ button:active {
 }
 
 .subtitle {
-    font-size: 0.8rem;
+    font-size: clamp(0.6rem, 1.6vmin, 0.8rem);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.18em;
     color: #7dd3fc;
-    margin-bottom: 2rem;
-    text-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
+    margin-bottom: clamp(0.6rem, 3.9vmin, 2rem);
+    text-shadow: 0 0 0.8em rgba(56, 189, 248, 0.45);
 }
 
-/* Add-to-Home-Screen hint — rendered only for mobile users (see Home.js) */
+/* Add-to-Home-Screen hint — rendered only for mobile users (see Home.js).
+   A normal flex child of #home-screen: the card's auto margins centre it
+   above and push the hint to the bottom, so the two can never overlap. */
 #install-hint {
-    position: absolute;
-    bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
-    left: 50%;
-    transform: translateX(-50%);
-    max-width: min(90vw, 460px);
+    flex-shrink: 0;
+    max-width: min(92vw, 440px);
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    padding: 0.65rem 1.1rem;
+    gap: 0.2rem;
+    padding: clamp(0.4rem, 1.4vmin, 0.65rem) clamp(0.7rem, 3vw, 1.1rem);
     background: var(--surface-color);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -971,11 +915,10 @@ button:active {
     border-radius: 0.9rem;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     text-align: center;
-    z-index: 15;
 }
 
 .install-hint-title {
-    font-size: 0.6rem;
+    font-size: clamp(0.5rem, 1.2vmin, 0.6rem);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.18em;
@@ -983,8 +926,8 @@ button:active {
 }
 
 .install-hint-body {
-    font-size: 0.78rem;
-    line-height: 1.7;
+    font-size: clamp(0.66rem, 1.5vmin, 0.78rem);
+    line-height: 1.6;
     color: var(--text-primary);
 }
 
@@ -1018,9 +961,9 @@ button:active {
 
 .play-btn {
     width: 100%;
-    font-size: 1.25rem;
-    padding: 1rem;
-    margin-top: 0.75rem;
+    font-size: clamp(0.85rem, 2.5vmin, 1.25rem);
+    padding: clamp(0.5rem, 2vmin, 1rem);
+    margin-top: clamp(0.35rem, 1.5vmin, 0.75rem);
 }
 
 .secondary-btn {
@@ -1347,19 +1290,20 @@ button:active {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding: clamp(0.5rem, 2vmin, 1.3rem);
     background: linear-gradient(rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.45)), url('../assets/main_bg.webp') center/cover no-repeat;
     z-index: 10;
 }
 
 #auth-screen input {
     width: 100%;
-    padding: 0.85rem 1rem;
-    margin-bottom: 0.75rem;
+    padding: clamp(0.5rem, 2vmin, 0.85rem) 1rem;
+    margin-bottom: clamp(0.4rem, 1.6vmin, 0.75rem);
     background: rgba(255, 255, 255, 0.07);
     border: 1px solid var(--border-color);
     border-radius: 0.75rem;
     color: var(--text-primary);
-    font-size: 1rem;
+    font-size: clamp(0.85rem, 2vmin, 1rem);
     font-family: inherit;
     outline: none;
     box-sizing: border-box;
@@ -1382,13 +1326,13 @@ button:active {
 }
 
 .user-email {
-    font-size: 0.72rem;
+    font-size: clamp(0.58rem, 1.4vmin, 0.72rem);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.16em;
     color: var(--text-secondary);
-    margin-bottom: 1rem;
-    margin-top: -1rem;
+    margin-bottom: clamp(0.5rem, 2vmin, 1rem);
+    margin-top: clamp(-1rem, -2vmin, -0.4rem);
     word-break: break-all;
 }
 
