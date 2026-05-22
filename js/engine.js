@@ -44,7 +44,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     // same gravity/throw covers far less of the desktop's tall field per
     // second, making it feel slow. The phone is the reference (1.0); the
     // desktop simulation runs faster by this factor to match its feel.
-    const DESKTOP_TIME_SCALE = 2.0;
+    const DESKTOP_TIME_SCALE = 1.4;
     
     // Dynamic mode parameters
     let gameMode = 'pingpong'; 
