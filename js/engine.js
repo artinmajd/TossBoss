@@ -211,18 +211,12 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
         const isPhone = window.matchMedia('(pointer: coarse) and (max-height: 500px)').matches;
         if (isPhone) {
-            // Small phones in landscape: fill the screen edge-to-edge, inset by
-            // safe-area so nothing hides behind the notch or home indicator.
-            const rs = getComputedStyle(document.documentElement);
-            const st = parseFloat(rs.getPropertyValue('--safe-top'))    || 0;
-            const sb = parseFloat(rs.getPropertyValue('--safe-bottom')) || 0;
-            const sl = parseFloat(rs.getPropertyValue('--safe-left'))   || 0;
-            const sr = parseFloat(rs.getPropertyValue('--safe-right'))  || 0;
-            width  = winW - sl - sr;
-            height = winH - st - sb;
+            // Small phones in landscape: fill the screen edge-to-edge.
+            width = winW;
+            height = winH;
             viewScale   = 1;
-            viewOffsetX = sl;
-            viewOffsetY = st;
+            viewOffsetX = 0;
+            viewOffsetY = 0;
         } else {
             // Desktop: a fixed playfield, centered with contain-fit. Resizing
             // the window only changes the display scale, never the gameplay,
