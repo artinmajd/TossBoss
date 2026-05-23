@@ -209,11 +209,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         const prevW = width;
         const prevH = height;
 
-        if (window.matchMedia('(pointer: coarse)').matches) {
-            // Touch devices (phones/tablets): inset the playfield by the safe-area
-            // so game elements never appear behind the status bar, home indicator,
-            // or notch. The CSS custom properties carry the env() values and can
-            // be read synchronously here.
+        const isPhone = window.matchMedia('(pointer: coarse) and (max-height: 500px)').matches;
+        if (isPhone) {
+            // Small phones in landscape: fill the screen edge-to-edge, inset by
+            // safe-area so nothing hides behind the notch or home indicator.
             const rs = getComputedStyle(document.documentElement);
             const st = parseFloat(rs.getPropertyValue('--safe-top'))    || 0;
             const sb = parseFloat(rs.getPropertyValue('--safe-bottom')) || 0;
