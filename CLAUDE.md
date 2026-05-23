@@ -182,6 +182,10 @@ or modifier code branches on `gameCtx.tester` / `ctx.tester` (e.g.
 `ctx.tester?.blackHoleShotThreshold ?? 10`). Test-user scores are never
 saved to the leaderboard. Edit `testerConfig` to tweak the test rules.
 
+Detection is via `session.user.app_metadata.is_tester === true` — a flag
+set server-side in Supabase (Auth → Users → Edit → app_metadata JSON:
+`{"is_tester": true}`). No email is hard-coded in the source.
+
 ## Workflow
 
 - This is a git repo; remote is `https://github.com/artinmajd/TossBoss`.

@@ -1,11 +1,11 @@
 // Tester config — custom rules that apply ONLY when the test user is logged
 // in. They never affect normal players. Edit the values below freely.
 
-export const TEST_USER_EMAIL = 'artin.majd@torontomu.ca';
-
 // True if the given Supabase session belongs to the test user.
+// Detection is via app_metadata.is_tester (set server-side in Supabase Auth
+// → Users → Edit → app_metadata), so no email is hard-coded here.
 export function isTestUser(session) {
-    return !!session && session.user?.email === TEST_USER_EMAIL;
+    return !!session && session.user?.app_metadata?.is_tester === true;
 }
 
 // Custom-rule parameters for the test user — tweak these as needed.
