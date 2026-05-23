@@ -210,14 +210,20 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         const prevH = height;
 
         if (window.matchMedia('(pointer: coarse)').matches) {
-            // Touch devices (phones): the playfield IS the screen — the look
-            // is unchanged. A phone screen can't be resized, so it is already
-            // consistent and needs no fixed resolution.
-            width = winW;
-            height = winH;
-            viewScale = 1;
-            viewOffsetX = 0;
-            viewOffsetY = 0;
+            // Touch devices (phones/tablets): inset the playfield by the safe-area
+            // so game elements never appear behind the status bar, home indicator,
+            // or notch. The CSS custom properties carry the env() values and can
+            // be read synchronously here.
+            const rs = getComputedStyle(document.documentElement);
+            const st = parseFloat(rs.getPropertyValue('--safe-top'))    || 0;
+            const sb = parseFloat(rs.getPropertyValue('--safe-bottom')) || 0;
+            const sl = parseFloat(rs.getPropertyValue('--safe-left'))   || 0;
+            const sr = parseFloat(rs.getPropertyValue('--safe-right'))  || 0;
+            width  = winW - sl - sr;
+            height = winH - st - sb;
+            viewScale   = 1;
+            viewOffsetX = sl;
+            viewOffsetY = st;
         } else {
             // Desktop: a fixed playfield, centered with contain-fit. Resizing
             // the window only changes the display scale, never the gameplay,

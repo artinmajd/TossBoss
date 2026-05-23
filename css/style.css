@@ -6,6 +6,11 @@
     --accent-color: #38bdf8;
     --surface-color: rgba(30, 41, 59, 0.75);
     --border-color: rgba(255, 255, 255, 0.1);
+    /* Safe-area insets — readable from JS via getComputedStyle */
+    --safe-top:    env(safe-area-inset-top,    0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left:   env(safe-area-inset-left,   0px);
+    --safe-right:  env(safe-area-inset-right,  0px);
 }
 
 * {
