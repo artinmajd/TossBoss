@@ -765,10 +765,11 @@ button:active {
     display: none !important;
 }
 
-@media screen and (max-width: 900px) {
+@media (pointer: coarse) {
     #fullscreen-btn { display: none !important; }
-    /* No fullscreen button on mobile — hearts take the rightmost spot */
-    /* #heart-decor size is driven by --game-scale (set in engine.js) */
+    /* No fullscreen button on any touch device (phone, tablet, iPad) —
+       hearts take the rightmost spot. #heart-decor size is driven by
+       --game-scale (set in engine.js). */
 }
 
 /* Mobile Adjustments */
