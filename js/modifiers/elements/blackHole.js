@@ -85,19 +85,31 @@ export default function blackHole() {
             c.rotate(time * 1.8);              // same swirl rate as before
             c.drawImage(sprite, -r, -r, r * 2, r * 2);
 
-            // "CHALLENGE" spinning as a whole word around the black hole.
+            // "CHALLENGE" curved along the arc and spinning with the hole.
+            // Each letter is placed at its actual width so the word reads
+            // naturally, just bent around the circle.
             const fontSize = Math.max(7, r * 0.34);
             c.font = `700 ${fontSize}px Orbitron, sans-serif`;
             c.fillStyle = '#ff1a3c';
             c.shadowColor = '#ff1a3c';
             c.shadowBlur = 10 * s;
             c.textAlign = 'center';
-            c.textBaseline = 'middle';
-            c.save();
-            c.translate(0, -r * 1.62);   // orbit distance above centre
-            c.rotate(-time * 1.8);        // counter-rotate so text stays upright
-            c.fillText('CHALLENGE', 0, 0);
-            c.restore();
+            c.textBaseline = 'bottom';
+
+            const textR = r * 1.62;
+            const word = 'CHALLENGE';
+            const widths = [...word].map(ch => c.measureText(ch).width);
+            const totalAngle = widths.reduce((a, b) => a + b, 0) / textR;
+            let a = -totalAngle / 2;
+            for (let i = 0; i < word.length; i++) {
+                const cw = widths[i] / textR;
+                c.save();
+                c.rotate(a + cw / 2);
+                c.translate(0, -textR);
+                c.fillText(word[i], 0, 0);
+                c.restore();
+                a += cw;
+            }
 
             c.restore();
         },
