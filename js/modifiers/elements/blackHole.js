@@ -1,5 +1,5 @@
-// Black Hole — a small swirling neon-red void that appears on the playfield
-// once the player sustains a scoring run (the trigger lives in director.js).
+// Black Hole — a swirling neon-red void that appears on the playfield once
+// the player sustains a scoring run (the trigger lives in director.js).
 //
 // It belongs to a single game (mode) and is cleared on a mode switch.
 // Lifecycle: expands in, holds, then shrinks out — 8 seconds on screen.
@@ -8,6 +8,10 @@
 const LIFETIME = 8;      // seconds on screen
 const EXPAND   = 0.32;   // grow-in duration (s)
 const SHRINK   = 0.45;   // shrink-out duration (s)
+
+// Shared image — loaded once, reused by every spawn.
+const sprite = new Image();
+sprite.src = 'assets/black_hole_red.webp';
 
 export default function blackHole() {
     let x = 0;
@@ -67,51 +71,16 @@ export default function blackHole() {
         onDraw(ctx) {
             const s = animScale();
             if (s <= 0.001) return;
+            if (!sprite.complete || !sprite.naturalWidth) return;
+
             const c = ctx.ctx2d;
             const r = radius * s;
             const time = performance.now() / 1000;
 
             c.save();
             c.translate(x, y);
-
-            // Event horizon — black core fading to deep red at the edge.
-            const core = c.createRadialGradient(0, 0, r * 0.08, 0, 0, r);
-            core.addColorStop(0, '#000000');
-            core.addColorStop(0.7, '#0b0007');
-            core.addColorStop(1, 'rgba(35, 0, 12, 0.92)');
-            c.fillStyle = core;
-            c.beginPath();
-            c.arc(0, 0, r, 0, Math.PI * 2);
-            c.fill();
-
-            // Two arms spiralling inward, rotating over time = the swirl.
-            c.rotate(time * 1.8);
-            for (let arm = 0; arm < 2; arm++) {
-                c.rotate(Math.PI);
-                c.strokeStyle = arm === 0
-                    ? 'rgba(255, 70, 100, 0.7)'
-                    : 'rgba(255, 30, 68, 0.5)';
-                c.lineWidth = 2;
-                c.beginPath();
-                for (let a = 0; a <= Math.PI * 2.6; a += 0.18) {
-                    const rr = r * (0.95 - a / (Math.PI * 3.1));
-                    const px = Math.cos(a) * rr;
-                    const py = Math.sin(a) * rr;
-                    if (a === 0) c.moveTo(px, py);
-                    else c.lineTo(px, py);
-                }
-                c.stroke();
-            }
-
-            // Neon-red glowing rim — the outline, drawn on top.
-            c.shadowColor = '#ff1f44';
-            c.shadowBlur = 14 * s;
-            c.strokeStyle = '#ff1f44';
-            c.lineWidth = 2.5;
-            c.beginPath();
-            c.arc(0, 0, r, 0, Math.PI * 2);
-            c.stroke();
-
+            c.rotate(time * 1.8);              // same swirl rate as before
+            c.drawImage(sprite, -r, -r, r * 2, r * 2);
             c.restore();
         },
     };
