@@ -78,7 +78,7 @@ export default function blackHole() {
             const time = performance.now() / 1000;
 
             c.save();
-            c.globalAlpha = 0.75;
+            c.globalAlpha = 0.9;
             c.translate(x, y);
             c.rotate(time * 1.8);              // same swirl rate as before
             c.drawImage(sprite, -r, -r, r * 2, r * 2);
