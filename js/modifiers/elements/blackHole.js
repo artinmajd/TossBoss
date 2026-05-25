@@ -100,13 +100,17 @@ export default function blackHole() {
             const word = 'CHALLENGE';
             const widths = [...word].map(ch => c.measureText(ch).width);
             const totalAngle = widths.reduce((a, b) => a + b, 0) / textR;
+            c.strokeStyle = 'rgba(255,255,255,0.9)';
+            c.lineWidth = fontSize * 0.18;
+            c.lineJoin = 'round';
             let a = -totalAngle / 2;
             for (let i = 0; i < word.length; i++) {
                 const cw = widths[i] / textR;
                 c.save();
                 c.rotate(a + cw / 2);
                 c.translate(0, -textR);
-                c.fillText(word[i], 0, 0);
+                c.strokeText(word[i], 0, 0);  // white outline first
+                c.fillText(word[i], 0, 0);    // red fill on top
                 c.restore();
                 a += cw;
             }
