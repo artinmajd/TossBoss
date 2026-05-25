@@ -85,9 +85,7 @@ export default function blackHole() {
             c.rotate(time * 1.8);              // same swirl rate as before
             c.drawImage(sprite, -r, -r, r * 2, r * 2);
 
-            // "CHALLENGE" lettered ring — spins with the image.
-            const text = 'CHALLENGE';
-            const textR = r * 1.62;
+            // "CHALLENGE" spinning as a whole word around the black hole.
             const fontSize = Math.max(7, r * 0.34);
             c.font = `700 ${fontSize}px Orbitron, sans-serif`;
             c.fillStyle = '#ff1a3c';
@@ -95,15 +93,11 @@ export default function blackHole() {
             c.shadowBlur = 10 * s;
             c.textAlign = 'center';
             c.textBaseline = 'middle';
-            const step = (Math.PI * 2) / text.length;
-            for (let i = 0; i < text.length; i++) {
-                c.save();
-                c.rotate(i * step);
-                c.translate(0, -textR);
-                c.rotate(Math.PI / 2);   // face clockwise along the ring
-                c.fillText(text[i], 0, 0);
-                c.restore();
-            }
+            c.save();
+            c.translate(0, -r * 1.62);   // orbit distance above centre
+            c.rotate(-time * 1.8);        // counter-rotate so text stays upright
+            c.fillText('CHALLENGE', 0, 0);
+            c.restore();
 
             c.restore();
         },
