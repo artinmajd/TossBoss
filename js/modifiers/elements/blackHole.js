@@ -3,11 +3,18 @@
 //
 // It belongs to a single game (mode) and is cleared on a mode switch.
 // Lifecycle: expands in, holds, then shrinks out — 8 seconds on screen.
-// Purely visual for now: no effect on the ball.
+//
+// If the player flies the ball into it, the hole "consumes" the ball:
+// it absorbs the ball (a short shrink-toward-center animation), holds
+// briefly, then runs the same shrink-out animation as normal expiry,
+// expiring early. While consumed it sets ctx.blackHoleConsumed so the
+// director can spawn a random challenge once the hole is gone.
 
-const LIFETIME = 8;      // seconds on screen
-const EXPAND   = 0.32;   // grow-in duration (s)
-const SHRINK   = 0.45;   // shrink-out duration (s)
+const LIFETIME    = 8;     // seconds on screen for a non-consumed hole
+const EXPAND      = 0.32;  // grow-in duration (s)
+const SHRINK      = 0.45;  // shrink-out duration (s)
+const ABSORB      = 0.4;   // ball shrink-into-hole animation (s)
+const POST_HOLD   = 0.5;   // hold after the ball is gone, before shrinking out (s)
 
 // Shared image — loaded once, reused by every spawn.
 const sprite = new Image();
@@ -19,18 +26,34 @@ export default function blackHole() {
     let radius = 0;
     let spawnTime = 0;
 
-    const elapsed = () => (performance.now() - spawnTime) / 1000;
+    // Consumption state
+    let consumed   = false;
+    let consumedAt = 0;
+    let ballStart  = { x: 0, y: 0 };
+    let ballR0     = 0;
 
-    // Animation scale 0..1 — ease-out expand, hold, ease-in shrink.
+    const elapsed   = () => (performance.now() - spawnTime)   / 1000;
+    const consumedT = () => (performance.now() - consumedAt)  / 1000;
+
+    // Animation scale 0..1 — ease-out expand, hold, ease-in shrink. When
+    // consumed, the timeline switches: hold for ABSORB + POST_HOLD, then
+    // run the same shrink curve over SHRINK seconds (matches normal
+    // expiry visually).
     function animScale() {
+        if (consumed) {
+            const tc = consumedT();
+            if (tc < ABSORB + POST_HOLD) return 1;
+            const p = (tc - (ABSORB + POST_HOLD)) / SHRINK;
+            return Math.max(0, 1 - p * p * p);
+        }
         const e = elapsed();
         if (e < EXPAND) {
             const p = e / EXPAND;
-            return 1 - Math.pow(1 - p, 3);              // ease-out grow
+            return 1 - Math.pow(1 - p, 3);
         }
         if (e > LIFETIME - SHRINK) {
             const p = (e - (LIFETIME - SHRINK)) / SHRINK;
-            return Math.max(0, 1 - p * p * p);          // ease-in shrink
+            return Math.max(0, 1 - p * p * p);
         }
         return 1;
     }
@@ -46,8 +69,12 @@ export default function blackHole() {
             const py = minY + Math.random() * (maxY - minY);
             if (!t || Math.hypot(px - t.x, py - t.y) > clear) return { x: px, y: py };
         }
-        // Fallback: left-of-centre — always far from the right-side target.
         return { x: ctx.width * 0.3, y: ctx.height * 0.5 };
+    }
+
+    function smoothstep(t) {
+        const x = Math.max(0, Math.min(1, t));
+        return x * x * (3 - 2 * x);
     }
 
     return {
@@ -63,8 +90,31 @@ export default function blackHole() {
             y = spot.y;
         },
 
-        // The manager removes the modifier once this returns true.
+        onUpdate(ctx /*, dt */) {
+            if (consumed) return;
+            // Only consume once the hole is visibly grown — a touch in the
+            // first split second of the expand animation feels unfair.
+            if (elapsed() < EXPAND * 0.5) return;
+
+            const b = ctx.ball;
+            if (!b) return;
+            // Compare against the *animated* visible radius so the test
+            // matches what the player sees.
+            const r = radius * animScale();
+            const d = Math.hypot(b.x - x, b.y - y);
+            if (d < r * 0.85 + b.radius * 0.5) {
+                consumed     = true;
+                consumedAt   = performance.now();
+                ballStart    = { x: b.x, y: b.y };
+                ballR0       = b.radius;
+                ctx.absorbBall();
+                ctx.blackHoleConsumed = true;
+            }
+        },
+
+        // Manager removes the modifier when this returns true.
         isExpired() {
+            if (consumed) return consumedT() > ABSORB + POST_HOLD + SHRINK;
             return elapsed() >= LIFETIME;
         },
 
@@ -82,12 +132,30 @@ export default function blackHole() {
             c.shadowColor = '#ff1a3c';
             c.shadowBlur = 28 * s;
             c.translate(x, y);
-            c.rotate(time * 1.8);              // same swirl rate as before
+
+            // Absorption: draw the shrinking ball in WORLD space (before
+            // the swirl-rotate transform) so it doesn't spin with the
+            // image. Local (0,0) is the hole's center, so the ball lerps
+            // from (ballStart - hole) to (0, 0).
+            if (consumed && consumedT() < ABSORB) {
+                const p  = smoothstep(consumedT() / ABSORB);
+                const bx = (ballStart.x - x) * (1 - p);
+                const by = (ballStart.y - y) * (1 - p);
+                const br = ballR0 * (1 - p);
+                c.save();
+                c.globalAlpha = 1;
+                c.shadowBlur = 0;
+                c.fillStyle = '#f8fafc';
+                c.beginPath();
+                c.arc(bx, by, br, 0, Math.PI * 2);
+                c.fill();
+                c.restore();
+            }
+
+            c.rotate(time * 1.8);              // swirl rate
             c.drawImage(sprite, -r, -r, r * 2, r * 2);
 
             // "CHALLENGE" curved along the arc and spinning with the hole.
-            // Each letter is placed at its actual width so the word reads
-            // naturally, just bent around the circle.
             const fontSize = Math.max(7, r * 0.34);
             c.font = `700 ${fontSize}px Orbitron, sans-serif`;
             c.fillStyle = '#ff1a3c';
@@ -109,8 +177,8 @@ export default function blackHole() {
                 c.save();
                 c.rotate(a + cw / 2);
                 c.translate(0, -textR);
-                c.strokeText(word[i], 0, 0);  // white outline first
-                c.fillText(word[i], 0, 0);    // red fill on top
+                c.strokeText(word[i], 0, 0);
+                c.fillText(word[i], 0, 0);
                 c.restore();
                 a += cw;
             }

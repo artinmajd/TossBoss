@@ -13,6 +13,7 @@ export default function Game() {
             </div>
 
             <div id="top-left">
+              <div id="top-bar">
                 <button id="menu-toggle" class="mode-btn" title="Menu" aria-label="Toggle menu">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:18px;height:18px;"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                 </button>
@@ -49,6 +50,11 @@ export default function Game() {
                     <button id="mode-basketball" class="mode-btn" title="Basketball Mode">
                         <div class="basketball-icon"></div>
                     </button>
+                </div>
+              </div>
+                <div id="challenge-badge" hidden>
+                    <div class="challenge-title">MOVING TARGET</div>
+                    <div class="challenge-reward">Reward: <span>2X</span> points</div>
                 </div>
             </div>
 

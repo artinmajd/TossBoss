@@ -64,6 +64,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     let isBehindNet = false;
     let wasAboveRim = false;
     let isDisqualified = false;
+    let ballAbsorbed = false;   // a modifier (e.g. the black hole) has taken the ball:
+                                // physics is frozen, the engine skips drawing it, and
+                                // the modifier draws the absorption animation itself.
 
     // Return animation state
     let ballReturning = false;
@@ -87,6 +90,44 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     const modifiers = createModifierManager();
     const director = createDirector();
 
+    // Action methods modifiers can call on the context. These touch engine
+    // state directly so they live here, not in context.js.
+    gameCtx.absorbBall = () => {
+        ballAbsorbed = true;
+        ball.vx = 0;
+        ball.vy = 0;
+        scoredThisThrow = true;   // suppresses both score & miss for this throw
+        ballReturning = false;
+        wasThrown = false;        // the throw is consumed — when the modifier
+                                  // later calls resetBallToStart() the
+                                  // wasResting→true transition must NOT count
+                                  // as a miss.
+    };
+    gameCtx.resetBallToStart = () => {
+        ballAbsorbed = false;
+        resetBall();
+    };
+    gameCtx.showChallengeBadge = (title, reward) => {
+        const el = document.getElementById('challenge-badge');
+        if (!el) return;
+        const t = el.querySelector('.challenge-title');
+        const r = el.querySelector('.challenge-reward span');
+        if (t) t.textContent = title;
+        if (r) r.textContent = reward;
+        el.hidden = false;
+    };
+    gameCtx.hideChallengeBadge = () => {
+        const el = document.getElementById('challenge-badge');
+        if (el) el.hidden = true;
+    };
+
+    // Live cup/hoop positions — fold in gameCtx.targetOffset so modifiers like
+    // the Moving Target challenge can shift the target without the engine
+    // needing to know who's driving it. With offset = {0,0} these are the
+    // original hard-coded positions (width*0.85 / height*0.45).
+    function getCupX()     { return width  * 0.85 + (gameCtx.targetOffset?.x || 0); }
+    function getHoopRimY() { return height * 0.45 + (gameCtx.targetOffset?.y || 0); }
+
     // Refresh the modifier context from live engine state (called each frame).
     function syncContext() {
         gameCtx.score = score;
@@ -102,9 +143,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // The active target (cup / hoop) with a keep-clear radius — used by
         // modifiers that must not spawn on top of it.
         if (gameMode === 'pingpong') {
-            gameCtx.target = { x: width * 0.85, y: height * groundLevel - 65 * scale, r: 150 * scale };
+            gameCtx.target = { x: getCupX(), y: height * groundLevel - 65 * scale, r: 150 * scale };
         } else {
-            gameCtx.target = { x: width - 80 * scale, y: height * 0.45, r: 170 * scale };
+            gameCtx.target = { x: width - 80 * scale, y: getHoopRimY(), r: 170 * scale };
         }
     }
 
@@ -151,9 +192,15 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         updateScoreDisplay();
 
         // A modifier (e.g. the black hole) belongs to a single game — clear
-        // it and re-arm the director when switching modes.
+        // it and re-arm the director when switching modes. Reset any
+        // modifier-writable fields on the context so a fresh mode starts
+        // with a clean slate.
         modifiers.clear(gameCtx);
         director.reset();
+        gameCtx.blackHoleConsumed = false;
+        gameCtx.scoreMultiplier   = 1;
+        gameCtx.targetOffset.x    = 0;
+        gameCtx.targetOffset.y    = 0;
     }
 
 
@@ -171,6 +218,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         isBehindNet = false;
         wasAboveRim = false;
         isDisqualified = false;
+        ballAbsorbed = false;
     }
     
     function startReturn() {
@@ -361,6 +409,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     
     // Physics update
     function updatePhysics() {
+        // While the ball is absorbed by a modifier, the modifier owns its
+        // position and visuals — the engine pauses its own simulation.
+        if (ballAbsorbed) return;
         if (ballReturning) {
             returnT = Math.min(returnT + dt / RETURN_DURATION, 1);
             // ease-out cubic — fast start, soft landing
@@ -393,12 +444,12 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             const cupWidthTop = 110 * scale;
             const cupWidthBottom = 70 * scale;
             const cupHeight = 130 * scale;
-            const cupX = width * 0.85; 
+            const cupX = getCupX();
             const cupY = floorY;
             const cupRimY = cupY - cupHeight;
             const cupLeftRim = cupX - cupWidthTop / 2;
             const cupRightRim = cupX + cupWidthTop / 2;
-            
+
             const distLeftRim = Math.hypot(ball.x - cupLeftRim, ball.y - cupRimY);
             const distRightRim = Math.hypot(ball.x - cupRightRim, ball.y - cupRimY);
             
@@ -472,7 +523,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             }
         } else if (gameMode === 'basketball') {
             let hoopWidth = 140 * scale;
-            const hoopRimY = height * 0.45; 
+            const hoopRimY = getHoopRimY();
             const backboardX = width; // Flush against the right wall
             
             if (hoopImg.complete && hoopImg.naturalHeight !== 0) {
@@ -572,7 +623,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         }
         
         // Ground
-        if (ball.y + ball.radius >= floorY && (gameMode === 'basketball' || ball.x <= width * 0.85 - (110*scale)/2 || ball.x >= width * 0.85 + (110*scale)/2)) {
+        if (ball.y + ball.radius >= floorY && (gameMode === 'basketball' || ball.x <= getCupX() - (110*scale)/2 || ball.x >= getCupX() + (110*scale)/2)) {
             ball.y = floorY - ball.radius;
             ball.vy = -ball.vy * bounceFactor;
             ball.vx *= friction;
@@ -652,7 +703,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             const cupWidthTop = 110 * scale;
             const cupWidthBottom = 70 * scale;
             const cupHeight = 130 * scale;
-            const cupX = width * 0.85;
+            const cupX = getCupX();
             const cupY = floorY;
             const cupRimY = cupY - cupHeight;
             const cupLeftRim = cupX - cupWidthTop / 2;
@@ -702,7 +753,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         } else {
             // Basketball backboard & back hoop
             let hoopWidth = 140 * scale;
-            const hoopRimY = height * 0.45; 
+            const hoopRimY = getHoopRimY();
             const backboardX = width; // Flush against right wall
             
             if (hoopImg.complete && hoopImg.naturalHeight !== 0) {
@@ -812,7 +863,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         }
         
         // Shadow
-        const isOverCup = gameMode === 'pingpong' && ball.x > width * 0.85 - (110*scale)/2 && ball.x < width * 0.85 + (110*scale)/2;
+        const isOverCup = gameMode === 'pingpong' && ball.x > getCupX() - (110*scale)/2 && ball.x < getCupX() + (110*scale)/2;
         if (ball.y < floorY + 50 && !isOverCup) {
             const distToGround = Math.max(0, floorY - ball.y);
             const shadowScale = Math.max(0, 1 - distToGround / 200);
@@ -836,7 +887,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             const cwTop = 110 * scale;
             const cwBottom = 70 * scale;
             const cHeight = 130 * scale;
-            const cX = width * 0.85;
+            const cX = getCupX();
             const cY = floorY;
             const cRimY = cY - cHeight;
             const mouthY = cRimY + cHeight * 0.06 + 1 + 10 * scale;
@@ -853,7 +904,13 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             ballClipped = true;
         }
 
-        // Draw ball
+        // Draw ball — skipped while a modifier owns it (e.g. the black hole
+        // is running its absorption animation and drawing the ball itself).
+        if (ballAbsorbed) {
+            if (ballClipped) ctx.restore();
+            // continue past the ball draw entirely
+        } else {
+
         ctx.save();
         ctx.translate(ball.x, ball.y);
 
@@ -903,12 +960,14 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         ctx.restore();
         if (ballClipped) ctx.restore();
 
+        }  // end if (!ballAbsorbed) ball-draw block
+
         // Foreground Targets
         if (gameMode === 'pingpong') {
             const cupWidthTop = 110 * scale;
             const cupWidthBottom = 70 * scale;
             const cupHeight = 130 * scale;
-            const cupX = width * 0.85;
+            const cupX = getCupX();
             const cupY = floorY;
             const cupRimY = cupY - cupHeight;
             const cupLeftRim = cupX - cupWidthTop / 2;
@@ -950,7 +1009,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         } else {
             // Basketball Front Net & Rim
             let hoopWidth = 140 * scale;
-            const hoopRimY = height * 0.45; 
+            const hoopRimY = getHoopRimY();
             const backboardX = width; // Flush against right wall
             
             if (hoopImg.complete && hoopImg.naturalHeight !== 0) {
@@ -1110,7 +1169,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
     function handleScore() {
         const prevBonus = Math.floor(consecutiveHits / 3);
-        const points = 1 + prevBonus;
+        const basePoints = 1 + prevBonus;
+        // Active challenge (e.g. Moving Target) sets a multiplier > 1.
+        const points = Math.round(basePoints * (gameCtx.scoreMultiplier || 1));
         score += points;
         consecutiveHits++;
         consecutiveMisses = 0;

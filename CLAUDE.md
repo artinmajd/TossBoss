@@ -147,7 +147,25 @@ via `gameCtx.ctx2d`.
 
 `syncContext()` in `engine.js` refreshes `gameCtx`'s read fields from live
 engine state every frame: `score, streak, misses, lives, gameMode, width,
-height, scale, dt, floorY`. Stable reference fields: `ball`, `ctx2d`.
+height, scale, dt, floorY, target`. Stable reference fields: `ball`,
+`ctx2d`, `tester`.
+
+**Modifier-writable fields** (engine reads them, not refreshed):
+- `targetOffset: { x, y }` — added to cup X / hoop Y. Lets a challenge
+  move the target without the engine knowing who's driving it. Engine
+  uses helpers `getCupX()` / `getHoopRimY()` that fold this in.
+- `scoreMultiplier` — multiplied into points in `handleScore`.
+- `blackHoleConsumed` — signal from `blackHole.js` to `director.js` that
+  the ball was absorbed; the director consumes it to spawn a challenge.
+
+**Action methods** (filled in by engine.js when constructing the context):
+- `ctx.absorbBall()` — the modifier takes the ball: physics freezes, the
+  engine skips drawing the ball, and the modifier becomes responsible
+  for the absorption animation.
+- `ctx.resetBallToStart()` — call `resetBall()` and clear the absorbed
+  flag, putting a fresh ball at the launch position.
+- `ctx.showChallengeBadge(title, reward)` / `ctx.hideChallengeBadge()` —
+  toggles the `#challenge-badge` HUD element.
 
 When a modifier needs to *change* something or call an *action* (move the
 cup, grant a life, spawn a target…), add that field/method to `context.js`
@@ -169,9 +187,20 @@ should account for that (or drive motion from `onDraw`).
 
 ### Status
 
-One modifier exists: the **black hole** (`elements/blackHole.js`) — a timed
-neutral element triggered by the director after 10 un-reset shots. No
-challenges or powerups exist yet.
+Two modifiers exist:
+
+- **Black hole** (`elements/blackHole.js`) — neutral element triggered by
+  the director before every 10th un-reset shot. If the player flies the
+  ball into it, it absorbs the ball, sets `ctx.blackHoleConsumed`, and
+  expires early via the same shrink animation.
+- **Moving Target** (`challenges/movingTarget.js`) — first challenge. The
+  director picks a random `type === 'challenge'` from the registry
+  whenever `ctx.blackHoleConsumed` is set. The cup (pingpong) or hoop
+  (basketball) oscillates (SHM) around its original position for 20 s
+  with the score multiplier set to 2×, then smoothly winds down to rest.
+  A `#challenge-badge` HUD element announces it.
+
+No powerups exist yet.
 
 ## Tester config (`js/tester_config.js`)
 

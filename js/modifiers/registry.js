@@ -18,8 +18,10 @@
 // directly; this list is the complete inventory (and the future source for
 // weighted/random selection).
 
-import blackHole from './elements/blackHole.js';
+import blackHole    from './elements/blackHole.js';
+import movingTarget from './challenges/movingTarget.js';
 
 export const modifierRegistry = [
     blackHole,
+    movingTarget,
 ];

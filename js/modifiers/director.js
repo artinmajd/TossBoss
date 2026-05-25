@@ -2,10 +2,21 @@
 // game state and events. Modifiers define WHAT happens; the director defines
 // WHEN. It receives game events via notify() and a per-frame tick().
 
-import blackHole from './elements/blackHole.js';
+import blackHole          from './elements/blackHole.js';
+import { modifierRegistry } from './registry.js';
 
 const NORMAL_PERIOD = 10;     // black hole appears before every 10th shot
 const REST_VEL = 0.5;         // |v| below this counts as "ball at rest"
+
+// Pick a random challenge factory from the registry. Returns null if none.
+function pickRandomChallenge() {
+    // Instantiate each factory once to read .type — cheap, no game state.
+    const challenges = modifierRegistry
+        .map(f => ({ factory: f, sample: f() }))
+        .filter(x => x.sample.type === 'challenge');
+    if (!challenges.length) return null;
+    return challenges[Math.floor(Math.random() * challenges.length)].factory;
+}
 
 export function createDirector() {
     let shotsSinceReset = 0;   // throws since the last score reset
@@ -24,9 +35,15 @@ export function createDirector() {
             prevScore = ctx.score;
 
             // Black hole expired — clear the flag so the next cycle can arm.
+            // If it was consumed by the ball, spawn a random challenge now.
             if (blackHoleActive && !manager.active.some(m => m.id === 'black-hole')) {
                 blackHoleActive = false;
                 armedForRestSpawn = false;
+                if (ctx.blackHoleConsumed) {
+                    ctx.blackHoleConsumed = false;
+                    const pick = pickRandomChallenge();
+                    if (pick) manager.add(pick(), ctx);
+                }
             }
 
             // Spawn once the ball is at rest and the arm is set.

@@ -67,8 +67,82 @@ html, body {
     left: max(2rem, env(safe-area-inset-left, 2rem));
     z-index: 10;
     display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    align-items: flex-start;
+}
+
+/* Horizontal row inside #top-left holding the menu toggle, nav-bar and
+   mode-bar. The challenge-badge sits below this row when visible. */
+#top-bar {
+    display: flex;
     gap: 0.6rem;
     align-items: center;
+}
+
+/* Challenge badge — fancy glassmorphic box that announces the active
+   challenge and its reward. Hidden by default; the engine flips
+   [hidden] off via gameCtx.showChallengeBadge(). */
+#challenge-badge {
+    background: var(--surface-color);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border-radius: 0.85rem;
+    padding: 0.55rem 0.85rem;
+    min-width: 9rem;
+    animation: challenge-badge-in 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* gentle pulsing border keeps the box feeling alive while active */
+    position: relative;
+    overflow: hidden;
+}
+
+#challenge-badge::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.0), rgba(251, 191, 36, 0.10), rgba(56, 189, 248, 0.0));
+    animation: challenge-shimmer 3s ease-in-out infinite;
+}
+
+@keyframes challenge-badge-in {
+    from { opacity: 0; transform: translateY(-6px) scale(0.92); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+@keyframes challenge-shimmer {
+    0%, 100% { opacity: 0.6; }
+    50%      { opacity: 1; }
+}
+
+#challenge-badge[hidden] { display: none; }
+
+.challenge-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    color: #f8fafc;
+    text-shadow: 0 0 8px rgba(251, 191, 36, 0.55);
+    line-height: 1.1;
+}
+
+.challenge-reward {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-top: 0.18rem;
+}
+
+.challenge-reward span {
+    color: #fbbf24;
+    font-weight: 900;
+    text-shadow: 0 0 6px rgba(251, 191, 36, 0.6);
 }
 
 #help-bubble {
@@ -647,10 +721,19 @@ button:active {
     #top-left {
         top: max(0.5rem, env(safe-area-inset-top, 0.5rem));
         left: max(0.75rem, env(safe-area-inset-left, 0.75rem));
-        flex-direction: row;
-        align-items: center;
-        gap: 0.35rem;
+        gap: 0.35rem;       /* column gap between #top-bar and #challenge-badge */
     }
+
+    #top-bar { gap: 0.35rem; }
+
+    /* Compact badge for mobile-landscape */
+    #challenge-badge {
+        padding: 0.35rem 0.6rem;
+        min-width: 0;
+        border-radius: 0.65rem;
+    }
+    .challenge-title  { font-size: 0.62rem; }
+    .challenge-reward { font-size: 0.5rem; }
 
     /* Shrink the mode box to the same height as the menu button (36px) */
     #mode-bar {

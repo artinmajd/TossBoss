@@ -4,9 +4,8 @@
 //
 // Read fields are refreshed by the engine every frame (engine: syncContext()).
 // Reference fields are stable for the whole game lifetime.
-//
-// Action methods (grantLife, addMultiplier, spawnTarget, …) will be added here
-// as the modifiers that need them are built.
+// Writable fields are owned by modifiers and read by the engine.
+// Action methods are filled in by the engine when the context is constructed.
 
 export function createGameContext({ ball, ctx2d, tester = null }) {
     return {
@@ -27,5 +26,17 @@ export function createGameContext({ ball, ctx2d, tester = null }) {
         ball,             // the live ball object { x, y, vx, vy, radius }
         ctx2d,            // the canvas 2D rendering context (for onDraw)
         tester,           // tester_config object when the test user is logged in, else null
+
+        // --- modifier-writable fields (engine reads these) ---
+        targetOffset: { x: 0, y: 0 }, // added to cup X / hoop Y for moving-target challenge
+        scoreMultiplier: 1,           // points are multiplied by this in handleScore
+        blackHoleConsumed: false,     // black hole sets this when the ball is absorbed;
+                                      // director consumes it to spawn a challenge
+
+        // --- action methods (engine wires real implementations in initGame) ---
+        absorbBall: () => {},
+        resetBallToStart: () => {},
+        showChallengeBadge: (_title, _reward) => {},
+        hideChallengeBadge: () => {},
     };
 }
