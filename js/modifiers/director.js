@@ -11,8 +11,7 @@ export function createDirector() {
     let shotsSinceReset = 0;   // throws since the last score reset
     let prevScore = 0;         // score seen on the previous frame
     let blackHoleActive = false;
-    let armedForRestSpawn = false;  // normal mode: armed when shot N-1 fires;
-                                    // spawns the next time the ball rests.
+    let armedForRestSpawn = false;  // armed after shot N-1; fires when ball rests
 
     return {
         // Once per frame.
@@ -24,16 +23,14 @@ export function createDirector() {
             }
             prevScore = ctx.score;
 
-            // The black hole finished its life and was pruned by the manager
-            // — re-arm so another can be earned after the next 10 shots.
+            // Black hole expired — clear the flag so the next cycle can arm.
             if (blackHoleActive && !manager.active.some(m => m.id === 'black-hole')) {
                 blackHoleActive = false;
                 armedForRestSpawn = false;
             }
 
-            // Normal mode: if armed, spawn the black hole as soon as the ball
-            // is at rest and the player is ready to take the next shot.
-            if (armedForRestSpawn && !blackHoleActive && !ctx.tester && ctx.score > 0) {
+            // Spawn once the ball is at rest and the arm is set.
+            if (armedForRestSpawn && !blackHoleActive && ctx.score > 0) {
                 const b = ctx.ball;
                 if (b && Math.hypot(b.vx, b.vy) < REST_VEL) {
                     manager.add(blackHole(), ctx);
@@ -49,19 +46,10 @@ export function createDirector() {
             if (event !== 'throw') return;
             shotsSinceReset++;
 
-            if (ctx.tester) {
-                // Test mode (unchanged): spawn immediately after the Nth throw.
-                const threshold = ctx.tester.blackHoleShotThreshold ?? NORMAL_PERIOD;
-                if (!blackHoleActive && shotsSinceReset >= threshold && ctx.score > 0) {
-                    manager.add(blackHole(), ctx);
-                    blackHoleActive = true;
-                }
-            } else {
-                // Normal mode: if the next shot will be the 10·Xth, arm the
-                // spawn — tick() will fire it once the ball comes to rest.
-                if ((shotsSinceReset + 1) % NORMAL_PERIOD === 0) {
-                    armedForRestSpawn = true;
-                }
+            // Period is configurable for the test user; normal players use 10.
+            const period = ctx.tester?.blackHoleShotThreshold ?? NORMAL_PERIOD;
+            if ((shotsSinceReset + 1) % period === 0) {
+                armedForRestSpawn = true;
             }
         },
 
