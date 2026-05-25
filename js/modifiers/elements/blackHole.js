@@ -96,7 +96,7 @@ export default function blackHole() {
             c.textAlign = 'center';
             c.textBaseline = 'bottom';
 
-            const textR = r * 1.62;
+            const textR = r * 1.08;
             const word = 'CHALLENGE';
             const widths = [...word].map(ch => c.measureText(ch).width);
             const totalAngle = widths.reduce((a, b) => a + b, 0) / textR;
