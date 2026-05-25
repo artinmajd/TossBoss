@@ -79,6 +79,8 @@ export default function blackHole() {
 
             c.save();
             c.globalAlpha = 0.9;
+            c.shadowColor = '#ff1a3c';
+            c.shadowBlur = 28 * s;
             c.translate(x, y);
             c.rotate(time * 1.8);              // same swirl rate as before
             c.drawImage(sprite, -r, -r, r * 2, r * 2);
