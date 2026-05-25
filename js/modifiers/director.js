@@ -28,7 +28,6 @@ export function createDirector() {
             // — re-arm so another can be earned after the next 10 shots.
             if (blackHoleActive && !manager.active.some(m => m.id === 'black-hole')) {
                 blackHoleActive = false;
-                shotsSinceReset = 0;
                 armedForRestSpawn = false;
             }
 
@@ -40,6 +39,7 @@ export function createDirector() {
                     manager.add(blackHole(), ctx);
                     blackHoleActive = true;
                     armedForRestSpawn = false;
+                    shotsSinceReset = 0;
                 }
             }
         },
