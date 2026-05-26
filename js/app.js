@@ -174,6 +174,13 @@ async function router() {
         };
 
         lbBtn.addEventListener('click', () => {
+            // Sync modal mode to whichever game mode is currently active.
+            lbModalMode = document.getElementById('mode-basketball').classList.contains('active')
+                ? 'basketball' : 'pingpong';
+            const pingTab = document.getElementById('lb-modal-tab-pingpong');
+            const bballTab = document.getElementById('lb-modal-tab-basketball');
+            pingTab.classList.toggle('active', lbModalMode === 'pingpong');
+            bballTab.classList.toggle('active', lbModalMode === 'basketball');
             setLbModal(true);
             renderModalList(lbModalMode);
         });
