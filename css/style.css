@@ -1379,10 +1379,11 @@ button:active {
 }
 
 .lb-row.lb-me {
-    border-color: rgba(56, 189, 248, 0.55);
-    background: rgba(56, 189, 248, 0.07);
-    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.25),
-                0 0 16px rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.85);
+    background: rgba(56, 189, 248, 0.12);
+    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.5),
+                0 0 12px rgba(56, 189, 248, 0.55),
+                0 0 28px rgba(56, 189, 248, 0.3);
 }
 
 .lb-dots {
