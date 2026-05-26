@@ -55,8 +55,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     let highScores = { pingpong: initialData.pingpong.score, basketball: initialData.basketball.score };
 
     // New-High-Score celebration state
-    let nhsStartTime = null;   // performance.now() when celebration began; null = inactive
-    let nhsParticles = null;   // confetti array — null means needs re-init
+    let nhsStartTime        = null;   // performance.now() when celebration began; null = inactive
+    let nhsParticles        = null;   // confetti array — null means needs re-init
+    let nhsCelebratedThisRun = false; // true once we've fired the celebration; reset when score resets
     let bestStreaks = { pingpong: initialData.pingpong.bestStreak, basketball: initialData.basketball.bestStreak };
     let consecutiveHits = 0;
     let consecutiveMisses = 0;
@@ -344,8 +345,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         gameCtx.targetOffset.x    = 0;
         gameCtx.targetOffset.y    = 0;
         prevCupX = null;
-        nhsStartTime = null;
-        nhsParticles = null;
+        nhsStartTime        = null;
+        nhsParticles        = null;
+        nhsCelebratedThisRun = false;
     }
 
 
@@ -1588,8 +1590,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         if ((streakImproved || scoreImproved) && !gameCtx.tester) {
             saveHighScore(gameMode, highScores[gameMode], bestStreaks[gameMode]);
         }
-        // Celebrate when an existing record is beaten.
-        if (scoreImproved && oldHighScore > 0) {
+        // Celebrate once when an existing record is first beaten this run.
+        if (scoreImproved && oldHighScore > 0 && !nhsCelebratedThisRun) {
+            nhsCelebratedThisRun = true;
             nhsStartTime = performance.now();
             nhsParticles = null;
         }
@@ -1651,6 +1654,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             const wasZero = score === 0;
             score = 0;
             consecutiveMisses = 0;
+            nhsCelebratedThisRun = false;
             if (!wasZero) showToast('💥 RESET!', 'reset');
             if (!wasZero && box) {
                 box.classList.remove('flash-reset');
@@ -1845,8 +1849,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         cancelAnimationFrame(animationId);
         stopChallengeTimer();
         if (challengeBadgeHideTimer) { clearTimeout(challengeBadgeHideTimer); challengeBadgeHideTimer = null; }
-        nhsStartTime = null;
-        nhsParticles = null;
+        nhsStartTime        = null;
+        nhsParticles        = null;
+        nhsCelebratedThisRun = false;
         modifiers.clear(gameCtx);
         // Remove any extra heart elements that a challenge may have added.
         document.querySelectorAll('#heart-decor img:nth-child(n+3)').forEach(h => h.remove());
