@@ -38,8 +38,8 @@ export function createDirector() {
     let blackHoleActive = false;
     let armedForRestSpawn = false;  // armed after shot N-1; fires when ball rests
 
-    // Session-wide play history — NOT cleared on reset() so it persists
-    // across mode switches for the lifetime of the browser session.
+    // Play history for the current run. Cleared whenever the score resets
+    // (2-miss wipeout or mode switch that zeroes the score).
     const playCounts = new Map();
 
     return {
@@ -49,6 +49,7 @@ export function createDirector() {
             if (prevScore > 0 && ctx.score === 0) {
                 shotsSinceReset = 0;
                 armedForRestSpawn = false;
+                playCounts.clear();
             }
             prevScore = ctx.score;
 
