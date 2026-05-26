@@ -148,7 +148,17 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     // the Moving Target challenge can shift the target without the engine
     // needing to know who's driving it. With offset = {0,0} these are the
     // original hard-coded positions (width*0.85 / height*0.45).
-    function getCupX()     { return width  * 0.85 + (gameCtx.targetOffset?.x || 0); }
+    function getCupX() {
+        const raw = width * 0.85 + (gameCtx.targetOffset?.x || 0);
+        // Clamp so the cup never extends past the playfield edges. With the
+        // ball-side right-wall constraint, this means a swinging cup that
+        // pushes the ball to the wall has nowhere to go — it visibly pauses
+        // at the limit until its SHM swings it back the other way.
+        const halfTop = 55 * scale;            // cupWidthTop / 2 — see updatePhysics
+        const minX = halfTop;
+        const maxX = width - halfTop;
+        return Math.max(minX, Math.min(maxX, raw));
+    }
     function getHoopRimY() { return height * 0.45 + (gameCtx.targetOffset?.y || 0); }
 
     // Refresh the modifier context from live engine state (called each frame).
