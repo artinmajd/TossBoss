@@ -19,9 +19,11 @@
 // weighted/random selection).
 
 import blackHole    from './elements/blackHole.js';
+import movingTarget from './challenges/movingTarget.js';
 import smallTarget  from './challenges/smallTarget.js';
 
 export const modifierRegistry = [
     blackHole,
+    movingTarget,
     smallTarget,
 ];

@@ -8,14 +8,28 @@ import { modifierRegistry } from './registry.js';
 const NORMAL_PERIOD = 10;     // black hole appears before every 10th shot
 const REST_VEL = 0.5;         // |v| below this counts as "ball at rest"
 
-// Pick a random challenge factory from the registry. Returns null if none.
-function pickRandomChallenge() {
-    // Instantiate each factory once to read .type — cheap, no game state.
+// Weighted random challenge pick.
+// playCounts: Map<challengeId, number> — times each challenge has been played
+// this session. Weight = 1 / (plays + 1), so unplayed challenges are always
+// preferred but already-played ones are never locked out.
+function pickRandomChallenge(playCounts) {
     const challenges = modifierRegistry
         .map(f => ({ factory: f, sample: f() }))
         .filter(x => x.sample.type === 'challenge');
     if (!challenges.length) return null;
-    return challenges[Math.floor(Math.random() * challenges.length)].factory;
+
+    const weighted = challenges.map(c => ({
+        factory: c.factory,
+        id:      c.sample.id,
+        weight:  1 / ((playCounts.get(c.sample.id) ?? 0) + 1),
+    }));
+    const total = weighted.reduce((s, c) => s + c.weight, 0);
+    let r = Math.random() * total;
+    for (const c of weighted) {
+        r -= c.weight;
+        if (r <= 0) return c;
+    }
+    return weighted[weighted.length - 1];
 }
 
 export function createDirector() {
@@ -23,6 +37,10 @@ export function createDirector() {
     let prevScore = 0;         // score seen on the previous frame
     let blackHoleActive = false;
     let armedForRestSpawn = false;  // armed after shot N-1; fires when ball rests
+
+    // Session-wide play history — NOT cleared on reset() so it persists
+    // across mode switches for the lifetime of the browser session.
+    const playCounts = new Map();
 
     return {
         // Once per frame.
@@ -41,8 +59,11 @@ export function createDirector() {
                 armedForRestSpawn = false;
                 if (ctx.blackHoleConsumed) {
                     ctx.blackHoleConsumed = false;
-                    const pick = pickRandomChallenge();
-                    if (pick) manager.add(pick(), ctx);
+                    const pick = pickRandomChallenge(playCounts);
+                    if (pick) {
+                        playCounts.set(pick.id, (playCounts.get(pick.id) ?? 0) + 1);
+                        manager.add(pick.factory(), ctx);
+                    }
                 }
             }
 
