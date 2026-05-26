@@ -681,7 +681,18 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         }
         
         // Ground
-        if (ball.y + ball.radius >= floorY && (gameMode === 'basketball' || ball.x <= getCupX() - (110*scale)/2 || ball.x >= getCupX() + (110*scale)/2)) {
+        // Outer floor — the safety net under the whole playfield. The
+        // skip-when-inside-cup only makes sense for a live throw, where the
+        // cup-wall block runs and its inner-cup floor catches the ball
+        // instead. Between throws (`!wasThrown`) the cup block is gated off,
+        // so the outer floor MUST fire unconditionally — otherwise a
+        // moving cup oscillating over a parked ball would skip both floors
+        // and let gravity drag the ball off-screen.
+        if (ball.y + ball.radius >= floorY && (
+                gameMode === 'basketball'
+                || !wasThrown
+                || ball.x <= getCupX() - (110*scale)/2
+                || ball.x >= getCupX() + (110*scale)/2)) {
             ball.y = floorY - ball.radius;
             ball.vy = -ball.vy * bounceFactor;
             ball.vx *= friction;
@@ -707,6 +718,16 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         } else if (ball.x - ball.radius < 0) {
             ball.x = ball.radius;
             if (ball.vx < 0) ball.vx = -ball.vx * bounceFactor;
+        }
+
+        // Hard safety floor — the ball can NEVER cross the playfield floor,
+        // regardless of which collision branch did or didn't fire. Without
+        // this, edge cases (cup engulfing a parked ball, inner-floor
+        // skipped while outer-floor was also skipped) could let gravity
+        // drag the ball off-screen.
+        if (ball.y + ball.radius > floorY) {
+            ball.y = floorY - ball.radius;
+            if (ball.vy > 0) ball.vy = 0;
         }
     }
     
