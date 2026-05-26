@@ -69,9 +69,15 @@ export default function Game() {
                     </div>
                 </div>
                 <div id="challenge-badge" hidden>
-                    <div class="challenge-title">MOVING TARGET</div>
-                    <div class="challenge-reward">Reward: <span>2X</span> points</div>
-                    <div class="challenge-sub" hidden></div>
+                    <div class="challenge-badge-content">
+                        <div class="challenge-title">MOVING TARGET</div>
+                        <div class="challenge-reward">Reward: <span>2X</span> points</div>
+                        <div class="challenge-sub" hidden></div>
+                    </div>
+                    <svg class="challenge-timer" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle class="challenge-timer-bg" cx="12" cy="12" r="9"/>
+                        <circle class="challenge-timer-arc" cx="12" cy="12" r="9"/>
+                    </svg>
                 </div>
             </div>
 

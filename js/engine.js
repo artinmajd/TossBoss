@@ -119,7 +119,33 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     // Hide-out animation timer — kept here so a quick hide→show doesn't
     // leave a stale timeout that nukes the freshly-shown badge.
     let challengeBadgeHideTimer = null;
-    gameCtx.showChallengeBadge = (title, reward, sub = '') => {
+    let challengeTimerRaf       = null;
+    const TIMER_CIRCUMFERENCE   = 56.55; // 2π × r(9) — matches CSS stroke-dasharray
+
+    function stopChallengeTimer() {
+        if (challengeTimerRaf) { cancelAnimationFrame(challengeTimerRaf); challengeTimerRaf = null; }
+    }
+
+    function startChallengeTimer(duration) {
+        stopChallengeTimer();
+        const arc = document.querySelector('.challenge-timer-arc');
+        if (!arc) return;
+        arc.style.strokeDashoffset = TIMER_CIRCUMFERENCE; // reset to empty
+        const startedAt = performance.now();
+        function tick() {
+            const elapsed  = (performance.now() - startedAt) / 1000;
+            const progress = Math.min(elapsed / duration, 1);
+            arc.style.strokeDashoffset = TIMER_CIRCUMFERENCE * (1 - progress);
+            // Shift stroke colour from gold → orange → red as time runs out
+            const hue = Math.round(45 - 45 * progress);  // 45 (gold) → 0 (red)
+            arc.style.stroke = `hsl(${hue}, 100%, 55%)`;
+            if (progress < 1) challengeTimerRaf = requestAnimationFrame(tick);
+            else challengeTimerRaf = null;
+        }
+        challengeTimerRaf = requestAnimationFrame(tick);
+    }
+
+    gameCtx.showChallengeBadge = (title, reward, sub = '', duration = 20) => {
         const el = document.getElementById('challenge-badge');
         if (!el) return;
         if (challengeBadgeHideTimer) {
@@ -135,11 +161,13 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         el.hidden = false;
         void el.offsetWidth;
         el.classList.add('visible');
+        startChallengeTimer(duration);
     };
     gameCtx.hideChallengeBadge = () => {
         const el = document.getElementById('challenge-badge');
         if (!el) return;
         el.classList.remove('visible');
+        stopChallengeTimer();
         // After the slide-out transition completes (matches CSS 0.5 s),
         // restore display: none so the element doesn't intercept hits.
         if (challengeBadgeHideTimer) clearTimeout(challengeBadgeHideTimer);
@@ -1715,6 +1743,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
     return function destroyGame() {
         cancelAnimationFrame(animationId);
+        stopChallengeTimer();
+        if (challengeBadgeHideTimer) { clearTimeout(challengeBadgeHideTimer); challengeBadgeHideTimer = null; }
         modifiers.clear(gameCtx);
         // Remove any extra heart elements that a challenge may have added.
         document.querySelectorAll('#heart-decor img:nth-child(n+3)').forEach(h => h.remove());
