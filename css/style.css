@@ -98,7 +98,6 @@ html, body {
         0 0 18px rgba(251, 191, 36, 0.45),
         0 0 48px rgba(251, 191, 36, 0.22);
     position: relative;
-    z-index: 1;   /* stay below #help-bubble (z-index: 20) when it opens */
     overflow: hidden;
     /* Hidden state: slid off-screen to the left, transparent.
        Transition timing matches the JS hide-timeout in engine.js. */
@@ -177,9 +176,6 @@ html, body {
 
 #help-bubble {
     display: none;
-    position: absolute;
-    top: calc(100% + 0.6rem);
-    left: 0;
     background: var(--surface-color);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -190,7 +186,6 @@ html, body {
     font-size: 0.82rem;
     color: var(--text-primary);
     white-space: nowrap;
-    z-index: 20;
     min-width: 220px;
 }
 

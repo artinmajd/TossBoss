@@ -27,33 +27,6 @@ export default function Game() {
                     <button id="btn-help" class="mode-btn" title="Help">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                     </button>
-                    <div id="help-bubble">
-                        <div class="help-section">
-                            <div class="help-title">Scoring</div>
-                            <div class="help-row"><span class="help-key">3 in a row</span><span>+2 per shot</span></div>
-                            <div class="help-row"><span class="help-key">6 in a row</span><span>+3 per shot</span></div>
-                            <div class="help-row"><span class="help-key">9, 12, 15…</span><span class="help-infinite">climbs forever</span></div>
-                            <div class="help-row"><span class="help-key">2 misses</span><span>score resets</span></div>
-                            <div class="help-row"><span class="help-key">miss on bonus</span><span>bonus lost, 2 chances</span></div>
-                        </div>
-                        <div class="help-divider"></div>
-                        <div class="help-section">
-                            <div class="help-row help-desktop-only"><span class="help-key"><kbd>Space</kbd></span><span>fast-forward</span></div>
-                            <div class="help-row help-mobile-only"><span class="help-key">Hold finger</span><span>fast-forward</span></div>
-                        </div>
-                        <div class="help-divider"></div>
-                        <div class="help-section">
-                            <div class="help-title">Challenges</div>
-                            <div class="help-row">
-                                <span class="help-key help-bh-label"><span class="help-bh-icon"></span>Black Hole</span>
-                                <span>throw ball in → challenge</span>
-                            </div>
-                            <div class="help-row">
-                                <span class="help-key">Challenge</span>
-                                <span>2× points &amp; a twist</span>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <div id="mode-bar">
                     <button id="mode-pingpong" class="mode-btn active" title="Ping Pong Mode">
@@ -64,6 +37,33 @@ export default function Game() {
                     </button>
                 </div>
               </div>
+                <div id="help-bubble">
+                    <div class="help-section">
+                        <div class="help-title">Scoring</div>
+                        <div class="help-row"><span class="help-key">3 in a row</span><span>+2 per shot</span></div>
+                        <div class="help-row"><span class="help-key">6 in a row</span><span>+3 per shot</span></div>
+                        <div class="help-row"><span class="help-key">9, 12, 15…</span><span class="help-infinite">climbs forever</span></div>
+                        <div class="help-row"><span class="help-key">2 misses</span><span>score resets</span></div>
+                        <div class="help-row"><span class="help-key">miss on bonus</span><span>bonus lost, 2 chances</span></div>
+                    </div>
+                    <div class="help-divider"></div>
+                    <div class="help-section">
+                        <div class="help-row help-desktop-only"><span class="help-key"><kbd>Space</kbd></span><span>fast-forward</span></div>
+                        <div class="help-row help-mobile-only"><span class="help-key">Hold finger</span><span>fast-forward</span></div>
+                    </div>
+                    <div class="help-divider"></div>
+                    <div class="help-section">
+                        <div class="help-title">Challenges</div>
+                        <div class="help-row">
+                            <span class="help-key help-bh-label"><span class="help-bh-icon"></span>Black Hole</span>
+                            <span>throw ball in → challenge</span>
+                        </div>
+                        <div class="help-row">
+                            <span class="help-key">Challenge</span>
+                            <span>2× points &amp; a twist</span>
+                        </div>
+                    </div>
+                </div>
                 <div id="challenge-badge" hidden>
                     <div class="challenge-title">MOVING TARGET</div>
                     <div class="challenge-reward">Reward: <span>2X</span> points</div>
