@@ -67,6 +67,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     let ballAbsorbed = false;   // a modifier (e.g. the black hole) has taken the ball:
                                 // physics is frozen, the engine skips drawing it, and
                                 // the modifier draws the absorption animation itself.
+    let ballInCupOffsetX = null; // pingpong: when the ball scores, the cup may keep
+                                // moving (Moving Target challenge). Storing the
+                                // ball-vs-cup X offset lets us slide the ball with
+                                // the cup so it doesn't get left behind in mid-air.
 
     // Return animation state
     let ballReturning = false;
@@ -238,9 +242,12 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         wasAboveRim = false;
         isDisqualified = false;
         ballAbsorbed = false;
+        ballInCupOffsetX = null;
     }
     
     function startReturn() {
+        // Release the cup-locked ball — the return arc flies it back home.
+        ballInCupOffsetX = null;
         const minX = ball.radius * 2;
         const maxX = width * 0.65;
         const targetX = minX + Math.random() * (maxX - minX);
@@ -431,6 +438,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // While the ball is absorbed by a modifier, the modifier owns its
         // position and visuals — the engine pauses its own simulation.
         if (ballAbsorbed) return;
+        // After a pingpong score, glue the ball's X to the cup so a moving
+        // cup (Moving Target challenge) doesn't slide out from under it.
+        if (ballInCupOffsetX !== null && gameMode === 'pingpong') {
+            ball.x = getCupX() + ballInCupOffsetX;
+        }
         if (ballReturning) {
             returnT = Math.min(returnT + dt / RETURN_DURATION, 1);
             // ease-out cubic — fast start, soft landing
@@ -506,6 +518,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                     if (!scoredThisThrow && ball.y > cupRimY + ball.radius * 0.8) {
                         scoredThisThrow = true;
                         wasThrown = false;
+                        // Lock the ball's X to the cup so it follows along if the
+                        // cup is moving (e.g. Moving Target challenge). The cup
+                        // doesn't move vertically, so Y physics continue normally.
+                        ballInCupOffsetX = ball.x - cupX;
                         handleScore();
                         setTimeout(startReturn, 1400);
                     }
