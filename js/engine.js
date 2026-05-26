@@ -1135,7 +1135,19 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
         if (bonusEl) {
             const bonus = Math.floor(consecutiveHits / 3);
-            bonusEl.textContent = bonus > 0 ? `(+${1 + bonus} per shot)` : '';
+            const mult  = gameCtx.scoreMultiplier || 1;
+            // Per-shot value reflects both the streak bonus AND any active
+            // challenge multiplier so the player always sees the real reward.
+            const perShot = Math.round((1 + bonus) * mult);
+            if (mult > 1 && bonus > 0) {
+                bonusEl.textContent = `(+${perShot} per shot · ${mult}X)`;
+            } else if (mult > 1) {
+                bonusEl.textContent = `(+${perShot} per shot · ${mult}X)`;
+            } else if (bonus > 0) {
+                bonusEl.textContent = `(+${perShot} per shot)`;
+            } else {
+                bonusEl.textContent = '';
+            }
         }
 
         if (bestStreakEl) {
@@ -1219,7 +1231,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         } else if (prevBonus > 0) {
             showToast(`+${points} 🔥`, 'bonus-score');
         } else {
-            showToast(`+1`, 'score');
+            // Show the actual awarded points (reflects an active multiplier).
+            showToast(`+${points}`, 'score');
         }
 
         updateLives();   // a successful shot restores any lost chance
@@ -1380,6 +1393,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     // physics ticks so motion stays smooth on high-refresh (90/120Hz) screens.
     let accumulator = 0;
     let lastTime = 0;
+    let lastScoreMultiplier = 1;
     const prevBall = { x: ball.x, y: ball.y };
 
     animate = function(timestamp) {
@@ -1389,6 +1403,14 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         lastTime = timestamp;
         // A hitch or a backgrounded tab must not fast-forward the simulation.
         if (frameTime > 0.25) frameTime = 0.25;
+
+        // Refresh the score box whenever a modifier flips the multiplier
+        // (challenge activates / ends) so the "per shot · 2X" label is live
+        // without waiting for the next score event.
+        if (gameCtx.scoreMultiplier !== lastScoreMultiplier) {
+            lastScoreMultiplier = gameCtx.scoreMultiplier;
+            updateScoreDisplay();
+        }
 
         // Holding space / touch fast-forwards by feeding the accumulator faster.
         const fastForward = (isSpaceDown || isTouchHeld) && !isResting && !isAiming;
