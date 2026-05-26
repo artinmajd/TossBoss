@@ -480,8 +480,12 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         
         ball.x += ball.vx * dt;
         ball.y += ball.vy * dt;
-        
-        if (gameMode === 'pingpong') {
+
+        // Cup collisions only matter for a live throw. Between throws
+        // (wasThrown === false, after a miss or a score's startReturn) the
+        // ball sits idle — a moving cup must pass over it without dragging
+        // or trapping it against the wall.
+        if (gameMode === 'pingpong' && wasThrown) {
             const cupWidthTop = 110 * scale;
             const cupWidthBottom = 70 * scale;
             const cupHeight = 130 * scale;
