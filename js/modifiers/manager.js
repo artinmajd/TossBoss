@@ -67,6 +67,20 @@ export function createModifierManager() {
             }
         },
 
+        // Collect aim-line blocking shapes from all active modifiers.
+        // Calls optional getAimBlocker(ctx) on each modifier; returns
+        // an array of { x, y, r } circles to exclude from the drawn path.
+        getAimBlockers(ctx) {
+            const result = [];
+            for (const m of active) {
+                try {
+                    const b = m.getAimBlocker?.(ctx);
+                    if (b) result.push(b);
+                } catch (e) { console.error(`[modifier ${m.id}] getAimBlocker threw:`, e); }
+            }
+            return result;
+        },
+
         // Deactivate everything (game reset / teardown).
         clear(ctx) {
             for (const m of [...active]) m.onDeactivate?.(ctx);

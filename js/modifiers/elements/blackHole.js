@@ -114,6 +114,13 @@ export default function blackHole() {
             }
         },
 
+        // Returns a { x, y, r } circle for aim-line masking, or null when invisible.
+        getAimBlocker() {
+            const s = animScale();
+            if (s <= 0.001) return null;
+            return { x, y, r: radius * s };
+        },
+
         // Manager removes the modifier when this returns true.
         isExpired() {
             if (consumed) return consumedT() > ABSORB + POST_HOLD + SHRINK;

@@ -1011,11 +1011,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         if (isAiming) {
             let dx = aimStart.x - aimCurrent.x;
             let dy = aimStart.y - aimCurrent.y;
-            
+
             const powerMultiplier = 8;
             let simVx = dx * powerMultiplier;
             let simVy = dy * powerMultiplier;
-            
+
             const speed = Math.hypot(simVx, simVy);
             const maxSpeed = 4000;
             if (speed > maxSpeed) {
@@ -1024,23 +1024,63 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                 dx = simVx / powerMultiplier;
                 dy = simVy / powerMultiplier;
             }
-            
+
+            // Compute blocking regions for this frame
+            const aimCircleBlockers = modifiers.getAimBlockers(gameCtx);
+            const aimTs = gameCtx.targetScale ?? 1;
+            let aimCupRimY = 0, aimCupH = 0, aimCwTop = 0, aimCwBot = 0, aimCupX = 0;
+            let aimRimLeft = 0, aimRimRight = 0, aimRimY = 0, aimRimThick = 0;
+            if (gameMode === 'pingpong') {
+                aimCwTop   = 110 * scale * aimTs;
+                aimCwBot   = 70  * scale * aimTs;
+                aimCupH    = 130 * scale * aimTs;
+                aimCupX    = getCupX();
+                aimCupRimY = floorY - aimCupH;
+            } else {
+                let hoopW = 140 * scale * aimTs;
+                if (hoopImg.complete && hoopImg.naturalHeight !== 0) {
+                    const S = (320 * scale * aimTs) / hoopImg.naturalHeight;
+                    hoopW = (874 - 169) * S;
+                }
+                aimRimY     = getHoopRimY();
+                aimRimThick = 12 * scale;
+                aimRimLeft  = width - hoopW;
+                aimRimRight = width;
+            }
+
+            const isAimBlocked = (px, py) => {
+                if (gameMode === 'pingpong') {
+                    if (py >= aimCupRimY && py <= floorY) {
+                        const t = (py - aimCupRimY) / aimCupH;
+                        const halfW = aimCwTop / 2 * (1 - t) + aimCwBot / 2 * t;
+                        if (px > aimCupX - halfW && px < aimCupX + halfW) return true;
+                    }
+                } else {
+                    if (py >= aimRimY - aimRimThick && py <= aimRimY + aimRimThick &&
+                        px >= aimRimLeft && px <= aimRimRight) return true;
+                }
+                for (const b of aimCircleBlockers) {
+                    if (Math.hypot(px - b.x, py - b.y) < b.r) return true;
+                }
+                return false;
+            };
+
             let simX = ball.x;
             let simY = ball.y;
-            
+
             // Forward prediction
             ctx.beginPath();
             ctx.moveTo(simX, simY);
-            
-            const predictionSteps = 30; 
+
+            const predictionSteps = 30;
             for(let i = 0; i < predictionSteps; i++) {
                 simVy += gravity * pixelsPerMeter * dt;
                 simVx *= airResistance;
                 simVy *= airResistance;
-                
+
                 simX += simVx * dt;
                 simY += simVy * dt;
-                
+
                 if (simY + ball.radius >= floorY) {
                     simY = floorY - ball.radius;
                     simVy = -simVy * bounceFactor;
@@ -1057,11 +1097,15 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                     simX = ball.radius;
                     simVx = -simVx * bounceFactor;
                 }
-                
-                ctx.lineTo(simX, simY);
+
+                if (isAimBlocked(simX, simY)) {
+                    ctx.moveTo(simX, simY);
+                } else {
+                    ctx.lineTo(simX, simY);
+                }
             }
-            
-            ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)'; 
+
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
             ctx.lineWidth = 3;
             ctx.setLineDash([8, 8]);
             ctx.stroke();
