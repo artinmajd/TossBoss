@@ -53,6 +53,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     // Game state
     let score = 0;
     let highScores = { pingpong: initialData.pingpong.score, basketball: initialData.basketball.score };
+
+    // New-High-Score celebration state
+    let nhsStartTime = null;   // performance.now() when celebration began; null = inactive
+    let nhsParticles = null;   // confetti array — null means needs re-init
     let bestStreaks = { pingpong: initialData.pingpong.bestStreak, basketball: initialData.basketball.bestStreak };
     let consecutiveHits = 0;
     let consecutiveMisses = 0;
@@ -340,6 +344,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         gameCtx.targetOffset.x    = 0;
         gameCtx.targetOffset.y    = 0;
         prevCupX = null;
+        nhsStartTime = null;
+        nhsParticles = null;
     }
 
 
@@ -1364,6 +1370,94 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // coordinates, before the letterbox mask is applied on top.
         modifiers.draw(gameCtx);
 
+        // ── New High Score celebration ──────────────────────────────────────
+        if (nhsStartTime !== null) {
+            const nhsElapsed = (performance.now() - nhsStartTime) / 1000;
+            const NHS_DUR    = 3.5;
+
+            if (nhsElapsed >= NHS_DUR) {
+                nhsStartTime = null;
+                nhsParticles = null;
+            } else {
+                // Lazy-init confetti particles once per trigger
+                if (nhsParticles === null) {
+                    const cx = width / 2, cy = height * 0.15;
+                    const cols = ['#fbbf24','#38bdf8','#f472b6','#34d399','#a78bfa','#fb923c','#f8fafc'];
+                    nhsParticles = Array.from({ length: 72 }, (_, i) => {
+                        const angle = (Math.PI * 2 * i / 72) + (Math.random() - 0.5) * 0.5;
+                        const spd   = (180 + Math.random() * 380) * scale;
+                        return {
+                            x0: cx + (Math.random() - 0.5) * 24 * scale,
+                            y0: cy,
+                            vx: Math.cos(angle) * spd,
+                            vy: Math.sin(angle) * spd - 100 * scale,
+                            color: cols[i % cols.length],
+                            size: (2.5 + Math.random() * 3) * scale,
+                            rect: Math.random() < 0.5,
+                            rotSpeed: (Math.random() - 0.5) * 12,
+                            delay: Math.random() * 0.28,
+                        };
+                    });
+                }
+
+                // Fade in → hold → fade out
+                const nhsAlpha =
+                    nhsElapsed < 0.2  ? nhsElapsed / 0.2 :
+                    nhsElapsed < 3.0  ? 1 :
+                    Math.max(0, 1 - (nhsElapsed - 3.0) / 0.5);
+
+                // Confetti / firework particles
+                const grav = 500 * scale;
+                for (const p of nhsParticles) {
+                    const t = nhsElapsed - p.delay;
+                    if (t <= 0) continue;
+                    const px = p.x0 + p.vx * t;
+                    const py = p.y0 + p.vy * t + 0.5 * grav * t * t;
+                    const pa = Math.max(0, 1 - t / 2.8) * nhsAlpha;
+                    if (pa < 0.02) continue;
+                    ctx.save();
+                    ctx.globalAlpha = pa;
+                    ctx.fillStyle   = p.color;
+                    ctx.translate(px, py);
+                    ctx.rotate(p.rotSpeed * t);
+                    if (p.rect) {
+                        ctx.fillRect(-p.size * 0.5, -p.size * 1.6, p.size, p.size * 3.2);
+                    } else {
+                        ctx.beginPath();
+                        ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                }
+
+                // "NEW HIGH SCORE!" text — Orbitron, gold, pulsing glow
+                const nhsX    = width / 2;
+                const nhsY    = height * 0.14;
+                const nhsSize = Math.max(20, Math.round(44 * scale));
+                const nhsPulse = 1 + 0.04 * Math.sin(nhsElapsed * 9);
+
+                ctx.save();
+                ctx.globalAlpha  = nhsAlpha;
+                ctx.textAlign    = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = `900 ${Math.round(nhsSize * nhsPulse)}px 'Orbitron', sans-serif`;
+
+                // Diffuse outer glow
+                ctx.shadowColor = '#fbbf24';
+                ctx.shadowBlur  = 40 * scale;
+                ctx.fillStyle   = '#fff8e1';
+                ctx.fillText('NEW HIGH SCORE!', nhsX, nhsY);
+
+                // Crisp gold fill on top
+                ctx.shadowColor = '#f59e0b';
+                ctx.shadowBlur  = 14 * scale;
+                ctx.fillStyle   = '#fbbf24';
+                ctx.fillText('NEW HIGH SCORE!', nhsX, nhsY);
+
+                ctx.restore();
+            }
+        }
+
         // Mask the letterbox margins so the playfield reads as a framed
         // screen. No-op on touch devices, where there are no margins.
         if (viewOffsetX > 0.5 || viewOffsetY > 0.5) {
@@ -1486,12 +1580,18 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         const newBonus = Math.floor(consecutiveHits / 3);
 
         const streakImproved = consecutiveHits > bestStreaks[gameMode];
-        const scoreImproved = score > highScores[gameMode];
+        const scoreImproved  = score > highScores[gameMode];
+        const oldHighScore   = highScores[gameMode];
         if (streakImproved) bestStreaks[gameMode] = consecutiveHits;
-        if (scoreImproved) highScores[gameMode] = score;
+        if (scoreImproved)  highScores[gameMode]  = score;
         // Test-user scores are kept off the leaderboard.
         if ((streakImproved || scoreImproved) && !gameCtx.tester) {
             saveHighScore(gameMode, highScores[gameMode], bestStreaks[gameMode]);
+        }
+        // Celebrate when an existing record is beaten.
+        if (scoreImproved && oldHighScore > 0) {
+            nhsStartTime = performance.now();
+            nhsParticles = null;
         }
 
         // Flash score box
@@ -1745,6 +1845,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         cancelAnimationFrame(animationId);
         stopChallengeTimer();
         if (challengeBadgeHideTimer) { clearTimeout(challengeBadgeHideTimer); challengeBadgeHideTimer = null; }
+        nhsStartTime = null;
+        nhsParticles = null;
         modifiers.clear(gameCtx);
         // Remove any extra heart elements that a challenge may have added.
         document.querySelectorAll('#heart-decor img:nth-child(n+3)').forEach(h => h.remove());
