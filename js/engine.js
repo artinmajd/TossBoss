@@ -71,6 +71,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                                 // moving (Moving Target challenge). Storing the
                                 // ball-vs-cup X offset lets us slide the ball with
                                 // the cup so it doesn't get left behind in mid-air.
+    let prevCupX = null;        // cupX from the previous physics tick — used by the
+                                // cup-wall collision code to tell whether the cup
+                                // is APPROACHING the ball (push it) or RETREATING
+                                // (don't drag it).
 
     // Return animation state
     let ballReturning = false;
@@ -142,6 +146,49 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             if (!el.classList.contains('visible')) el.hidden = true;
             challengeBadgeHideTimer = null;
         }, 520);
+    };
+
+    // Draws the ball at an arbitrary position and radius using the current
+    // game-mode appearance. Used by modifiers (e.g. black hole absorption).
+    gameCtx.drawBall = (bx, by, br) => {
+        const c = ctx;
+        c.save();
+        c.translate(bx, by);
+        c.rotate(bx / br);
+        if (gameMode === 'pingpong') {
+            c.beginPath();
+            c.arc(0, 0, br, 0, Math.PI * 2);
+            c.fillStyle = '#f8fafc';
+            c.fill();
+            const g = c.createRadialGradient(-br * 0.35, -br * 0.35, br * 0.1, 0, 0, br);
+            g.addColorStop(0, 'rgba(255,255,255,1)');
+            g.addColorStop(0.6, 'rgba(226,232,240,0.8)');
+            g.addColorStop(1, 'rgba(100,116,139,0.9)');
+            c.beginPath();
+            c.arc(0, 0, br, 0, Math.PI * 2);
+            c.fillStyle = g;
+            c.fill();
+        } else {
+            if (basketballImg.complete && basketballImg.naturalHeight !== 0) {
+                c.beginPath();
+                c.arc(0, 0, br, 0, Math.PI * 2);
+                c.clip();
+                const ri = br * 1.05;
+                c.drawImage(basketballImg, -ri, -ri, ri * 2, ri * 2);
+                const g = c.createRadialGradient(-br * 0.35, -br * 0.35, br * 0.1, 0, 0, br);
+                g.addColorStop(0, 'rgba(255,255,255,0.4)');
+                g.addColorStop(0.6, 'rgba(255,255,255,0)');
+                g.addColorStop(1, 'rgba(0,0,0,0.25)');
+                c.fillStyle = g;
+                c.fill();
+            } else {
+                c.beginPath();
+                c.arc(0, 0, br, 0, Math.PI * 2);
+                c.fillStyle = '#ea580c';
+                c.fill();
+            }
+        }
+        c.restore();
     };
 
     // Live cup/hoop positions — fold in gameCtx.targetOffset so modifiers like
@@ -234,6 +281,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         gameCtx.scoreMultiplier   = 1;
         gameCtx.targetOffset.x    = 0;
         gameCtx.targetOffset.y    = 0;
+        prevCupX = null;
     }
 
 
@@ -253,6 +301,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         isDisqualified = false;
         ballAbsorbed = false;
         ballInCupOffsetX = null;
+        // Drop the stale cup-velocity baseline — any frames that were
+        // skipped while ballAbsorbed was true would otherwise show up as a
+        // huge spurious cupDx on the first resumed physics tick.
+        prevCupX = null;
     }
     
     function startReturn() {
@@ -481,11 +533,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         ball.x += ball.vx * dt;
         ball.y += ball.vy * dt;
 
-        // Cup collisions only matter for a live throw. Between throws
-        // (wasThrown === false, after a miss or a score's startReturn) the
-        // ball sits idle — a moving cup must pass over it without dragging
-        // or trapping it against the wall.
-        if (gameMode === 'pingpong' && wasThrown) {
+        if (gameMode === 'pingpong') {
             const cupWidthTop = 110 * scale;
             const cupWidthBottom = 70 * scale;
             const cupHeight = 130 * scale;
@@ -494,6 +542,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             const cupRimY = cupY - cupHeight;
             const cupLeftRim = cupX - cupWidthTop / 2;
             const cupRightRim = cupX + cupWidthTop / 2;
+            // Cup wall velocity per tick (in playfield px). Positive = cup
+            // moving right, negative = cup moving left, ~0 = stationary.
+            const cupDx = prevCupX === null ? 0 : cupX - prevCupX;
 
             const distLeftRim = Math.hypot(ball.x - cupLeftRim, ball.y - cupRimY);
             const distRightRim = Math.hypot(ball.x - cupRightRim, ball.y - cupRimY);
@@ -548,12 +599,17 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                         handleScore();
                         setTimeout(startReturn, 1400);
                     }
-                    
-                    if (ball.x - ball.radius < wallLeftX) {
+
+                    // Inner-wall side pushes — only fire when the ball is
+                    // actually moving into the wall. A stationary ball that
+                    // the cup happens to envelop (Moving Target challenge)
+                    // would otherwise be dragged along with the wall.
+                    const innerPushTol = 1;   // px/sec — ignore numerical noise
+                    if (ball.x - ball.radius < wallLeftX && ball.vx < -innerPushTol) {
                         ball.x = wallLeftX + ball.radius;
                         ball.vx = Math.abs(ball.vx) * 0.5;
                     }
-                    if (ball.x + ball.radius > wallRightX) {
+                    if (ball.x + ball.radius > wallRightX && ball.vx > innerPushTol) {
                         ball.x = wallRightX - ball.radius;
                         ball.vx = -Math.abs(ball.vx) * 0.5;
                     }
@@ -570,15 +626,41 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                         }
                     }
                 } else {
+                    // OUTSIDE the cup walls — push the ball away ONLY if the
+                    // overlap is growing (cup wall moving into ball OR ball
+                    // moving into wall). If the cup is retreating and the
+                    // ball is stationary, the overlap is shrinking — don't
+                    // touch the ball, otherwise it would be dragged along
+                    // with the wall.
+                    //
+                    // Overlap growth rate per tick on the right side:
+                    //   d/dt[wallRightX − (ball.x − ball.r)] = cupDx − ball.vx · dt
+                    // (and similarly mirrored for the left side). A small
+                    // tolerance keeps a frame's worth of noise from drifting
+                    // the ball.
+                    const ballDx = ball.vx * dt;
+                    const APPROACH_TOL = 0.05;
+
                     if (ball.x + ball.radius > wallLeftX && ball.x < cupX) {
-                        ball.x = wallLeftX - ball.radius;
-                        ball.vx = -Math.abs(ball.vx) * bounceFactor;
+                        // Left outer wall: overlap grows when ball moves
+                        // right faster than the wall (cupDx) — i.e. ballDx > cupDx.
+                        if (ballDx - cupDx > APPROACH_TOL) {
+                            ball.x = wallLeftX - ball.radius;
+                            ball.vx = -Math.abs(ball.vx) * bounceFactor;
+                        }
                     } else if (ball.x - ball.radius < wallRightX && ball.x > cupX) {
-                        ball.x = wallRightX + ball.radius;
-                        ball.vx = Math.abs(ball.vx) * bounceFactor;
+                        // Right outer wall: overlap grows when the wall
+                        // moves right faster than the ball — cupDx > ballDx.
+                        if (cupDx - ballDx > APPROACH_TOL) {
+                            ball.x = wallRightX + ball.radius;
+                            ball.vx = Math.abs(ball.vx) * bounceFactor;
+                        }
                     }
                 }
             }
+            // Remember this tick's cupX so the next tick can tell which way
+            // the cup is moving (used for the direction-aware push above).
+            prevCupX = cupX;
         } else if (gameMode === 'basketball') {
             let hoopWidth = 140 * scale;
             const hoopRimY = getHoopRimY();
@@ -681,16 +763,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         }
         
         // Ground
-        // Outer floor — the safety net under the whole playfield. The
-        // skip-when-inside-cup only makes sense for a live throw, where the
-        // cup-wall block runs and its inner-cup floor catches the ball
-        // instead. Between throws (`!wasThrown`) the cup block is gated off,
-        // so the outer floor MUST fire unconditionally — otherwise a
-        // moving cup oscillating over a parked ball would skip both floors
-        // and let gravity drag the ball off-screen.
+        // Outer floor — the safety net under the whole playfield. Skip
+        // when the ball sits inside the cup's footprint so the gentler
+        // inner-cup floor (in the cup-wall block above) handles it.
         if (ball.y + ball.radius >= floorY && (
                 gameMode === 'basketball'
-                || !wasThrown
                 || ball.x <= getCupX() - (110*scale)/2
                 || ball.x >= getCupX() + (110*scale)/2)) {
             ball.y = floorY - ball.radius;
@@ -941,9 +1018,13 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             ctx.fill();
         }
         
+        // Ball is invisible while resting inside the cup (scored but return
+        // arc not yet started). The return arc itself IS the respawn animation.
+        const ballInCup = gameMode === 'pingpong' && scoredThisThrow && !ballReturning;
+
         // Shadow
         const isOverCup = gameMode === 'pingpong' && ball.x > getCupX() - (110*scale)/2 && ball.x < getCupX() + (110*scale)/2;
-        if (ball.y < floorY + 50 && !isOverCup) {
+        if (!ballInCup && ball.y < floorY + 50 && !isOverCup) {
             const distToGround = Math.max(0, floorY - ball.y);
             const shadowScale = Math.max(0, 1 - distToGround / 200);
             const shadowWidth = ball.radius * 0.9 * shadowScale;
@@ -983,9 +1064,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             ballClipped = true;
         }
 
-        // Draw ball — skipped while a modifier owns it (e.g. the black hole
-        // is running its absorption animation and drawing the ball itself).
-        if (ballAbsorbed) {
+        // Draw ball — skipped while a modifier owns it, or while the ball is
+        // resting inside the cup waiting for the return arc (ballInCup).
+        if (ballAbsorbed || ballInCup) {
             if (ballClipped) ctx.restore();
             // continue past the ball draw entirely
         } else {

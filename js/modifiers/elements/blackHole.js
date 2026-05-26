@@ -134,28 +134,17 @@ export default function blackHole() {
             c.shadowColor = '#ff1a3c';
             c.shadowBlur = 28 * s;
             c.translate(x, y);
-
-            // Absorption: draw the shrinking ball in WORLD space (before
-            // the swirl-rotate transform) so it doesn't spin with the
-            // image. Local (0,0) is the hole's center, so the ball lerps
-            // from (ballStart - hole) to (0, 0).
-            if (consumed && consumedT() < ABSORB) {
-                const p  = smoothstep(consumedT() / ABSORB);
-                const bx = (ballStart.x - x) * (1 - p);
-                const by = (ballStart.y - y) * (1 - p);
-                const br = ballR0 * (1 - p);
-                c.save();
-                c.globalAlpha = 1;
-                c.shadowBlur = 0;
-                c.fillStyle = '#f8fafc';
-                c.beginPath();
-                c.arc(bx, by, br, 0, Math.PI * 2);
-                c.fill();
-                c.restore();
-            }
-
             c.rotate(time * 1.8);              // swirl rate
             c.drawImage(sprite, -r, -r, r * 2, r * 2);
+
+            // Black void in the centre to punch through the sprite and make
+            // the hole look deeper. Remove this block to revert to the plain sprite.
+            c.shadowBlur = 0;
+            c.globalAlpha = 1;
+            c.fillStyle = '#000000';
+            c.beginPath();
+            c.arc(0, 0, r * 0.62, 0, Math.PI * 2);
+            c.fill();
 
             // "CHALLENGE" curved along the arc and spinning with the hole.
             const fontSize = Math.max(7, r * 0.34);
@@ -186,6 +175,16 @@ export default function blackHole() {
             }
 
             c.restore();
+
+            // Draw the shrinking ball on top of the hole sprite, in world
+            // coordinates so it doesn't spin with the swirl image.
+            if (consumed && consumedT() < ABSORB) {
+                const p  = smoothstep(consumedT() / ABSORB);
+                const bx = ballStart.x * (1 - p) + x * p;
+                const by = ballStart.y * (1 - p) + y * p;
+                const br = ballR0 * (1 - p);
+                ctx.drawBall(bx, by, br);
+            }
         },
     };
 }

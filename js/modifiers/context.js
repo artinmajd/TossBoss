@@ -38,5 +38,6 @@ export function createGameContext({ ball, ctx2d, tester = null }) {
         resetBallToStart: () => {},
         showChallengeBadge: (_title, _reward) => {},
         hideChallengeBadge: () => {},
+        drawBall: (_x, _y, _radius) => {},
     };
 }
