@@ -1659,7 +1659,6 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             score = 0;
             consecutiveMisses = 0;
             nhsCelebratedThisRun = false;
-            nhsRunStartHighScore = highScores[gameMode];
             if (!wasZero) showToast('💥 RESET!', 'reset');
             if (!wasZero && box) {
                 box.classList.remove('flash-reset');
