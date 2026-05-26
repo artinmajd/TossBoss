@@ -59,9 +59,11 @@ export default function blackHole() {
     }
 
     // Random spot on the playfield, clear of the active target (cup / hoop).
+    // Y range is kept in the upper half so the hole never appears right
+    // above the floor — it must feel like a sky-borne obstacle, not a puddle.
     function pickSpot(ctx) {
-        const minX = ctx.width * 0.12, maxX = ctx.width * 0.90;
-        const minY = ctx.height * 0.20, maxY = ctx.height * 0.78;
+        const minX = ctx.width  * 0.12, maxX = ctx.width  * 0.90;
+        const minY = ctx.height * 0.15, maxY = ctx.height * 0.55;
         const t = ctx.target;
         const clear = (t ? t.r : 0) + radius + 10;
         for (let i = 0; i < 50; i++) {
@@ -69,7 +71,7 @@ export default function blackHole() {
             const py = minY + Math.random() * (maxY - minY);
             if (!t || Math.hypot(px - t.x, py - t.y) > clear) return { x: px, y: py };
         }
-        return { x: ctx.width * 0.3, y: ctx.height * 0.5 };
+        return { x: ctx.width * 0.3, y: ctx.height * 0.4 };
     }
 
     function smoothstep(t) {
