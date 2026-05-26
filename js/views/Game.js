@@ -56,7 +56,11 @@ export default function Game() {
                         <div class="help-title">Challenges</div>
                         <div class="help-row">
                             <span class="help-key help-bh-label"><span class="help-bh-icon"></span>Black Hole</span>
-                            <span>throw ball in → challenge</span>
+                            <span>appears every 10 throws</span>
+                        </div>
+                        <div class="help-row">
+                            <span class="help-key">To trigger</span>
+                            <span>throw the ball into it</span>
                         </div>
                         <div class="help-row">
                             <span class="help-key">Each time</span>

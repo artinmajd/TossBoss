@@ -187,6 +187,10 @@ html, body {
     color: var(--text-primary);
     white-space: nowrap;
     min-width: 220px;
+    max-height: 55vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
 }
 
 #help-bubble.visible {
