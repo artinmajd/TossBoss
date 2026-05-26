@@ -107,18 +107,37 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         ballAbsorbed = false;
         resetBall();
     };
+    // Hide-out animation timer — kept here so a quick hide→show doesn't
+    // leave a stale timeout that nukes the freshly-shown badge.
+    let challengeBadgeHideTimer = null;
     gameCtx.showChallengeBadge = (title, reward) => {
         const el = document.getElementById('challenge-badge');
         if (!el) return;
+        if (challengeBadgeHideTimer) {
+            clearTimeout(challengeBadgeHideTimer);
+            challengeBadgeHideTimer = null;
+        }
         const t = el.querySelector('.challenge-title');
         const r = el.querySelector('.challenge-reward span');
         if (t) t.textContent = title;
         if (r) r.textContent = reward;
         el.hidden = false;
+        // Force a reflow so the transition kicks off from the off-screen
+        // hidden state instead of snapping straight to .visible.
+        void el.offsetWidth;
+        el.classList.add('visible');
     };
     gameCtx.hideChallengeBadge = () => {
         const el = document.getElementById('challenge-badge');
-        if (el) el.hidden = true;
+        if (!el) return;
+        el.classList.remove('visible');
+        // After the slide-out transition completes (matches CSS 0.5 s),
+        // restore display: none so the element doesn't intercept hits.
+        if (challengeBadgeHideTimer) clearTimeout(challengeBadgeHideTimer);
+        challengeBadgeHideTimer = setTimeout(() => {
+            if (!el.classList.contains('visible')) el.hidden = true;
+            challengeBadgeHideTimer = null;
+        }, 520);
     };
 
     // Live cup/hoop positions — fold in gameCtx.targetOffset so modifiers like
