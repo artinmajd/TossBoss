@@ -55,9 +55,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     let highScores = { pingpong: initialData.pingpong.score, basketball: initialData.basketball.score };
 
     // New-High-Score celebration state
-    let nhsStartTime        = null;   // performance.now() when celebration began; null = inactive
-    let nhsParticles        = null;   // confetti array — null means needs re-init
-    let nhsCelebratedThisRun = false; // true once we've fired the celebration; reset when score resets
+    let nhsStartTime         = null;   // performance.now() when celebration began; null = inactive
+    let nhsParticles         = null;   // confetti array — null means needs re-init
+    let nhsCelebratedThisRun = false;  // true once we've fired the celebration; reset when score resets
+    let nhsRunStartHighScore = 0;      // high score at the start of this run; never updated mid-run
     let bestStreaks = { pingpong: initialData.pingpong.bestStreak, basketball: initialData.basketball.bestStreak };
     let consecutiveHits = 0;
     let consecutiveMisses = 0;
@@ -302,6 +303,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         
         gameMode = mode;
         score = 0;
+        nhsRunStartHighScore = highScores[mode];
         scoredThisThrow = false;
         consecutiveHits = 0;
         consecutiveMisses = 0;
@@ -1593,7 +1595,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             saveHighScore(gameMode, highScores[gameMode], bestStreaks[gameMode]);
         }
         // Celebrate once when an existing record is first beaten this run.
-        if (scoreImproved && oldHighScore > 0 && !nhsCelebratedThisRun) {
+        if (scoreImproved && nhsRunStartHighScore > 0 && !nhsCelebratedThisRun) {
             nhsCelebratedThisRun = true;
             nhsStartTime = performance.now();
             nhsParticles = null;
@@ -1657,6 +1659,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             score = 0;
             consecutiveMisses = 0;
             nhsCelebratedThisRun = false;
+            nhsRunStartHighScore = highScores[gameMode];
             if (!wasZero) showToast('💥 RESET!', 'reset');
             if (!wasZero && box) {
                 box.classList.remove('flash-reset');
