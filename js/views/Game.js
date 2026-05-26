@@ -41,6 +41,18 @@ export default function Game() {
                             <div class="help-row help-desktop-only"><span class="help-key"><kbd>Space</kbd></span><span>fast-forward</span></div>
                             <div class="help-row help-mobile-only"><span class="help-key">Hold finger</span><span>fast-forward</span></div>
                         </div>
+                        <div class="help-divider"></div>
+                        <div class="help-section">
+                            <div class="help-title">Challenges</div>
+                            <div class="help-row">
+                                <span class="help-key help-bh-label"><span class="help-bh-icon"></span>Black Hole</span>
+                                <span>throw ball in → challenge</span>
+                            </div>
+                            <div class="help-row">
+                                <span class="help-key">Challenge</span>
+                                <span>2× points &amp; a twist</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div id="mode-bar">
