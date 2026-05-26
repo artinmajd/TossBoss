@@ -113,24 +113,30 @@ export default function movingTarget() {
 
                 const ballLeftEdge  = ctx.ball.x - ctx.ball.radius;
                 const ballRightEdge = ctx.ball.x + ctx.ball.radius;
-                // 0.5 px tolerance — large enough that a cup that just
-                // retreated by one tick's worth of motion (~3 px/tick at
-                // peak velocity) won't re-trigger; small enough that an
-                // actual contact registers.
                 const TOL = 0.5;
 
-                // Right trap: ball pinned at right wall, cup touching it
-                // from the left. Clamp the swing so the cup never crosses
-                // the ball's left edge, AND reflect the phase so the next
-                // tick already moves the cup leftward.
-                if (ballRightEdge >= ctx.width - 1 && cupRight >= ballLeftEdge - TOL) {
+                // Direction the cup is currently swinging. For position
+                // -amp · sin(θ), velocity has the sign of -cos(θ): so
+                // cos(θ) < 0 ⇒ moving right, cos(θ) > 0 ⇒ moving left.
+                // Gating each trap by direction guarantees we never reflect
+                // twice in a row — after a reflection cos flips sign and
+                // the trap can't re-fire until the cup actually returns
+                // (next half-cycle), which keeps the swing visually smooth
+                // even at high framerates.
+                const cosPhase = Math.cos((2 * Math.PI * phaseT) / PERIOD);
+                const movingRight = cosPhase < 0;
+                const movingLeft  = cosPhase > 0;
+
+                // Right trap: ball pinned at right wall AND cup moving
+                // into it. Clamp the swing so the cup doesn't penetrate
+                // the ball, then reflect phase so the cup leaves immediately.
+                if (movingRight && ballRightEdge >= ctx.width - 1 && cupRight >= ballLeftEdge - TOL) {
                     const maxSwing = (ballLeftEdge - halfTop) - homeX;
                     if (swing > maxSwing) swing = maxSwing;
                     phaseT = reflectPhase(phaseT);
                 }
-                // Left trap: symmetric. Unlikely with the cup's home X near
-                // the right side, but covered for completeness.
-                else if (ballLeftEdge <= 1 && cupLeft <= ballRightEdge + TOL) {
+                // Left trap: symmetric.
+                else if (movingLeft && ballLeftEdge <= 1 && cupLeft <= ballRightEdge + TOL) {
                     const minSwing = (ballRightEdge + halfTop) - homeX;
                     if (swing < minSwing) swing = minSwing;
                     phaseT = reflectPhase(phaseT);
