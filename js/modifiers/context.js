@@ -29,15 +29,19 @@ export function createGameContext({ ball, ctx2d, tester = null }) {
 
         // --- modifier-writable fields (engine reads these) ---
         targetOffset: { x: 0, y: 0 }, // added to cup X / hoop Y for moving-target challenge
+        targetScale: 1,               // multiplied into cup/hoop dimensions; 1 = normal size
         scoreMultiplier: 1,           // points are multiplied by this in handleScore
+        extraLives: 0,                // extra lives granted by a challenge (added on top of the base 2)
         blackHoleConsumed: false,     // black hole sets this when the ball is absorbed;
                                       // director consumes it to spawn a challenge
 
         // --- action methods (engine wires real implementations in initGame) ---
         absorbBall: () => {},
         resetBallToStart: () => {},
-        showChallengeBadge: (_title, _reward) => {},
+        showChallengeBadge: (_title, _reward, _sub) => {},
         hideChallengeBadge: () => {},
         drawBall: (_x, _y, _radius) => {},
+        addExtraLife: () => {},
+        removeExtraLife: () => {},
     };
 }

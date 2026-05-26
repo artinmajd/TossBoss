@@ -63,6 +63,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     let isTouchHeld = false;
     let isBehindNet = false;
     let wasAboveRim = false;
+    let wasAboveCupRim = false;   // pingpong: ball must clear the rim before scoring
     let isDisqualified = false;
     let ballAbsorbed = false;   // a modifier (e.g. the black hole) has taken the ball:
                                 // physics is frozen, the engine skips drawing it, and
@@ -118,7 +119,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     // Hide-out animation timer — kept here so a quick hide→show doesn't
     // leave a stale timeout that nukes the freshly-shown badge.
     let challengeBadgeHideTimer = null;
-    gameCtx.showChallengeBadge = (title, reward) => {
+    gameCtx.showChallengeBadge = (title, reward, sub = '') => {
         const el = document.getElementById('challenge-badge');
         if (!el) return;
         if (challengeBadgeHideTimer) {
@@ -127,11 +128,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         }
         const t = el.querySelector('.challenge-title');
         const r = el.querySelector('.challenge-reward span');
+        const s = el.querySelector('.challenge-sub');
         if (t) t.textContent = title;
         if (r) r.textContent = reward;
+        if (s) { s.textContent = sub; s.hidden = !sub; }
         el.hidden = false;
-        // Force a reflow so the transition kicks off from the off-screen
-        // hidden state instead of snapping straight to .visible.
         void el.offsetWidth;
         el.classList.add('visible');
     };
@@ -146,6 +147,33 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             if (!el.classList.contains('visible')) el.hidden = true;
             challengeBadgeHideTimer = null;
         }, 520);
+    };
+
+    // Grant one extra life: add a third heart to #heart-decor with a
+    // fade-in animation and refresh the live display.
+    gameCtx.addExtraLife = () => {
+        const container = document.getElementById('heart-decor');
+        if (!container) return;
+        const img = document.createElement('img');
+        img.src = 'assets/heart.webp?v=2';
+        img.alt = '';
+        img.classList.add('heart-extra-in');
+        // Remove the animation class once it finishes so the heart becomes a
+        // plain heart element — heart-dim and heart-fire can then apply normally.
+        img.addEventListener('animationend', () => img.classList.remove('heart-extra-in'), { once: true });
+        container.appendChild(img);
+        updateLives();
+        updateStreakFire();
+    };
+
+    // Remove the extra heart added by addExtraLife, with a fade-out animation.
+    gameCtx.removeExtraLife = () => {
+        const hearts = getHearts();
+        const extra = hearts[hearts.length - 1];
+        if (!extra) return;
+        extra.classList.remove('heart-extra-in');
+        extra.classList.add('heart-extra-out');
+        setTimeout(() => extra.remove(), 500);
     };
 
     // Draws the ball at an arbitrary position and radius using the current
@@ -201,7 +229,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // ball-side right-wall constraint, this means a swinging cup that
         // pushes the ball to the wall has nowhere to go — it visibly pauses
         // at the limit until its SHM swings it back the other way.
-        const halfTop = 55 * scale;            // cupWidthTop / 2 — see updatePhysics
+        const halfTop = 55 * scale * (gameCtx.targetScale ?? 1);
         const minX = halfTop;
         const maxX = width - halfTop;
         return Math.max(minX, Math.min(maxX, raw));
@@ -213,7 +241,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         gameCtx.score = score;
         gameCtx.streak = consecutiveHits;
         gameCtx.misses = consecutiveMisses;
-        gameCtx.lives = 2 - consecutiveMisses;
+        gameCtx.lives = (2 + gameCtx.extraLives) - consecutiveMisses;
         gameCtx.gameMode = gameMode;
         gameCtx.width = width;
         gameCtx.height = height;
@@ -279,6 +307,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         director.reset();
         gameCtx.blackHoleConsumed = false;
         gameCtx.scoreMultiplier   = 1;
+        gameCtx.targetScale       = 1;
+        gameCtx.extraLives        = 0;
         gameCtx.targetOffset.x    = 0;
         gameCtx.targetOffset.y    = 0;
         prevCupX = null;
@@ -298,6 +328,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         isResting = true;
         isBehindNet = false;
         wasAboveRim = false;
+        wasAboveCupRim = false;
         isDisqualified = false;
         ballAbsorbed = false;
         ballInCupOffsetX = null;
@@ -326,6 +357,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         isResting = false;
         isAiming = false;
         wasAboveRim = false;
+        wasAboveCupRim = false;
         isBehindNet = false;
         isDisqualified = false;
     }
@@ -428,6 +460,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         isAiming = true;
         isResting = false;
         wasAboveRim = false;
+        wasAboveCupRim = false;
         isDisqualified = false;
         aimStart = { x: pos.x, y: pos.y };
         aimCurrent = { x: pos.x, y: pos.y };
@@ -534,9 +567,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         ball.y += ball.vy * dt;
 
         if (gameMode === 'pingpong') {
-            const cupWidthTop = 110 * scale;
-            const cupWidthBottom = 70 * scale;
-            const cupHeight = 130 * scale;
+            const ts = gameCtx.targetScale ?? 1;
+            const cupWidthTop = 110 * scale * ts;
+            const cupWidthBottom = 70 * scale * ts;
+            const cupHeight = 130 * scale * ts;
             const cupX = getCupX();
             const cupY = floorY;
             const cupRimY = cupY - cupHeight;
@@ -545,6 +579,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             // Cup wall velocity per tick (in playfield px). Positive = cup
             // moving right, negative = cup moving left, ~0 = stationary.
             const cupDx = prevCupX === null ? 0 : cupX - prevCupX;
+
+            // Ball is entirely above the rim — mark it so side-entry tunnelling
+            // can't trigger a score without the ball having come from above.
+            if (ball.y + ball.radius < cupRimY) wasAboveCupRim = true;
 
             const distLeftRim = Math.hypot(ball.x - cupLeftRim, ball.y - cupRimY);
             const distRightRim = Math.hypot(ball.x - cupRightRim, ball.y - cupRimY);
@@ -578,18 +616,36 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             } else if (ball.y + ball.radius > cupRimY && ball.y < cupY + ball.radius) {
                 const wallLeftX = cupLeftRim + ((ball.y - cupRimY)/cupHeight) * ((cupWidthTop - cupWidthBottom)/2);
                 const wallRightX = cupRightRim - ((ball.y - cupRimY)/cupHeight) * ((cupWidthTop - cupWidthBottom)/2);
-                
+
                 if (ball.x > wallLeftX && ball.x < wallRightX) {
-                    // The ball must be a *live, falling* shot for it to score.
-                    // Without this, a stationary ball trapped between the
-                    // right wall and a cup moving toward it (Moving Target
-                    // challenge) can be pushed laterally into the cup's
-                    // interior and trigger a false score.
+                    // Tunnelling guard: if the ball was at cup height last tick
+                    // AND was fully outside the wall, it punched through the side.
+                    // Use prevBall (set just before each updatePhysics call in
+                    // animate()) to detect the crossing without extra state.
+                    let ejected = false;
+                    if (prevBall.y >= cupRimY) {
+                        const pWL = cupLeftRim  + ((prevBall.y - cupRimY) / cupHeight) * ((cupWidthTop - cupWidthBottom) / 2);
+                        const pWR = cupRightRim - ((prevBall.y - cupRimY) / cupHeight) * ((cupWidthTop - cupWidthBottom) / 2);
+                        if (prevBall.x + ball.radius <= pWL) {
+                            ball.x  = wallLeftX - ball.radius;
+                            ball.vx = -Math.abs(ball.vx) * bounceFactor;
+                            ejected = true;
+                        } else if (prevBall.x - ball.radius >= pWR) {
+                            ball.x  = wallRightX + ball.radius;
+                            ball.vx =  Math.abs(ball.vx) * bounceFactor;
+                            ejected = true;
+                        }
+                    }
+
+                    if (!ejected) {
+                    // Legitimate entry (came from above or was already inside).
+                    // wasAboveCupRim is a belt-and-braces scoring guard.
                     if (!scoredThisThrow
                         && wasThrown
                         && !isResting
                         && ball.vy > 0
-                        && ball.y > cupRimY + ball.radius * 0.8) {
+                        && ball.y > cupRimY + ball.radius * 0.8
+                        && wasAboveCupRim) {
                         scoredThisThrow = true;
                         wasThrown = false;
                         // Lock the ball's X to the cup so it follows along if the
@@ -615,7 +671,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                     }
                     if (ball.y + ball.radius > cupY) {
                         ball.y = cupY - ball.radius;
-                        ball.vy = -Math.abs(ball.vy) * 0.3; 
+                        ball.vy = -Math.abs(ball.vy) * 0.3;
                         ball.vx *= 0.8;
                         if (Math.abs(ball.vy) < 25 * scale) {
                             ball.vy = 0;
@@ -625,6 +681,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                             }
                         }
                     }
+                    } // end !ejected
                 } else {
                     // OUTSIDE the cup walls — push the ball away ONLY if the
                     // overlap is growing (cup wall moving into ball OR ball
@@ -662,56 +719,57 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             // the cup is moving (used for the direction-aware push above).
             prevCupX = cupX;
         } else if (gameMode === 'basketball') {
-            let hoopWidth = 140 * scale;
+            const ts = gameCtx.targetScale ?? 1;
+            let hoopWidth = 140 * scale * ts;
             const hoopRimY = getHoopRimY();
             const backboardX = width; // Flush against the right wall
-            
+
             if (hoopImg.complete && hoopImg.naturalHeight !== 0) {
-                const imgHeight = 320 * scale;
+                const imgHeight = 320 * scale * ts;
                 const S = imgHeight / hoopImg.naturalHeight;
                 // Map the physics hoop width to the exact orange rim pixels (874 - 169)
-                hoopWidth = (874 - 169) * S; 
+                hoopWidth = (874 - 169) * S;
             }
-    
+
             const hoopLeftRim = backboardX - hoopWidth;
             // The rim has physical thickness and sticks out from the backboard.
-            const hoopRightRim = backboardX - 12 * scale; 
-            
+            const hoopRightRim = backboardX - 12 * scale;
+
             const distLeftRim = Math.hypot(ball.x - hoopLeftRim, ball.y - hoopRimY);
             const distRightRim = Math.hypot(ball.x - hoopRightRim, ball.y - hoopRimY);
-            
+
             // Front left rim bounce
             if (distLeftRim < ball.radius) {
                 const overlap = ball.radius - distLeftRim;
                 const nx = (ball.x - hoopLeftRim) / distLeftRim;
                 const ny = (ball.y - hoopRimY) / distLeftRim;
-                
+
                 ball.x += nx * overlap;
                 ball.y += ny * overlap;
-                
+
                 const dot = ball.vx * nx + ball.vy * ny;
                 if (dot < 0) {
                     ball.vx = (ball.vx - 2 * dot * nx) * bounceFactor;
                     ball.vy = (ball.vy - 2 * dot * ny) * bounceFactor;
                 }
             }
-            
+
             // Front right rim bounce
             if (distRightRim < ball.radius) {
                 const overlap = ball.radius - distRightRim;
                 const nx = (ball.x - hoopRightRim) / distRightRim;
                 const ny = (ball.y - hoopRimY) / distRightRim;
-                
+
                 ball.x += nx * overlap;
                 ball.y += ny * overlap;
-                
+
                 const dot = ball.vx * nx + ball.vy * ny;
                 if (dot < 0) {
                     ball.vx = (ball.vx - 2 * dot * nx) * bounceFactor;
                     ball.vy = (ball.vy - 2 * dot * ny) * bounceFactor;
                 }
             }
-            
+
             // Backboard collision
             if (ball.x + ball.radius > backboardX && ball.y > hoopRimY - 120 * scale && ball.y < hoopRimY + 40 * scale) {
                 ball.x = backboardX - ball.radius;
@@ -719,25 +777,26 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                     ball.vx = -ball.vx * bounceFactor;
                 }
             }
-            
+
             // Net physics (going through the hole)
-            if (ball.y > hoopRimY && ball.y < hoopRimY + 90 * scale) {
+            const netDepth = 90 * scale * ts;
+            if (ball.y > hoopRimY && ball.y < hoopRimY + netDepth) {
                 // Tapering net width logic
-                const netLeft = hoopLeftRim + ((ball.y - hoopRimY)/(90*scale)) * (30*scale);
-                const netRight = hoopRightRim - ((ball.y - hoopRimY)/(90*scale)) * (30*scale);
-                
+                const netLeft = hoopLeftRim + ((ball.y - hoopRimY)/netDepth) * (30*scale*ts);
+                const netRight = hoopRightRim - ((ball.y - hoopRimY)/netDepth) * (30*scale*ts);
+
                 if (ball.x > netLeft && ball.x < netRight) {
                     isBehindNet = true;
-                    
+
                     // If it enters the net from the bottom (never went above the rim first), disqualify it!
                     if (!wasAboveRim) {
                         isDisqualified = true;
                     }
-                    
+
                     // Simulate drag of going through the net
                     ball.vx *= 0.95;
                     ball.vy -= gravity * pixelsPerMeter * dt * 0.5; // slow down the fall drastically
-                    
+
                     if (!scoredThisThrow && !isDisqualified && ball.vy > 0 && ball.y > hoopRimY + ball.radius) {
                         if (wasAboveRim) {
                             scoredThisThrow = true;
@@ -748,16 +807,17 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                     }
                 }
             }
-            
+
             if (ball.y + ball.radius < hoopRimY) {
                 wasAboveRim = true;
             }
-            if (ball.y > hoopRimY + 120 * scale) {
+            const clearDepth = 120 * scale * ts;
+            if (ball.y > hoopRimY + clearDepth) {
                 wasAboveRim = false;
             }
-            
+
             // Reset depth state if the ball exits the net area
-            if (ball.y > hoopRimY + 120 * scale || ball.y < hoopRimY || ball.x < hoopLeftRim || ball.x > hoopRightRim) {
+            if (ball.y > hoopRimY + clearDepth || ball.y < hoopRimY || ball.x < hoopLeftRim || ball.x > hoopRightRim) {
                 isBehindNet = false;
             }
         }
@@ -768,8 +828,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // inner-cup floor (in the cup-wall block above) handles it.
         if (ball.y + ball.radius >= floorY && (
                 gameMode === 'basketball'
-                || ball.x <= getCupX() - (110*scale)/2
-                || ball.x >= getCupX() + (110*scale)/2)) {
+                || ball.x <= getCupX() - (110*scale*(gameCtx.targetScale??1))/2
+                || ball.x >= getCupX() + (110*scale*(gameCtx.targetScale??1))/2)) {
             ball.y = floorY - ball.radius;
             ball.vy = -ball.vy * bounceFactor;
             ball.vx *= friction;
@@ -856,15 +916,16 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         
         // Background Targets
         if (gameMode === 'pingpong') {
-            const cupWidthTop = 110 * scale;
-            const cupWidthBottom = 70 * scale;
-            const cupHeight = 130 * scale;
+            const ts = gameCtx.targetScale ?? 1;
+            const cupWidthTop = 110 * scale * ts;
+            const cupWidthBottom = 70 * scale * ts;
+            const cupHeight = 130 * scale * ts;
             const cupX = getCupX();
             const cupY = floorY;
             const cupRimY = cupY - cupHeight;
             const cupLeftRim = cupX - cupWidthTop / 2;
             const cupRightRim = cupX + cupWidthTop / 2;
-            
+
             // shadow
             ctx.beginPath();
             ctx.ellipse(cupX, floorY - 3 * scale, cupWidthBottom / 2 * 0.9, 6 * scale, 0, 0, Math.PI * 2);
@@ -908,15 +969,16 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             }
         } else {
             // Basketball backboard & back hoop
-            let hoopWidth = 140 * scale;
+            const ts = gameCtx.targetScale ?? 1;
+            let hoopWidth = 140 * scale * ts;
             const hoopRimY = getHoopRimY();
             const backboardX = width; // Flush against right wall
-            
+
             if (hoopImg.complete && hoopImg.naturalHeight !== 0) {
-                const imgHeight = 320 * scale;
+                const imgHeight = 320 * scale * ts;
                 const S = imgHeight / hoopImg.naturalHeight;
-                hoopWidth = (874 - 169) * S; 
-                
+                hoopWidth = (874 - 169) * S;
+
                 const hoopLeftRim = backboardX - hoopWidth;
                 const hoopRightRim = backboardX - 12 * scale;
                 
@@ -1023,7 +1085,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         const ballInCup = gameMode === 'pingpong' && scoredThisThrow && !ballReturning;
 
         // Shadow
-        const isOverCup = gameMode === 'pingpong' && ball.x > getCupX() - (110*scale)/2 && ball.x < getCupX() + (110*scale)/2;
+        const isOverCup = gameMode === 'pingpong' && ball.x > getCupX() - (110*scale*(gameCtx.targetScale??1))/2 && ball.x < getCupX() + (110*scale*(gameCtx.targetScale??1))/2;
         if (!ballInCup && ball.y < floorY + 50 && !isOverCup) {
             const distToGround = Math.max(0, floorY - ball.y);
             const shadowScale = Math.max(0, 1 - distToGround / 200);
@@ -1044,9 +1106,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // is not clipped.
         let ballClipped = false;
         if (gameMode === 'pingpong') {
-            const cwTop = 110 * scale;
-            const cwBottom = 70 * scale;
-            const cHeight = 130 * scale;
+            const ts = gameCtx.targetScale ?? 1;
+            const cwTop = 110 * scale * ts;
+            const cwBottom = 70 * scale * ts;
+            const cHeight = 130 * scale * ts;
             const cX = getCupX();
             const cY = floorY;
             const cRimY = cY - cHeight;
@@ -1124,9 +1187,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
         // Foreground Targets
         if (gameMode === 'pingpong') {
-            const cupWidthTop = 110 * scale;
-            const cupWidthBottom = 70 * scale;
-            const cupHeight = 130 * scale;
+            const ts = gameCtx.targetScale ?? 1;
+            const cupWidthTop = 110 * scale * ts;
+            const cupWidthBottom = 70 * scale * ts;
+            const cupHeight = 130 * scale * ts;
             const cupX = getCupX();
             const cupY = floorY;
             const cupRimY = cupY - cupHeight;
@@ -1168,15 +1232,16 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     
         } else {
             // Basketball Front Net & Rim
-            let hoopWidth = 140 * scale;
+            const ts = gameCtx.targetScale ?? 1;
+            let hoopWidth = 140 * scale * ts;
             const hoopRimY = getHoopRimY();
             const backboardX = width; // Flush against right wall
-            
+
             if (hoopImg.complete && hoopImg.naturalHeight !== 0) {
-                const imgHeight = 320 * scale;
+                const imgHeight = 320 * scale * ts;
                 const S = imgHeight / hoopImg.naturalHeight;
-                hoopWidth = (874 - 169) * S; 
-                
+                hoopWidth = (874 - 169) * S;
+
                 const hoopLeftRim = backboardX - hoopWidth;
                 const imgWidth = hoopImg.naturalWidth * S;
                 const xOffset = backboardX - 874 * S;
@@ -1298,15 +1363,17 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
     // --- Lives / hearts ---------------------------------------------------
     function getHearts() {
-        return document.querySelectorAll('#heart-decor img');
+        // Exclude hearts that are currently fading out (being removed by a challenge end).
+        return [...document.querySelectorAll('#heart-decor img')]
+            .filter(h => !h.classList.contains('heart-extra-out'));
     }
 
-    // Sync the hearts to the current life count (2 - consecutiveMisses).
-    // Hearts are lost right-to-left: the right heart dims on the 1st miss.
+    // Sync the hearts to the current life count. The number of hearts equals
+    // 2 + extraLives; each dims right-to-left as misses accumulate.
     function updateLives() {
-        const lives = 2 - consecutiveMisses;   // 2, 1, or 0
+        const lives = (2 + gameCtx.extraLives) - consecutiveMisses;
         getHearts().forEach((h, i) => {
-            const lit = i === 0 ? lives >= 1 : lives >= 2;
+            const lit = lives > i;
             h.classList.remove('heart-refill');
             h.classList.toggle('heart-dim', !lit);
         });
@@ -1411,7 +1478,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
         consecutiveMisses++;
 
-        if (consecutiveMisses >= 2) {
+        if (consecutiveMisses >= 2 + gameCtx.extraLives) {
             const wasZero = score === 0;
             score = 0;
             consecutiveMisses = 0;
@@ -1608,6 +1675,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     return function destroyGame() {
         cancelAnimationFrame(animationId);
         modifiers.clear(gameCtx);
+        // Remove any extra heart elements that a challenge may have added.
+        document.querySelectorAll('#heart-decor img:nth-child(n+3)').forEach(h => h.remove());
         window.removeEventListener('resize', resizeCanvas);
         window.removeEventListener('keydown', handleKeyDown);
         window.removeEventListener('keyup', handleKeyUp);

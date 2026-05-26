@@ -71,6 +71,7 @@ export default function Game() {
                 <div id="challenge-badge" hidden>
                     <div class="challenge-title">MOVING TARGET</div>
                     <div class="challenge-reward">Reward: <span>2X</span> points</div>
+                    <div class="challenge-sub" hidden></div>
                 </div>
             </div>
 
