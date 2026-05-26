@@ -1098,11 +1098,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                     simVx = -simVx * bounceFactor;
                 }
 
-                if (isAimBlocked(simX, simY)) {
-                    ctx.moveTo(simX, simY);
-                } else {
-                    ctx.lineTo(simX, simY);
-                }
+                if (isAimBlocked(simX, simY)) break;
+                ctx.lineTo(simX, simY);
             }
 
             ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
