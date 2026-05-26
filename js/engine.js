@@ -58,7 +58,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     let nhsStartTime         = null;   // performance.now() when celebration began; null = inactive
     let nhsParticles         = null;   // confetti array — null means needs re-init
     let nhsCelebratedThisRun = false;  // true once we've fired the celebration; reset when score resets
-    let nhsRunStartHighScore = 0;      // high score at the start of this run; never updated mid-run
+    let nhsRunStartHighScore = highScores['pingpong']; // default mode; updated by setMode() on switch
     let bestStreaks = { pingpong: initialData.pingpong.bestStreak, basketball: initialData.basketball.bestStreak };
     let consecutiveHits = 0;
     let consecutiveMisses = 0;
