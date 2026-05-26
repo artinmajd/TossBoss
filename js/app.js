@@ -3,10 +3,44 @@ import Game from './views/Game.js';
 import Auth from './views/Auth.js';
 import Leaderboard from './views/Leaderboard.js';
 import { initGame } from './engine.js';
-import { supabase, getHighScores, getLeaderboard } from './supabase.js';
+import { supabase, getHighScores, getLeaderboard, getUserEntry } from './supabase.js';
 import { isTestUser, testerConfig } from './tester_config.js';
 
 let destroyGame = null;
+
+const medalClass = ['lb-gold', 'lb-silver', 'lb-bronze'];
+const medalIcon  = ['🥇', '🥈', '🥉'];
+
+// Builds the inner HTML for a leaderboard list.
+// rows      — top-10 array from getLeaderboard (each has user_id)
+// userId    — logged-in user's id, or null
+// myEntry   — result of getUserEntry, or null
+function buildLbHtml(rows, userId, myEntry) {
+    const userInTop = userId && rows.some(r => r.user_id === userId);
+
+    const rowsHtml = rows.map((row, i) => {
+        const isMe = userId && row.user_id === userId;
+        return `
+            <div class="lb-row ${medalClass[i] || ''} ${isMe ? 'lb-me' : ''}">
+                <span class="lb-rank">${i < 3 ? medalIcon[i] : i + 1}</span>
+                <span class="lb-name">${row.display_name}</span>
+                <span class="lb-score">${row.score}</span>
+                <span class="lb-streak">${row.best_streak ?? '—'}</span>
+            </div>`;
+    }).join('');
+
+    if (userInTop || !myEntry) return rowsHtml;
+
+    // User exists but is outside the top 10 — append dots + their row.
+    return rowsHtml + `
+        <div class="lb-dots">• • •</div>
+        <div class="lb-row lb-me">
+            <span class="lb-rank">${myEntry.rank}</span>
+            <span class="lb-name">${myEntry.display_name}</span>
+            <span class="lb-score">${myEntry.score}</span>
+            <span class="lb-streak">${myEntry.best_streak ?? '—'}</span>
+        </div>`;
+}
 
 async function router() {
     const app = document.getElementById('app');
@@ -43,22 +77,16 @@ async function router() {
             const loadingTimer = setTimeout(() => {
                 list.innerHTML = '<div class="lb-loading">Loading...</div>';
             }, 500);
-            const rows = await getLeaderboard(mode, lbSortBy);
+            const [rows, myEntry] = await Promise.all([
+                getLeaderboard(mode, lbSortBy),
+                getUserEntry(mode, lbSortBy),
+            ]);
             clearTimeout(loadingTimer);
             if (rows.length === 0) {
                 list.innerHTML = '<div class="lb-loading">No scores yet.</div>';
                 return;
             }
-            const medalClass = ['lb-gold', 'lb-silver', 'lb-bronze'];
-            const medalIcon  = ['🥇', '🥈', '🥉'];
-            list.innerHTML = rows.map((row, i) => `
-                <div class="lb-row ${medalClass[i] || ''}">
-                    <span class="lb-rank">${i < 3 ? medalIcon[i] : i + 1}</span>
-                    <span class="lb-name">${row.display_name}</span>
-                    <span class="lb-score">${row.score}</span>
-                    <span class="lb-streak">${row.best_streak ?? '—'}</span>
-                </div>
-            `).join('');
+            list.innerHTML = buildLbHtml(rows, session?.user?.id ?? null, myEntry);
         };
 
         document.getElementById('lb-sort-score').addEventListener('click', () => {
@@ -127,22 +155,16 @@ async function router() {
             const loadingTimer = setTimeout(() => {
                 lbModalList.innerHTML = '<div class="lb-loading">Loading...</div>';
             }, 500);
-            const rows = await getLeaderboard(mode, lbModalSortBy);
+            const [rows, myEntry] = await Promise.all([
+                getLeaderboard(mode, lbModalSortBy),
+                getUserEntry(mode, lbModalSortBy),
+            ]);
             clearTimeout(loadingTimer);
             if (rows.length === 0) {
                 lbModalList.innerHTML = '<div class="lb-loading">No scores yet.</div>';
                 return;
             }
-            const medalClass = ['lb-gold', 'lb-silver', 'lb-bronze'];
-            const medalIcon  = ['🥇', '🥈', '🥉'];
-            lbModalList.innerHTML = rows.map((row, i) => `
-                <div class="lb-row ${medalClass[i] || ''}">
-                    <span class="lb-rank">${i < 3 ? medalIcon[i] : i + 1}</span>
-                    <span class="lb-name">${row.display_name}</span>
-                    <span class="lb-score">${row.score}</span>
-                    <span class="lb-streak">${row.best_streak ?? '—'}</span>
-                </div>
-            `).join('');
+            lbModalList.innerHTML = buildLbHtml(rows, session?.user?.id ?? null, myEntry);
         };
 
         const lbBtn = document.getElementById('btn-leaderboard-game');

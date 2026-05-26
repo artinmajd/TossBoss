@@ -34,10 +34,36 @@ export async function getLeaderboard(mode, sortBy = 'score') {
     const col = sortBy === 'best_streak' ? 'best_streak' : 'score';
     const { data, error } = await supabase
         .from('high_scores')
-        .select('display_name, score, best_streak')
+        .select('user_id, display_name, score, best_streak')
         .eq('mode', mode)
         .order(col, { ascending: false })
         .limit(10);
     if (error) return [];
     return data;
+}
+
+// Returns the logged-in user's own leaderboard row plus their rank (1-based),
+// or null if not logged in / no score on record.
+export async function getUserEntry(mode, sortBy = 'score') {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const col = sortBy === 'best_streak' ? 'best_streak' : 'score';
+
+    const { data: myRows } = await supabase
+        .from('high_scores')
+        .select('display_name, score, best_streak')
+        .eq('mode', mode)
+        .eq('user_id', user.id)
+        .limit(1);
+    if (!myRows || myRows.length === 0) return null;
+    const me = myRows[0];
+
+    // Rank = number of players with a strictly higher value + 1.
+    const { count } = await supabase
+        .from('high_scores')
+        .select('*', { count: 'exact', head: true })
+        .eq('mode', mode)
+        .gt(col, me[col]);
+
+    return { ...me, rank: (count ?? 0) + 1, user_id: user.id };
 }
