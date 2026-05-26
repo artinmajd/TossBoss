@@ -515,7 +515,16 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                 const wallRightX = cupRightRim - ((ball.y - cupRimY)/cupHeight) * ((cupWidthTop - cupWidthBottom)/2);
                 
                 if (ball.x > wallLeftX && ball.x < wallRightX) {
-                    if (!scoredThisThrow && ball.y > cupRimY + ball.radius * 0.8) {
+                    // The ball must be a *live, falling* shot for it to score.
+                    // Without this, a stationary ball trapped between the
+                    // right wall and a cup moving toward it (Moving Target
+                    // challenge) can be pushed laterally into the cup's
+                    // interior and trigger a false score.
+                    if (!scoredThisThrow
+                        && wasThrown
+                        && !isResting
+                        && ball.vy > 0
+                        && ball.y > cupRimY + ball.radius * 0.8) {
                         scoredThisThrow = true;
                         wasThrown = false;
                         // Lock the ball's X to the cup so it follows along if the
