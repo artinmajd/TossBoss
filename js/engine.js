@@ -303,7 +303,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         
         gameMode = mode;
         score = 0;
-        nhsRunStartHighScore = highScores[mode];
+        nhsRunStartHighScore  = highScores[mode];
+        nhsCelebratedThisRun  = false;
         scoredThisThrow = false;
         consecutiveHits = 0;
         consecutiveMisses = 0;
