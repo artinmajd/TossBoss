@@ -1432,29 +1432,31 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                     ctx.restore();
                 }
 
-                // "NEW HIGH SCORE!" text — Orbitron, gold, pulsing glow
+                // "NEW HIGH SCORE!" text — Orbitron, gold, smooth scale pulse
                 const nhsX    = width / 2;
                 const nhsY    = height * 0.14;
                 const nhsSize = Math.max(20, Math.round(44 * scale));
-                const nhsPulse = 1 + 0.04 * Math.sin(nhsElapsed * 9);
+                const nhsPulse = 1 + 0.04 * Math.sin(nhsElapsed * 5);
 
                 ctx.save();
                 ctx.globalAlpha  = nhsAlpha;
+                ctx.translate(nhsX, nhsY);
+                ctx.scale(nhsPulse, nhsPulse);
                 ctx.textAlign    = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.font = `900 ${Math.round(nhsSize * nhsPulse)}px 'Orbitron', sans-serif`;
+                ctx.font = `900 ${nhsSize}px 'Orbitron', sans-serif`;
 
                 // Diffuse outer glow
                 ctx.shadowColor = '#fbbf24';
                 ctx.shadowBlur  = 40 * scale;
                 ctx.fillStyle   = '#fff8e1';
-                ctx.fillText('NEW HIGH SCORE!', nhsX, nhsY);
+                ctx.fillText('NEW HIGH SCORE!', 0, 0);
 
                 // Crisp gold fill on top
                 ctx.shadowColor = '#f59e0b';
                 ctx.shadowBlur  = 14 * scale;
                 ctx.fillStyle   = '#fbbf24';
-                ctx.fillText('NEW HIGH SCORE!', nhsX, nhsY);
+                ctx.fillText('NEW HIGH SCORE!', 0, 0);
 
                 ctx.restore();
             }
