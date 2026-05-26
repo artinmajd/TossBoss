@@ -59,8 +59,8 @@ export default function Game() {
                             <span>throw ball in → challenge</span>
                         </div>
                         <div class="help-row">
-                            <span class="help-key">Challenge</span>
-                            <span>2× points &amp; a twist</span>
+                            <span class="help-key">Each time</span>
+                            <span>random challenge, unique reward</span>
                         </div>
                     </div>
                 </div>
