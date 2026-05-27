@@ -2,6 +2,7 @@ import Home from './views/Home.js';
 import Game from './views/Game.js';
 import Auth from './views/Auth.js';
 import Leaderboard from './views/Leaderboard.js';
+import Multiplayer from './views/Multiplayer.js';
 import { initGame } from './engine.js';
 import { supabase, getHighScores, getLeaderboard, getUserEntry } from './supabase.js';
 import { isTestUser, testerConfig } from './tester_config.js';
@@ -52,6 +53,14 @@ async function router() {
     }
 
     const { data: { session } } = await supabase.auth.getSession();
+
+    if (hash === '#multiplayer') {
+        app.innerHTML = Multiplayer();
+        document.getElementById('btn-mp-back').addEventListener('click', () => {
+            window.location.hash = '#home';
+        });
+        return;
+    }
 
     if (hash === '#auth') {
         app.innerHTML = Auth();
@@ -121,6 +130,9 @@ async function router() {
         app.innerHTML = Home(session);
         document.getElementById('btn-play-game').addEventListener('click', () => {
             window.location.hash = '#game';
+        });
+        document.getElementById('btn-multiplayer').addEventListener('click', () => {
+            window.location.hash = '#multiplayer';
         });
         document.getElementById('btn-leaderboard').addEventListener('click', () => {
             window.location.hash = '#leaderboard';
