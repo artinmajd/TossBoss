@@ -56,9 +56,31 @@ async function router() {
 
     if (hash === '#multiplayer') {
         app.innerHTML = Multiplayer();
+
         document.getElementById('btn-mp-back').addEventListener('click', () => {
             window.location.hash = '#home';
         });
+
+        document.getElementById('btn-mp-join').addEventListener('click', () => {
+            const code = document.getElementById('mp-room-code').value.trim().toUpperCase();
+            if (!code) {
+                document.getElementById('mp-room-code').focus();
+                return;
+            }
+            // TODO: implement join-room logic
+            console.log('Join room:', code);
+        });
+
+        // Allow pressing Enter inside the input to trigger Join
+        document.getElementById('mp-room-code').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') document.getElementById('btn-mp-join').click();
+        });
+
+        document.getElementById('btn-mp-create').addEventListener('click', () => {
+            // TODO: implement create-room logic
+            console.log('Create new room');
+        });
+
         return;
     }
 

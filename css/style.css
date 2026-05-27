@@ -1581,3 +1581,154 @@ button:active {
     color: #7dd3fc;
     text-shadow: 0 0 10px rgba(56, 189, 248, 0.45);
 }
+
+/* ── Multiplayer Screen ── */
+#multiplayer-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(0.5rem, 2vmin, 1.3rem);
+    background: linear-gradient(rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.45)), url('../assets/main_bg.webp') center/cover no-repeat;
+    z-index: 10;
+}
+
+/* Room-code input */
+.mp-section {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.35rem, 1.3vmin, 0.6rem);
+    margin-top: clamp(0.35rem, 1.5vmin, 0.75rem);
+}
+
+.mp-label {
+    font-size: clamp(0.55rem, 1.3vmin, 0.68rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-secondary);
+    text-align: left;
+}
+
+/* Input + arrow button side-by-side */
+.mp-input-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+}
+
+.mp-input {
+    flex: 1;
+    padding: clamp(0.5rem, 2vmin, 0.85rem) 1rem;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    color: var(--text-primary);
+    font-size: clamp(0.9rem, 2.2vmin, 1.05rem);
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    /* Inherit -webkit-user-select from body doesn't apply to inputs */
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+.mp-input::placeholder {
+    font-family: inherit;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    color: rgba(148, 163, 184, 0.45);
+    text-transform: none;
+}
+
+.mp-input:focus {
+    border-color: var(--accent-color);
+    background: rgba(56, 189, 248, 0.08);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18), 0 0 14px rgba(56, 189, 248, 0.2);
+}
+
+/* Arrow "Join" button attached to the input */
+.mp-join-btn {
+    flex-shrink: 0;
+    width: clamp(2.4rem, 6vmin, 3rem);
+    height: auto;
+    padding: 0;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+    color: #0f172a;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mp-join-btn svg {
+    width: clamp(1rem, 2.5vmin, 1.25rem);
+    height: clamp(1rem, 2.5vmin, 1.25rem);
+}
+
+@media (hover: hover) {
+    .mp-join-btn:hover {
+        background: linear-gradient(135deg, #7dd3fc, #38bdf8);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(56, 189, 248, 0.5);
+    }
+}
+
+.mp-join-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 10px rgba(56, 189, 248, 0.4);
+}
+
+/* "or" divider */
+.mp-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: clamp(0.5rem, 2vmin, 1rem) 0 0;
+}
+
+.mp-divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+}
+
+.mp-divider-text {
+    font-size: clamp(0.55rem, 1.3vmin, 0.68rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* Create Room button — teal/purple accent to distinguish from Join */
+.mp-create-btn {
+    background: linear-gradient(135deg, #818cf8, #6366f1) !important;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45) !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+@media (hover: hover) {
+    .mp-create-btn:hover {
+        background: linear-gradient(135deg, #a5b4fc, #818cf8) !important;
+        box-shadow: 0 8px 25px rgba(99, 102, 241, 0.55) !important;
+    }
+}
+
+.mp-btn-icon {
+    width: clamp(0.95rem, 2.2vmin, 1.15rem);
+    height: clamp(0.95rem, 2.2vmin, 1.15rem);
+    flex-shrink: 0;
+}
