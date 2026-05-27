@@ -5,7 +5,7 @@
 // session  — Supabase session or null (guest)
 // storedName — previously entered name from sessionStorage (guests only)
 
-export default function Multiplayer({ session = null, storedName = '' } = {}) {
+export default function Multiplayer({ session = null, storedName = '', replayCode = '' } = {}) {
     const needsName  = !session;
     const displayName = session
         ? (session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Player')
@@ -43,7 +43,7 @@ export default function Multiplayer({ session = null, storedName = '' } = {}) {
                     <label class="mp-label" for="mp-code-input">Join a Room</label>
                     <div class="mp-input-row">
                         <input id="mp-code-input" class="mp-input mp-code-input" type="text"
-                               placeholder="XXXXXX" maxlength="6"
+                               placeholder="XXXXXX" maxlength="6" value="${replayCode}"
                                autocomplete="off" spellcheck="false">
                         <button id="btn-mp-join" class="mp-join-btn" title="Join Room">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -106,9 +106,9 @@ export default function Multiplayer({ session = null, storedName = '' } = {}) {
                         <span class="mp-slider-value" id="mp-target-display">50 pts</span>
                     </div>
                     <input id="mp-target-slider" class="mp-slider" type="range"
-                           min="25" max="150" step="5" value="50">
+                           min="5" max="150" step="5" value="50">
                     <div class="mp-slider-ends">
-                        <span>25</span><span>150</span>
+                        <span>5</span><span>150</span>
                     </div>
                 </div>
 

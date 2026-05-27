@@ -2187,6 +2187,28 @@ button:disabled {
     transition: background 0.3s ease, color 0.3s ease;
 }
 
+/* ── Throws / streak mini-stats row ───────────────────────── */
+.mp-hud-stats {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-height: 0.85rem;
+}
+
+.mp-hud-throws {
+    font-size: clamp(0.38rem, 1.05vmin, 0.55rem);
+    color: var(--text-secondary);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.mp-hud-streak-val {
+    font-size: clamp(0.38rem, 1.05vmin, 0.55rem);
+    color: #fb923c;
+    font-weight: 700;
+    min-width: 0.5rem;
+}
+
 /* ── Countdown overlay ─────────────────────────────────────── */
 .mp-countdown-overlay {
     position: absolute;
@@ -2286,6 +2308,57 @@ button:disabled {
     to { transform: rotate(360deg); }
 }
 
+/* ── Game-over flash overlay ───────────────────────────────── */
+.mp-gameover-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(6, 8, 18, 0.88);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: mp-gameover-fadein 0.5s ease both;
+}
+
+.mp-gameover-overlay.hidden { display: none; }
+
+@keyframes mp-gameover-fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.mp-gameover-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: center;
+}
+
+.mp-gameover-text {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.6rem, 6vmin, 3.2rem);
+    font-weight: 900;
+    color: var(--text-primary);
+    text-shadow: 0 0 40px rgba(56, 189, 248, 0.7), 0 0 80px rgba(56, 189, 248, 0.3);
+    animation: mp-gameover-pop 0.45s 0.15s both cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.mp-gameover-scores {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1rem, 4vmin, 2rem);
+    font-weight: 700;
+    color: var(--text-secondary);
+    animation: mp-gameover-pop 0.45s 0.3s both cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes mp-gameover-pop {
+    from { transform: scale(0.6); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
+
 /* ══════════════════════════════════════════════════════════════
    MP Result Screen
    ══════════════════════════════════════════════════════════════ */
@@ -2299,6 +2372,12 @@ button:disabled {
     background: linear-gradient(rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.45)),
                 url('../assets/main_bg.webp') center/cover no-repeat;
     z-index: 10;
+    animation: mp-result-screen-in 0.4s ease both;
+}
+
+@keyframes mp-result-screen-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 .mp-result-card {
@@ -2307,6 +2386,12 @@ button:disabled {
     flex-direction: column;
     align-items: center;
     gap: clamp(0.6rem, 2vmin, 1.1rem);
+    animation: mp-result-card-in 0.5s 0.15s both cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes mp-result-card-in {
+    from { transform: scale(0.82) translateY(24px); opacity: 0; }
+    to   { transform: scale(1)    translateY(0);    opacity: 1; }
 }
 
 /* Win / lose / tie banner */

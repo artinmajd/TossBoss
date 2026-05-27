@@ -1652,7 +1652,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         if (!mpCfg) director.notify('score', gameCtx, modifiers);
 
         // Notify multiplayer layer — app.js will broadcast + flip turn.
-        if (mpCfg?.onThrowComplete) mpCfg.onThrowComplete({ scored: true, points, totalScore: score });
+        if (mpCfg?.onThrowComplete) mpCfg.onThrowComplete({ scored: true, points, totalScore: score, streak: consecutiveHits });
     }
 
     function handleMiss() {
@@ -1677,7 +1677,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             syncContext();
             modifiers.emit('miss', gameCtx);
             if (!mpCfg) director.notify('miss', gameCtx, modifiers);
-            if (mpCfg?.onThrowComplete) mpCfg.onThrowComplete({ scored: false, points: 0, totalScore: score });
+            if (mpCfg?.onThrowComplete) mpCfg.onThrowComplete({ scored: false, points: 0, totalScore: score, streak: consecutiveHits });
             return;
         }
 

@@ -81,7 +81,10 @@ async function router() {
 
     if (hash === '#multiplayer') {
         const storedName = getStoredPlayerName();
-        app.innerHTML = Multiplayer({ session, storedName });
+        // Consume replay code set by "Play Again" (guest path)
+        const replayCode = sessionStorage.getItem('mp_replay_code') || '';
+        if (replayCode) sessionStorage.removeItem('mp_replay_code');
+        app.innerHTML = Multiplayer({ session, storedName, replayCode });
 
         const hub         = document.getElementById('mp-hub');
         const createPanel = document.getElementById('mp-create');
@@ -303,43 +306,48 @@ async function router() {
         const { room: liveRoom } = await getRoomByCode(code);
         const room = liveRoom ?? JSON.parse(roomDataStr);
 
-        const myName    = role === 'host' ? room.host_name  : room.guest_name;
-        const oppName   = role === 'host' ? room.guest_name : room.host_name;
+        const myName      = role === 'host' ? room.host_name  : room.guest_name;
+        const oppName     = role === 'host' ? room.guest_name : room.host_name;
         const targetScore = room.target_score;
 
-        // Mutable scores — shared with the engine's onThrowComplete callback
-        // via closure (no need to copy into config; score comes back as totalScore).
+        // Mutable scores/stats — shared with the engine via closure.
         const mpScores = {
             mine:      role === 'host' ? (room.host_score  || 0) : (room.guest_score || 0),
             opp:       role === 'host' ? (room.guest_score || 0) : (room.host_score  || 0),
             myThrows:  0,
             oppThrows: 0,
+            myStreak:  0,
+            oppStreak: 0,
         };
 
         // multiplayerConfig is passed into initGame.
         // isMyTurn starts false — the countdown overlay enables it.
         const multiplayerConfig = {
             gameMode:        room.game_mode,
-            isMyTurn:        false,  // set to true after countdown
+            isMyTurn:        false,
             onThrowComplete: null,   // wired below
         };
 
-        app.innerHTML = MultiplayerGame({
-            myName, oppName, targetScore,
-            gameMode: room.game_mode,
-            isMyTurn: false,
-        });
+        app.innerHTML = MultiplayerGame({ myName, oppName, targetScore, gameMode: room.game_mode });
 
         // ── HUD helpers ──────────────────────────────────────────────────
         const updateMpHud = () => {
-            const myEl    = document.getElementById('mp-score-mine');
-            const oppEl   = document.getElementById('mp-score-theirs');
-            const turnEl  = document.getElementById('mp-turn-indicator');
-            const waitOv  = document.getElementById('mp-wait-overlay');
-            const waitTxt = document.getElementById('mp-wait-text');
+            const myScoreEl   = document.getElementById('mp-score-mine');
+            const oppScoreEl  = document.getElementById('mp-score-theirs');
+            const turnEl      = document.getElementById('mp-turn-indicator');
+            const waitOv      = document.getElementById('mp-wait-overlay');
+            const waitTxt     = document.getElementById('mp-wait-text');
+            const myThrowsEl  = document.getElementById('mp-throws-mine');
+            const oppThrowsEl = document.getElementById('mp-throws-theirs');
+            const myStreakEl  = document.getElementById('mp-streak-mine');
+            const oppStreakEl = document.getElementById('mp-streak-theirs');
 
-            if (myEl)   myEl.textContent  = mpScores.mine;
-            if (oppEl)  oppEl.textContent = mpScores.opp;
+            if (myScoreEl)   myScoreEl.textContent   = mpScores.mine;
+            if (oppScoreEl)  oppScoreEl.textContent   = mpScores.opp;
+            if (myThrowsEl)  myThrowsEl.textContent   = `${mpScores.myThrows}↑`;
+            if (oppThrowsEl) oppThrowsEl.textContent  = `${mpScores.oppThrows}↑`;
+            if (myStreakEl)  myStreakEl.textContent    = mpScores.myStreak  > 0 ? `🔥${mpScores.myStreak}`  : '';
+            if (oppStreakEl) oppStreakEl.textContent   = mpScores.oppStreak > 0 ? `🔥${mpScores.oppStreak}` : '';
             if (turnEl) turnEl.textContent = multiplayerConfig.isMyTurn
                 ? '🎯 Your Turn!'
                 : `⏳ ${oppName}'s Turn…`;
@@ -347,39 +355,59 @@ async function router() {
             if (waitTxt) waitTxt.textContent = `${oppName} is throwing…`;
         };
 
-        // ── Win-check (runs after every throw when counts are equal) ──────
+        // ── Win-check + animated game-over overlay ────────────────────────
+        let resultPending = false; // prevent double-fire
         const goToResult = (outcome) => {
-            sessionStorage.setItem('mp_result', JSON.stringify({
-                outcome, myScore: mpScores.mine, oppScore: mpScores.opp, myName, oppName,
-            }));
-            window.location.hash = '#mp-result';
+            if (resultPending) return;
+            resultPending = true;
+
+            // Block all input
+            multiplayerConfig.isMyTurn = false;
+            updateMpHud();
+
+            // Show in-game flash overlay
+            const bannerText = { win: '🏆 You Win!', lose: '💀 You Lose…', tie: "🤝 It's a Tie!" };
+            const textEl    = document.getElementById('mp-gameover-text');
+            const scoresEl  = document.getElementById('mp-gameover-scores');
+            const overlay   = document.getElementById('mp-gameover-overlay');
+            if (textEl)   textEl.textContent   = bannerText[outcome] ?? bannerText.tie;
+            if (scoresEl) scoresEl.textContent = `${mpScores.mine} — ${mpScores.opp}`;
+            if (overlay)  overlay.classList.remove('hidden');
+
+            setTimeout(() => {
+                sessionStorage.setItem('mp_result', JSON.stringify({
+                    outcome,
+                    myScore:  mpScores.mine,
+                    oppScore: mpScores.opp,
+                    myName, oppName, role, code,
+                }));
+                window.location.hash = '#mp-result';
+            }, 2500);
         };
 
         const checkWin = () => {
-            if (mpScores.myThrows !== mpScores.oppThrows) return; // round not done yet
+            if (mpScores.myThrows !== mpScores.oppThrows) return;
             const myS = mpScores.mine, oppS = mpScores.opp;
-            if (myS < targetScore && oppS < targetScore) return;  // neither reached target
-            if      (myS > oppS)  goToResult('win');
-            else if (oppS > myS)  goToResult('lose');
-            else                  goToResult('tie');
+            if (myS < targetScore && oppS < targetScore) return;
+            if      (myS > oppS) goToResult('win');
+            else if (oppS > myS) goToResult('lose');
+            else                 goToResult('tie');
         };
 
         // ── Broadcast channel setup ──────────────────────────────────────
-        // Clean up any leftover waiting-room subscription before subscribing.
         if (destroyMp) { destroyMp(); destroyMp = null; }
 
         const bcChannel = getRoomBroadcastChannel(code);
 
         bcChannel.on('broadcast', { event: 'turn_end' }, ({ payload }) => {
-            // Ignore our own echo
-            if (payload.role === role) return;
+            if (payload.role === role) return; // ignore own echo
 
-            mpScores.opp = payload.totalScore;
+            mpScores.opp       = payload.totalScore;
+            mpScores.oppStreak = payload.streak ?? 0;
             mpScores.oppThrows++;
-
             updateMpHud();
 
-            // Small delay before unlocking so both players can read the update.
+            // Pause so both players see the updated score, then unlock.
             setTimeout(() => {
                 multiplayerConfig.isMyTurn = true;
                 updateMpHud();
@@ -390,30 +418,29 @@ async function router() {
         bcChannel.subscribe();
         destroyMp = () => supabase.removeChannel(bcChannel);
 
-        // ── onThrowComplete (called by engine after each of OUR throws) ───
-        multiplayerConfig.onThrowComplete = async ({ scored, points, totalScore }) => {
-            // 1. Lock canvas immediately
+        // ── onThrowComplete — called by engine after each of our throws ───
+        multiplayerConfig.onThrowComplete = async ({ scored, points, totalScore, streak }) => {
             multiplayerConfig.isMyTurn = false;
-            mpScores.mine = totalScore;
+            mpScores.mine     = totalScore;
+            mpScores.myStreak = streak;
             mpScores.myThrows++;
             updateMpHud();
 
-            // 2. Broadcast result to opponent
-            await bcChannel.send({
+            // Broadcast to opponent
+            bcChannel.send({
                 type:    'broadcast',
                 event:   'turn_end',
-                payload: { role, scored, points, totalScore },
+                payload: { role, scored, points, totalScore, streak },
             });
 
-            // 3. Persist score + flip turn in DB
+            // Persist score + flip turn in DB
             const scoreCol = role === 'host' ? 'host_score' : 'guest_score';
             const nextTurn = role === 'host' ? 'guest'      : 'host';
-            await supabase.from('rooms').update({
-                [scoreCol]:    totalScore,
-                current_turn:  nextTurn,
+            supabase.from('rooms').update({
+                [scoreCol]:   totalScore,
+                current_turn: nextTurn,
             }).eq('code', code);
 
-            // 4. Check win (from my side — only when counts are equal)
             checkWin();
         };
 
@@ -426,10 +453,10 @@ async function router() {
             destroyGame = initGame(highScores, null, multiplayerConfig);
         });
 
-        // ── Countdown (3 → 2 → 1 → GO!) ──────────────────────────────────
-        const countdownEl  = document.getElementById('mp-countdown-num');
-        const countdownOv  = document.getElementById('mp-countdown-overlay');
-        let countdownVal   = 3;
+        // ── Countdown 3 → 2 → 1 → GO! ─────────────────────────────────────
+        const countdownEl = document.getElementById('mp-countdown-num');
+        const countdownOv = document.getElementById('mp-countdown-overlay');
+        let countdownVal  = 3;
 
         const countdownTick = () => {
             countdownVal--;
@@ -440,20 +467,18 @@ async function router() {
                 if (countdownEl) countdownEl.textContent = 'GO!';
                 setTimeout(() => {
                     if (countdownOv) countdownOv.classList.add('hidden');
-                    // Unlock canvas for the player whose turn it is
-                    if (room.current_turn === role) {
-                        multiplayerConfig.isMyTurn = true;
-                    }
+                    if (room.current_turn === role) multiplayerConfig.isMyTurn = true;
                     updateMpHud();
                 }, 700);
             }
         };
         setTimeout(countdownTick, 1000);
 
-        // ── Quit button ───────────────────────────────────────────────────
+        // ── Quit button — delete room and go back to lobby ─────────────────
         document.getElementById('mp-btn-quit')?.addEventListener('click', () => {
-            if (destroyMp)  { destroyMp();  destroyMp  = null; }
+            if (destroyMp)   { destroyMp();   destroyMp   = null; }
             if (destroyGame) { destroyGame(); destroyGame = null; }
+            supabase.from('rooms').delete().eq('code', code); // fire-and-forget
             sessionStorage.removeItem('mp_room_code');
             sessionStorage.removeItem('mp_role');
             sessionStorage.removeItem('mp_room_data');
@@ -474,16 +499,36 @@ async function router() {
         const result = JSON.parse(resultStr);
         app.innerHTML = MultiplayerResult(result);
 
-        document.getElementById('btn-mp-play-again')?.addEventListener('click', () => {
-            // Clear game-specific session data; keep anon ID and player name.
-            sessionStorage.removeItem('mp_room_code');
-            sessionStorage.removeItem('mp_role');
-            sessionStorage.removeItem('mp_room_data');
+        // ── Play Again ─────────────────────────────────────────────────────
+        document.getElementById('btn-mp-play-again')?.addEventListener('click', async () => {
             sessionStorage.removeItem('mp_result');
-            window.location.hash = '#multiplayer';
+            sessionStorage.removeItem('mp_room_data');
+
+            if (result.role === 'host') {
+                // Host: reset room scores/status and return to waiting screen.
+                await supabase.from('rooms').update({
+                    host_score:   0,
+                    guest_score:  0,
+                    status:       'waiting',
+                    current_turn: 'host',
+                    guest_id:     null,
+                    guest_name:   null,
+                }).eq('code', result.code);
+                // mp_room_code and mp_role are still set to host's values
+                window.location.hash = '#mp-waiting';
+            } else {
+                // Guest: pre-fill the code on the multiplayer hub so they can
+                // quickly re-join once the host resets the room.
+                sessionStorage.setItem('mp_replay_code', result.code);
+                sessionStorage.removeItem('mp_room_code');
+                sessionStorage.removeItem('mp_role');
+                window.location.hash = '#multiplayer';
+            }
         });
 
+        // ── Home — delete the room before leaving ──────────────────────────
         document.getElementById('btn-mp-result-home')?.addEventListener('click', () => {
+            supabase.from('rooms').delete().eq('code', result.code); // fire-and-forget
             sessionStorage.removeItem('mp_room_code');
             sessionStorage.removeItem('mp_role');
             sessionStorage.removeItem('mp_room_data');
