@@ -3,11 +3,25 @@ import Game from './views/Game.js';
 import Auth from './views/Auth.js';
 import Leaderboard from './views/Leaderboard.js';
 import Multiplayer from './views/Multiplayer.js';
+import MultiplayerWaiting from './views/MultiplayerWaiting.js';
 import { initGame } from './engine.js';
 import { supabase, getHighScores, getLeaderboard, getUserEntry } from './supabase.js';
 import { isTestUser, testerConfig } from './tester_config.js';
+import { getPlayerId, storePlayerName, getStoredPlayerName } from './multiplayer/session.js';
+import { createRoom, joinRoom, getRoomByCode, subscribeToRoom } from './multiplayer/roomManager.js';
 
 let destroyGame = null;
+let destroyMp   = null;   // unsubscribe fn for the active MP room subscription
+
+// Show / hide an .mp-error element.
+function showMpError(el, msg) {
+    if (!el) return;
+    el.textContent = msg;
+    el.hidden = false;
+}
+function hideMpError(el) {
+    if (el) el.hidden = true;
+}
 
 const medalClass = ['lb-gold', 'lb-silver', 'lb-bronze'];
 const medalIcon  = ['🥇', '🥈', '🥉'];
@@ -51,34 +65,212 @@ async function router() {
         destroyGame();
         destroyGame = null;
     }
+    if (destroyMp && hash !== '#mp-waiting') {
+        destroyMp();
+        destroyMp = null;
+    }
 
     const { data: { session } } = await supabase.auth.getSession();
 
     if (hash === '#multiplayer') {
-        app.innerHTML = Multiplayer();
+        const storedName = getStoredPlayerName();
+        app.innerHTML = Multiplayer({ session, storedName });
 
+        const hub         = document.getElementById('mp-hub');
+        const createPanel = document.getElementById('mp-create');
+        const hubError    = document.getElementById('mp-hub-error');
+        const createError = document.getElementById('mp-create-error');
+
+        // ── Back to Home ──────────────────────────────────────────────────
         document.getElementById('btn-mp-back').addEventListener('click', () => {
             window.location.hash = '#home';
         });
 
-        document.getElementById('btn-mp-join').addEventListener('click', () => {
-            const code = document.getElementById('mp-room-code').value.trim().toUpperCase();
-            if (!code) {
-                document.getElementById('mp-room-code').focus();
-                return;
+        // ── Panel switching ───────────────────────────────────────────────
+        document.getElementById('btn-mp-show-create').addEventListener('click', () => {
+            hideMpError(hubError);
+            hub.hidden = true;
+            createPanel.hidden = false;
+            // Copy typed name across to create panel (guests only)
+            const joinName    = document.getElementById('mp-join-name');
+            const createName  = document.getElementById('mp-create-name');
+            if (createName?.type === 'text' && joinName?.value.trim()) {
+                createName.value = joinName.value.trim();
             }
-            // TODO: implement join-room logic
-            console.log('Join room:', code);
         });
 
-        // Allow pressing Enter inside the input to trigger Join
-        document.getElementById('mp-room-code').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') document.getElementById('btn-mp-join').click();
+        document.getElementById('btn-mp-create-back').addEventListener('click', () => {
+            hideMpError(createError);
+            createPanel.hidden = true;
+            hub.hidden = false;
         });
 
-        document.getElementById('btn-mp-create').addEventListener('click', () => {
-            // TODO: implement create-room logic
-            console.log('Create new room');
+        // ── Target-score slider ───────────────────────────────────────────
+        const slider        = document.getElementById('mp-target-slider');
+        const targetDisplay = document.getElementById('mp-target-display');
+        const syncSlider = () => {
+            const min = +slider.min, max = +slider.max, val = +slider.value;
+            const pct = ((val - min) / (max - min) * 100).toFixed(1) + '%';
+            slider.style.setProperty('--val', pct);
+            targetDisplay.textContent = `${val} pts`;
+        };
+        slider.addEventListener('input', syncSlider);
+        syncSlider();   // initialise fill on load
+
+        // ── Game-mode buttons ─────────────────────────────────────────────
+        let selectedMode = 'pingpong';
+        document.getElementById('mp-mode-pp').addEventListener('click', () => {
+            selectedMode = 'pingpong';
+            document.getElementById('mp-mode-pp').classList.add('active');
+            document.getElementById('mp-mode-bb').classList.remove('active');
+        });
+        document.getElementById('mp-mode-bb').addEventListener('click', () => {
+            selectedMode = 'basketball';
+            document.getElementById('mp-mode-bb').classList.add('active');
+            document.getElementById('mp-mode-pp').classList.remove('active');
+        });
+
+        // ── Join Room ─────────────────────────────────────────────────────
+        const doJoin = async () => {
+            hideMpError(hubError);
+            const name = document.getElementById('mp-join-name').value.trim();
+            const code = document.getElementById('mp-code-input').value.trim().toUpperCase();
+
+            if (!name)              { showMpError(hubError, 'Please enter your name.'); return; }
+            if (code.length !== 6)  { showMpError(hubError, 'Room code must be 6 characters.'); return; }
+
+            const joinBtn = document.getElementById('btn-mp-join');
+            joinBtn.disabled = true;
+
+            const playerId = await getPlayerId();
+            storePlayerName(name);
+
+            const { room, error } = await joinRoom({ code, guestId: playerId, guestName: name });
+            joinBtn.disabled = false;
+            if (error) { showMpError(hubError, error.message); return; }
+
+            sessionStorage.setItem('mp_room_code', room.code);
+            sessionStorage.setItem('mp_role', 'guest');
+            window.location.hash = '#mp-waiting';
+        };
+
+        document.getElementById('btn-mp-join').addEventListener('click', doJoin);
+        document.getElementById('mp-code-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') doJoin();
+        });
+
+        // ── Create Room ───────────────────────────────────────────────────
+        document.getElementById('btn-mp-create-confirm').addEventListener('click', async () => {
+            hideMpError(createError);
+            const nameInput = document.getElementById('mp-create-name');
+            const name = nameInput.value.trim();
+
+            if (!name) { showMpError(createError, 'Please enter your name.'); return; }
+
+            const confirmBtn = document.getElementById('btn-mp-create-confirm');
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Creating…';
+
+            const playerId    = await getPlayerId();
+            const targetScore = +document.getElementById('mp-target-slider').value;
+
+            storePlayerName(name);
+
+            const { room, error } = await createRoom({
+                hostId: playerId, hostName: name,
+                gameMode: selectedMode, targetScore,
+            });
+
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Create Room';
+
+            if (error) { showMpError(createError, error.message); return; }
+
+            sessionStorage.setItem('mp_room_code', room.code);
+            sessionStorage.setItem('mp_role', 'host');
+            window.location.hash = '#mp-waiting';
+        });
+
+        return;
+    }
+
+    if (hash === '#mp-waiting') {
+        const code = sessionStorage.getItem('mp_room_code');
+        const role = sessionStorage.getItem('mp_role');
+
+        // Guard: no stored room → back to lobby
+        if (!code || !role) { window.location.hash = '#multiplayer'; return; }
+
+        const { room, error: roomErr } = await getRoomByCode(code);
+        if (roomErr || !room) { window.location.hash = '#multiplayer'; return; }
+
+        app.innerHTML = MultiplayerWaiting({ room, role });
+
+        // ── Realtime subscription ─────────────────────────────────────────
+        destroyMp = subscribeToRoom(code, updatedRoom => {
+            // Guest joined — update host's waiting screen
+            if (updatedRoom.guest_name) {
+                const nameEl  = document.getElementById('mp-guest-name-el');
+                const dotEl   = document.getElementById('mp-guest-dot');
+                const startBtn = document.getElementById('btn-mp-start');
+                const msgEl   = document.getElementById('mp-waiting-msg');
+                if (nameEl)  nameEl.textContent = updatedRoom.guest_name;
+                if (dotEl)   { dotEl.classList.replace('mp-dot-waiting', 'mp-dot-ready'); }
+                if (startBtn){ startBtn.disabled = false; }
+                if (msgEl && role === 'host')
+                    msgEl.textContent = "✅ Both players ready! Start when you're ready.";
+                if (msgEl && role === 'guest')
+                    msgEl.textContent = '✅ Both players ready! Waiting for host…';
+            }
+
+            // Host started the game
+            if (updatedRoom.status === 'playing') {
+                sessionStorage.setItem('mp_room_data', JSON.stringify(updatedRoom));
+                // Phase 2 will navigate to the actual game.
+                // For now update the status message on both screens.
+                const msgEl   = document.getElementById('mp-waiting-msg');
+                const startBtn = document.getElementById('btn-mp-start');
+                if (msgEl)   msgEl.textContent = '🎮 Game starting…';
+                if (startBtn){ startBtn.disabled = true; startBtn.textContent = 'Starting…'; }
+            }
+        });
+
+        // ── Copy code to clipboard ────────────────────────────────────────
+        document.getElementById('btn-mp-copy').addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(code);
+                const btn = document.getElementById('btn-mp-copy');
+                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><polyline points="20 6 9 17 4 12"/></svg>';
+                setTimeout(() => {
+                    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+                }, 1800);
+            } catch { /* clipboard blocked */ }
+        });
+
+        // ── Start Game (host only) ────────────────────────────────────────
+        if (role === 'host') {
+            document.getElementById('btn-mp-start')?.addEventListener('click', async () => {
+                const btn = document.getElementById('btn-mp-start');
+                btn.disabled = true;
+                btn.textContent = 'Starting…';
+                const { error } = await supabase
+                    .from('rooms')
+                    .update({ status: 'playing' })
+                    .eq('code', code);
+                if (error) {
+                    btn.disabled = false;
+                    btn.textContent = 'Start Game';
+                    console.error('Start failed:', error.message);
+                }
+            });
+        }
+
+        // ── Leave Room ────────────────────────────────────────────────────
+        document.getElementById('btn-mp-leave').addEventListener('click', () => {
+            if (destroyMp) { destroyMp(); destroyMp = null; }
+            sessionStorage.removeItem('mp_room_code');
+            sessionStorage.removeItem('mp_role');
+            window.location.hash = '#multiplayer';
         });
 
         return;

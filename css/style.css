@@ -1593,9 +1593,10 @@ button:active {
     z-index: 10;
 }
 
-/* Scale the title down so "MULTIPLAYER" (11 chars) fits the 400px card */
-#multiplayer-screen .logo-title {
-    font-size: clamp(1.1rem, 3.8vmin, 1.9rem);
+/* "MULTIPLAYER" (11 chars) needs a smaller cap than the default logo-title.
+   Applied as a class so only that title is affected — "New Room" stays full size. */
+.mp-long-title {
+    font-size: clamp(1.1rem, 3.8vmin, 1.9rem) !important;
 }
 
 /* Room-code input */
@@ -1736,4 +1737,344 @@ button:active {
     width: clamp(0.95rem, 2.2vmin, 1.15rem);
     height: clamp(0.95rem, 2.2vmin, 1.15rem);
     flex-shrink: 0;
+}
+
+/* mp-input used as a plain name field — override the code-specific styles */
+.mp-input.mp-name-input {
+    font-family: inherit;
+    font-weight: 600;
+    letter-spacing: normal;
+    text-transform: none;
+    font-size: clamp(0.85rem, 2vmin, 1rem);
+}
+
+.mp-input.mp-name-input::placeholder {
+    font-family: inherit;
+    font-weight: 400;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+/* Disabled buttons */
+button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Inline back text button (top of create-room card) */
+.mp-text-back {
+    display: block;
+    text-align: left;
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin-bottom: clamp(0.3rem, 1vmin, 0.5rem);
+    color: var(--text-secondary);
+    font-size: clamp(0.75rem, 1.8vmin, 0.85rem);
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+@media (hover: hover) {
+    .mp-text-back:hover {
+        color: var(--text-primary);
+        transform: none;
+        box-shadow: none;
+        background: none;
+    }
+}
+
+.mp-text-back:active {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Error message */
+.mp-error {
+    color: #fca5a5;
+    font-size: clamp(0.72rem, 1.6vmin, 0.82rem);
+    text-align: center;
+    margin-top: clamp(0.3rem, 1vmin, 0.5rem);
+    padding: 0.45rem 0.75rem;
+    background: rgba(220, 38, 38, 0.12);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-radius: 0.6rem;
+}
+
+/* Game-mode selector in create form */
+.mp-mode-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.mp-mode-pick {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: clamp(0.45rem, 1.4vmin, 0.7rem);
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    color: var(--text-secondary);
+    font-size: clamp(0.78rem, 1.8vmin, 0.9rem);
+    font-weight: 600;
+    box-shadow: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mp-mode-pick.active {
+    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+    border-color: transparent;
+    color: #0f172a;
+    box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);
+}
+
+@media (hover: hover) {
+    .mp-mode-pick:not(.active):hover {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text-primary);
+        transform: none;
+        box-shadow: none;
+    }
+}
+
+.mp-mode-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    pointer-events: none;
+}
+
+/* Target-score slider */
+.mp-slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.45rem;
+}
+
+.mp-slider-value {
+    font-size: clamp(0.78rem, 1.8vmin, 0.9rem);
+    font-weight: 800;
+    color: #38bdf8;
+    text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+.mp-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(
+        to right,
+        #38bdf8 0%,
+        #38bdf8 var(--val, 17%),
+        rgba(255, 255, 255, 0.12) var(--val, 17%)
+    );
+    outline: none;
+    cursor: pointer;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mp-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+    box-shadow: 0 2px 8px rgba(56, 189, 248, 0.6);
+    cursor: pointer;
+    border: none;
+    transition: transform 0.15s ease;
+}
+
+@media (hover: hover) {
+    .mp-slider::-webkit-slider-thumb:hover { transform: scale(1.25); }
+}
+
+.mp-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+    border: none;
+    box-shadow: 0 2px 8px rgba(56, 189, 248, 0.6);
+    cursor: pointer;
+}
+
+.mp-slider-ends {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.3rem;
+    font-size: 0.62rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+/* ── Waiting Room ─────────────────────────────────── */
+
+#mp-waiting-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(0.5rem, 2vmin, 1.3rem);
+    background: linear-gradient(rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.45)),
+                url('../assets/main_bg.webp') center/cover no-repeat;
+    z-index: 10;
+}
+
+.mp-waiting-card { max-width: 440px; }
+
+.mp-sub-label {
+    font-size: clamp(0.5rem, 1.2vmin, 0.6rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--text-secondary);
+    margin-bottom: clamp(0.25rem, 0.8vmin, 0.4rem);
+}
+
+.mp-code-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 1rem;
+    padding: clamp(0.45rem, 1.3vmin, 0.65rem) clamp(0.85rem, 2.2vmin, 1.2rem);
+    margin-bottom: clamp(0.45rem, 1.4vmin, 0.7rem);
+}
+
+.mp-code-badge span {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.4rem, 4vmin, 2rem);
+    font-weight: 900;
+    letter-spacing: 0.3em;
+    color: #38bdf8;
+    text-shadow: 0 0 16px rgba(56, 189, 248, 0.6);
+}
+
+.mp-copy-btn {
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    box-shadow: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s, transform 0.15s;
+}
+
+@media (hover: hover) {
+    .mp-copy-btn:hover {
+        color: #38bdf8;
+        transform: scale(1.2);
+        background: none;
+        box-shadow: none;
+    }
+}
+
+.mp-copy-btn:active { transform: scale(0.9); }
+
+.mp-game-info {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: clamp(0.55rem, 1.8vmin, 0.9rem);
+    flex-wrap: wrap;
+}
+
+.mp-info-chip {
+    font-size: clamp(0.68rem, 1.5vmin, 0.78rem);
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 2rem;
+    padding: 0.22rem 0.7rem;
+    white-space: nowrap;
+}
+
+.mp-players-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    width: 100%;
+    margin-bottom: clamp(0.55rem, 1.8vmin, 0.9rem);
+}
+
+.mp-player-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 0.55rem 0.85rem;
+}
+
+.mp-player-avatar {
+    font-size: clamp(0.95rem, 2.2vmin, 1.15rem);
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.mp-player-name {
+    flex: 1;
+    font-size: clamp(0.82rem, 1.9vmin, 1rem);
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.mp-ready-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.mp-dot-ready {
+    background: #4ade80;
+    box-shadow: 0 0 6px rgba(74, 222, 128, 0.7);
+}
+
+.mp-dot-waiting {
+    background: #fbbf24;
+    animation: mp-dot-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes mp-dot-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(0.75); }
+}
+
+.mp-waiting-status {
+    font-size: clamp(0.7rem, 1.6vmin, 0.8rem);
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.4;
+    margin-bottom: clamp(0.35rem, 1.2vmin, 0.65rem);
 }
