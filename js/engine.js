@@ -3,7 +3,7 @@ import { createModifierManager } from './modifiers/manager.js';
 import { createGameContext } from './modifiers/context.js';
 import { createDirector } from './modifiers/director.js';
 
-export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, basketball: { score: 0, bestStreak: 0 } }, testerRules = null) {
+export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, basketball: { score: 0, bestStreak: 0 } }, testerRules = null, multiplayerConfig = null) {
     const canvas = document.getElementById('simulation-canvas');
     if (!canvas) return null;
     const ctx = canvas.getContext('2d');
@@ -104,6 +104,27 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     const gameCtx = createGameContext({ ball, ctx2d: ctx, tester: testerRules });
     const modifiers = createModifierManager();
     const director = createDirector();
+
+    // ── Multiplayer config ────────────────────────────────────────────────
+    // When multiplayerConfig is provided:
+    //   • director is disabled (no black holes, no challenges)
+    //   • mode-switch buttons are locked
+    //   • input is blocked when mpCfg.isMyTurn is false
+    //   • onThrowComplete({ scored, points, totalScore }) fires after each throw
+    const mpCfg = multiplayerConfig;
+
+    // In multiplayer the game mode is fixed by the room — set physics params
+    // before the first resizeCanvas / resetBall calls further down.
+    if (mpCfg) {
+        gameMode = mpCfg.gameMode;
+        if (gameMode === 'basketball') {
+            baseRadius    = 26;
+            bounceFactor  = 0.76;
+            airResistance = 0.998;
+            friction      = 0.97;
+        }
+        nhsRunStartHighScore = highScores[gameMode];
+    }
 
     // Action methods modifiers can call on the context. These touch engine
     // state directly so they live here, not in context.js.
@@ -300,6 +321,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     
     function setMode(mode) {
         if (isAiming) return; // Prevent changing mode while aiming
+        if (mpCfg) return;    // Mode is locked in multiplayer
         
         gameMode = mode;
         score = 0;
@@ -479,6 +501,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     
     function handlePointerDown(e) {
         if (e.target.closest('button') || scoredThisThrow || ballReturning) return;
+        if (mpCfg && !mpCfg.isMyTurn) return;   // canvas locked when not our turn
         if (!isResting) return;
         // Close open mobile HUDs; block throw on this tap so it only dismisses the menu
         const _topLeft   = document.getElementById('top-left');
@@ -1591,12 +1614,13 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         const oldHighScore   = highScores[gameMode];
         if (streakImproved) bestStreaks[gameMode] = consecutiveHits;
         if (scoreImproved)  highScores[gameMode]  = score;
-        // Test-user scores are kept off the leaderboard.
-        if ((streakImproved || scoreImproved) && !gameCtx.tester) {
+        // Test-user and multiplayer scores are kept off the leaderboard.
+        if ((streakImproved || scoreImproved) && !gameCtx.tester && !mpCfg) {
             saveHighScore(gameMode, highScores[gameMode], bestStreaks[gameMode]);
         }
-        // Celebrate once when an existing record is first beaten this run.
-        if (scoreImproved && nhsRunStartHighScore > 0 && !nhsCelebratedThisRun) {
+        // Celebrate once when an existing record is first beaten this run
+        // (disabled in multiplayer — we have our own win/lose screen).
+        if (!mpCfg && scoreImproved && nhsRunStartHighScore > 0 && !nhsCelebratedThisRun) {
             nhsCelebratedThisRun = true;
             nhsStartTime = performance.now();
             nhsParticles = null;
@@ -1625,7 +1649,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         updateScoreDisplay();
         syncContext();
         modifiers.emit('score', gameCtx);
-        director.notify('score', gameCtx, modifiers);
+        if (!mpCfg) director.notify('score', gameCtx, modifiers);
+
+        // Notify multiplayer layer — app.js will broadcast + flip turn.
+        if (mpCfg?.onThrowComplete) mpCfg.onThrowComplete({ scored: true, points, totalScore: score });
     }
 
     function handleMiss() {
@@ -1649,7 +1676,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             updateScoreDisplay();
             syncContext();
             modifiers.emit('miss', gameCtx);
-            director.notify('miss', gameCtx, modifiers);
+            if (!mpCfg) director.notify('miss', gameCtx, modifiers);
+            if (mpCfg?.onThrowComplete) mpCfg.onThrowComplete({ scored: false, points: 0, totalScore: score });
             return;
         }
 
@@ -1677,7 +1705,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         updateScoreDisplay();
         syncContext();
         modifiers.emit('miss', gameCtx);
-        director.notify('miss', gameCtx, modifiers);
+        if (!mpCfg) director.notify('miss', gameCtx, modifiers);
+        if (mpCfg?.onThrowComplete) mpCfg.onThrowComplete({ scored: false, points: 0, totalScore: score });
     }
 
     function animate() {
@@ -1836,13 +1865,13 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             draw();
         }
 
-        director.tick(gameCtx, modifiers);
+        if (!mpCfg) director.tick(gameCtx, modifiers);
         animationId = requestAnimationFrame(animate);
     }
 
-    // Set initial background
+    // Set initial background (toggle handles both pingpong and basketball modes)
     const screen = document.getElementById('game-screen');
-    if (screen) screen.classList.add('bg-pingpong');
+    if (screen) screen.classList.toggle('bg-pingpong', gameMode === 'pingpong');
 
     resizeCanvas();
     updateScoreDisplay();

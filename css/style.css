@@ -2078,3 +2078,309 @@ button:disabled {
     line-height: 1.4;
     margin-bottom: clamp(0.35rem, 1.2vmin, 0.65rem);
 }
+
+/* ══════════════════════════════════════════════════════════════
+   MP Game HUD
+   ══════════════════════════════════════════════════════════════ */
+
+/* Hide score-area — engine needs the DOM nodes but we don't show them */
+.mp-score-area-hidden { display: none !important; }
+
+/* ── Top HUD bar ───────────────────────────────────────────── */
+#mp-game-hud {
+    position: absolute;
+    top: max(0.5rem, env(safe-area-inset-top, 0.5rem));
+    left: 0;
+    right: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 max(0.75rem, env(safe-area-inset-left, 0.75rem));
+    pointer-events: none;   /* canvas beneath stays interactive */
+}
+
+/* Quit button re-enables pointer events */
+.mp-quit-btn {
+    pointer-events: auto;
+    flex-shrink: 0;
+}
+
+/* Score panel — stretches to fill remaining width */
+.mp-hud-scores {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(15, 23, 42, 0.72);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 0.35rem 0.75rem;
+}
+
+/* Each player's name + score column */
+.mp-hud-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+}
+
+.mp-hud-pname {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.45rem, 1.3vmin, 0.65rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.mp-hud-pscore {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.15rem, 3.2vmin, 1.75rem);
+    font-weight: 900;
+    color: var(--text-primary);
+    line-height: 1.1;
+    transition: color 0.25s ease;
+}
+
+/* Opponent's name/score right-aligned */
+.mp-hud-opp-side {
+    align-items: center;
+}
+
+/* Center column: target score + turn indicator */
+.mp-hud-center-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    flex-shrink: 0;
+}
+
+.mp-hud-target {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.5rem, 1.4vmin, 0.7rem);
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 0.06em;
+}
+
+.mp-turn-indicator {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.45rem, 1.25vmin, 0.65rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.2rem 0.5rem;
+    border-radius: 99px;
+    background: rgba(56, 189, 248, 0.18);
+    color: #38bdf8;
+    white-space: nowrap;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* ── Countdown overlay ─────────────────────────────────────── */
+.mp-countdown-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(9, 14, 24, 0.72);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: opacity 0.4s ease;
+}
+
+.mp-countdown-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.mp-countdown-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mp-countdown-sub {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.7rem, 2vmin, 1rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--text-secondary);
+}
+
+.mp-countdown-num {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(3.5rem, 14vmin, 7rem);
+    font-weight: 900;
+    color: var(--text-primary);
+    text-shadow: 0 0 40px rgba(56, 189, 248, 0.8), 0 0 80px rgba(56, 189, 248, 0.4);
+    animation: mp-countdown-pop 0.35s ease-out;
+    line-height: 1;
+}
+
+@keyframes mp-countdown-pop {
+    from { transform: scale(1.5); opacity: 0.5; }
+    to   { transform: scale(1);   opacity: 1;   }
+}
+
+/* ── Wait overlay (opponent's turn) ────────────────────────── */
+.mp-wait-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(9, 14, 24, 0.55);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    transition: opacity 0.3s ease;
+    pointer-events: all;
+}
+
+.mp-wait-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.mp-wait-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.mp-wait-content p {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.75rem, 2.2vmin, 1.05rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+}
+
+.mp-wait-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(56, 189, 248, 0.2);
+    border-top-color: #38bdf8;
+    border-radius: 50%;
+    animation: mp-spin 0.9s linear infinite;
+}
+
+@keyframes mp-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MP Result Screen
+   ══════════════════════════════════════════════════════════════ */
+
+#mp-result-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(0.5rem, 2vmin, 1.3rem);
+    background: linear-gradient(rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.45)),
+                url('../assets/main_bg.webp') center/cover no-repeat;
+    z-index: 10;
+}
+
+.mp-result-card {
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.6rem, 2vmin, 1.1rem);
+}
+
+/* Win / lose / tie banner */
+.mp-result-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1.4rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    margin-bottom: 0.2rem;
+}
+
+.mp-result-win  { background: rgba(74, 222, 128, 0.15); border-color: rgba(74, 222, 128, 0.4); }
+.mp-result-lose { background: rgba(239, 68, 68, 0.12);  border-color: rgba(239, 68, 68, 0.35); }
+.mp-result-tie  { background: rgba(251, 191, 36, 0.12); border-color: rgba(251, 191, 36, 0.35); }
+
+.mp-result-icon  { font-size: clamp(1.4rem, 4vmin, 2rem); }
+.mp-result-label {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1rem, 3.2vmin, 1.5rem);
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    color: var(--text-primary);
+}
+
+/* Score comparison */
+.mp-result-scores {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid var(--border-color);
+    border-radius: 0.9rem;
+    padding: 0.75rem 1.25rem;
+    width: 100%;
+}
+
+.mp-result-player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    flex: 1;
+}
+
+.mp-rs-winner .mp-rs-score { color: #4ade80; }
+.mp-rs-winner .mp-rs-name  { color: var(--text-primary); }
+
+.mp-rs-name {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.55rem, 1.5vmin, 0.75rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.mp-rs-score {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.5rem, 5vmin, 2.5rem);
+    font-weight: 900;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.mp-rs-vs {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.7rem, 1.8vmin, 0.9rem);
+    font-weight: 700;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}

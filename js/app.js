@@ -4,11 +4,13 @@ import Auth from './views/Auth.js';
 import Leaderboard from './views/Leaderboard.js';
 import Multiplayer from './views/Multiplayer.js';
 import MultiplayerWaiting from './views/MultiplayerWaiting.js';
+import MultiplayerGame from './views/MultiplayerGame.js';
+import MultiplayerResult from './views/MultiplayerResult.js';
 import { initGame } from './engine.js';
 import { supabase, getHighScores, getLeaderboard, getUserEntry } from './supabase.js';
 import { isTestUser, testerConfig } from './tester_config.js';
 import { getPlayerId, storePlayerName, getStoredPlayerName } from './multiplayer/session.js';
-import { createRoom, joinRoom, getRoomByCode, subscribeToRoom } from './multiplayer/roomManager.js';
+import { createRoom, joinRoom, getRoomByCode, subscribeToRoom, getRoomBroadcastChannel } from './multiplayer/roomManager.js';
 
 let destroyGame = null;
 let destroyMp   = null;   // unsubscribe fn for the active MP room subscription
@@ -61,11 +63,16 @@ async function router() {
     const app = document.getElementById('app');
     const hash = window.location.hash || '#home';
 
-    if (destroyGame && hash !== '#game') {
+    // Engine lives on #game and #mp-game only — clean it up on all other routes.
+    if (destroyGame && hash !== '#game' && hash !== '#mp-game') {
         destroyGame();
         destroyGame = null;
     }
-    if (destroyMp && hash !== '#mp-waiting') {
+    // MP subscription (waiting room Postgres sub OR game broadcast channel)
+    // lives on #mp-waiting and #mp-game; the #mp-game handler explicitly
+    // re-creates it, so the old waiting-room sub is cleaned up by this guard
+    // on transition.
+    if (destroyMp && hash !== '#mp-waiting' && hash !== '#mp-game') {
         destroyMp();
         destroyMp = null;
     }
@@ -223,15 +230,10 @@ async function router() {
                     msgEl.textContent = '✅ Both players ready! Waiting for host…';
             }
 
-            // Host started the game
+            // Host started the game — save room data and navigate to game screen.
             if (updatedRoom.status === 'playing') {
                 sessionStorage.setItem('mp_room_data', JSON.stringify(updatedRoom));
-                // Phase 2 will navigate to the actual game.
-                // For now update the status message on both screens.
-                const msgEl   = document.getElementById('mp-waiting-msg');
-                const startBtn = document.getElementById('btn-mp-start');
-                if (msgEl)   msgEl.textContent = '🎮 Game starting…';
-                if (startBtn){ startBtn.disabled = true; startBtn.textContent = 'Starting…'; }
+                window.location.hash = '#mp-game';
             }
         });
 
@@ -253,15 +255,26 @@ async function router() {
                 const btn = document.getElementById('btn-mp-start');
                 btn.disabled = true;
                 btn.textContent = 'Starting…';
+
+                // Fetch the latest room row so we have the guest fields too.
+                const { room: freshRoom } = await getRoomByCode(code);
                 const { error } = await supabase
                     .from('rooms')
                     .update({ status: 'playing' })
                     .eq('code', code);
+
                 if (error) {
                     btn.disabled = false;
                     btn.textContent = 'Start Game';
                     console.error('Start failed:', error.message);
+                    return;
                 }
+
+                // Store room data and navigate directly (don't rely on echo).
+                if (freshRoom) {
+                    sessionStorage.setItem('mp_room_data', JSON.stringify({ ...freshRoom, status: 'playing' }));
+                }
+                window.location.hash = '#mp-game';
             });
         }
 
@@ -271,6 +284,211 @@ async function router() {
             sessionStorage.removeItem('mp_room_code');
             sessionStorage.removeItem('mp_role');
             window.location.hash = '#multiplayer';
+        });
+
+        return;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    //  #mp-game  — turn-based multiplayer game
+    // ─────────────────────────────────────────────────────────────────────
+    if (hash === '#mp-game') {
+        const code         = sessionStorage.getItem('mp_room_code');
+        const role         = sessionStorage.getItem('mp_role');
+        const roomDataStr  = sessionStorage.getItem('mp_room_data');
+
+        if (!code || !role || !roomDataStr) { window.location.hash = '#multiplayer'; return; }
+
+        // Always fetch the freshest room row in case we reloaded the page.
+        const { room: liveRoom } = await getRoomByCode(code);
+        const room = liveRoom ?? JSON.parse(roomDataStr);
+
+        const myName    = role === 'host' ? room.host_name  : room.guest_name;
+        const oppName   = role === 'host' ? room.guest_name : room.host_name;
+        const targetScore = room.target_score;
+
+        // Mutable scores — shared with the engine's onThrowComplete callback
+        // via closure (no need to copy into config; score comes back as totalScore).
+        const mpScores = {
+            mine:      role === 'host' ? (room.host_score  || 0) : (room.guest_score || 0),
+            opp:       role === 'host' ? (room.guest_score || 0) : (room.host_score  || 0),
+            myThrows:  0,
+            oppThrows: 0,
+        };
+
+        // multiplayerConfig is passed into initGame.
+        // isMyTurn starts false — the countdown overlay enables it.
+        const multiplayerConfig = {
+            gameMode:        room.game_mode,
+            isMyTurn:        false,  // set to true after countdown
+            onThrowComplete: null,   // wired below
+        };
+
+        app.innerHTML = MultiplayerGame({
+            myName, oppName, targetScore,
+            gameMode: room.game_mode,
+            isMyTurn: false,
+        });
+
+        // ── HUD helpers ──────────────────────────────────────────────────
+        const updateMpHud = () => {
+            const myEl    = document.getElementById('mp-score-mine');
+            const oppEl   = document.getElementById('mp-score-theirs');
+            const turnEl  = document.getElementById('mp-turn-indicator');
+            const waitOv  = document.getElementById('mp-wait-overlay');
+            const waitTxt = document.getElementById('mp-wait-text');
+
+            if (myEl)   myEl.textContent  = mpScores.mine;
+            if (oppEl)  oppEl.textContent = mpScores.opp;
+            if (turnEl) turnEl.textContent = multiplayerConfig.isMyTurn
+                ? '🎯 Your Turn!'
+                : `⏳ ${oppName}'s Turn…`;
+            if (waitOv)  waitOv.classList.toggle('hidden', multiplayerConfig.isMyTurn);
+            if (waitTxt) waitTxt.textContent = `${oppName} is throwing…`;
+        };
+
+        // ── Win-check (runs after every throw when counts are equal) ──────
+        const goToResult = (outcome) => {
+            sessionStorage.setItem('mp_result', JSON.stringify({
+                outcome, myScore: mpScores.mine, oppScore: mpScores.opp, myName, oppName,
+            }));
+            window.location.hash = '#mp-result';
+        };
+
+        const checkWin = () => {
+            if (mpScores.myThrows !== mpScores.oppThrows) return; // round not done yet
+            const myS = mpScores.mine, oppS = mpScores.opp;
+            if (myS < targetScore && oppS < targetScore) return;  // neither reached target
+            if      (myS > oppS)  goToResult('win');
+            else if (oppS > myS)  goToResult('lose');
+            else                  goToResult('tie');
+        };
+
+        // ── Broadcast channel setup ──────────────────────────────────────
+        // Clean up any leftover waiting-room subscription before subscribing.
+        if (destroyMp) { destroyMp(); destroyMp = null; }
+
+        const bcChannel = getRoomBroadcastChannel(code);
+
+        bcChannel.on('broadcast', { event: 'turn_end' }, ({ payload }) => {
+            // Ignore our own echo
+            if (payload.role === role) return;
+
+            mpScores.opp = payload.totalScore;
+            mpScores.oppThrows++;
+
+            updateMpHud();
+
+            // Small delay before unlocking so both players can read the update.
+            setTimeout(() => {
+                multiplayerConfig.isMyTurn = true;
+                updateMpHud();
+                checkWin();
+            }, 1000);
+        });
+
+        bcChannel.subscribe();
+        destroyMp = () => supabase.removeChannel(bcChannel);
+
+        // ── onThrowComplete (called by engine after each of OUR throws) ───
+        multiplayerConfig.onThrowComplete = async ({ scored, points, totalScore }) => {
+            // 1. Lock canvas immediately
+            multiplayerConfig.isMyTurn = false;
+            mpScores.mine = totalScore;
+            mpScores.myThrows++;
+            updateMpHud();
+
+            // 2. Broadcast result to opponent
+            await bcChannel.send({
+                type:    'broadcast',
+                event:   'turn_end',
+                payload: { role, scored, points, totalScore },
+            });
+
+            // 3. Persist score + flip turn in DB
+            const scoreCol = role === 'host' ? 'host_score' : 'guest_score';
+            const nextTurn = role === 'host' ? 'guest'      : 'host';
+            await supabase.from('rooms').update({
+                [scoreCol]:    totalScore,
+                current_turn:  nextTurn,
+            }).eq('code', code);
+
+            // 4. Check win (from my side — only when counts are equal)
+            checkWin();
+        };
+
+        // ── Start engine ─────────────────────────────────────────────────
+        const highScores = session
+            ? await getHighScores()
+            : { pingpong: { score: 0, bestStreak: 0 }, basketball: { score: 0, bestStreak: 0 } };
+
+        requestAnimationFrame(() => {
+            destroyGame = initGame(highScores, null, multiplayerConfig);
+        });
+
+        // ── Countdown (3 → 2 → 1 → GO!) ──────────────────────────────────
+        const countdownEl  = document.getElementById('mp-countdown-num');
+        const countdownOv  = document.getElementById('mp-countdown-overlay');
+        let countdownVal   = 3;
+
+        const countdownTick = () => {
+            countdownVal--;
+            if (countdownVal > 0) {
+                if (countdownEl) countdownEl.textContent = countdownVal;
+                setTimeout(countdownTick, 1000);
+            } else {
+                if (countdownEl) countdownEl.textContent = 'GO!';
+                setTimeout(() => {
+                    if (countdownOv) countdownOv.classList.add('hidden');
+                    // Unlock canvas for the player whose turn it is
+                    if (room.current_turn === role) {
+                        multiplayerConfig.isMyTurn = true;
+                    }
+                    updateMpHud();
+                }, 700);
+            }
+        };
+        setTimeout(countdownTick, 1000);
+
+        // ── Quit button ───────────────────────────────────────────────────
+        document.getElementById('mp-btn-quit')?.addEventListener('click', () => {
+            if (destroyMp)  { destroyMp();  destroyMp  = null; }
+            if (destroyGame) { destroyGame(); destroyGame = null; }
+            sessionStorage.removeItem('mp_room_code');
+            sessionStorage.removeItem('mp_role');
+            sessionStorage.removeItem('mp_room_data');
+            window.location.hash = '#multiplayer';
+        });
+
+        updateMpHud();
+        return;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    //  #mp-result  — post-game result screen
+    // ─────────────────────────────────────────────────────────────────────
+    if (hash === '#mp-result') {
+        const resultStr = sessionStorage.getItem('mp_result');
+        if (!resultStr) { window.location.hash = '#multiplayer'; return; }
+
+        const result = JSON.parse(resultStr);
+        app.innerHTML = MultiplayerResult(result);
+
+        document.getElementById('btn-mp-play-again')?.addEventListener('click', () => {
+            // Clear game-specific session data; keep anon ID and player name.
+            sessionStorage.removeItem('mp_room_code');
+            sessionStorage.removeItem('mp_role');
+            sessionStorage.removeItem('mp_room_data');
+            sessionStorage.removeItem('mp_result');
+            window.location.hash = '#multiplayer';
+        });
+
+        document.getElementById('btn-mp-result-home')?.addEventListener('click', () => {
+            sessionStorage.removeItem('mp_room_code');
+            sessionStorage.removeItem('mp_role');
+            sessionStorage.removeItem('mp_room_data');
+            sessionStorage.removeItem('mp_result');
+            window.location.hash = '#home';
         });
 
         return;
