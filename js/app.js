@@ -390,11 +390,13 @@ async function router() {
         };
 
         // ── Small helper: show a toast inside the game canvas area ──────
-        const showGameToast = (msg, type = 'bonus-up') => {
+        // Pass high=true for system/event toasts (tiebreaker, time's up)
+        // so they appear above score toasts that may fire simultaneously.
+        const showGameToast = (msg, type = 'bonus-up', high = false) => {
             const container = document.getElementById('toast-container');
             if (!container) return;
             const el = document.createElement('div');
-            el.className = `game-toast toast-${type}`;
+            el.className = `game-toast toast-${type}${high ? ' toast-high' : ''}`;
             el.textContent = msg;
             container.appendChild(el);
             setTimeout(() => el.remove(), 2500);
@@ -452,7 +454,7 @@ async function router() {
             // applying the real result (score or miss) with full consequences.
             if (multiplayerConfig.isBallInFlight?.()) {
                 clearTurnTimer();
-                showGameToast('⏰ Time\'s up!', 'bonus-up');
+                showGameToast('⏰ Time\\'s up!', 'bonus-up', true);
                 return;
             }
 
@@ -461,7 +463,7 @@ async function router() {
             // handleMiss resets streak/lives/bonus-mode and calls
             // onThrowComplete, which handles broadcast + DB + checkWin.
             multiplayerConfig.cancelAim?.();
-            showGameToast('⏰ Time\'s up!', 'bonus-up');
+            showGameToast('⏰ Time\\'s up!', 'bonus-up', true);
             multiplayerConfig.forceMiss?.();
         };
 
@@ -526,7 +528,7 @@ async function router() {
 
             // Scores are equal after equal throws — start (or extend) a tiebreaker.
             tiebreakActive = true;
-            showGameToast('🔥 TIEBREAKER! Keep playing!', 'bonus-up');
+            showGameToast('🔥 TIEBREAKER! Keep playing!', 'bonus-up', true);
             // Game continues normally; checkWin will fire again after the next round.
         };
 

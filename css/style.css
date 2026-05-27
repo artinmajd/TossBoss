@@ -838,6 +838,12 @@ button:active {
     text-shadow: 0 0 30px rgba(239, 68, 68, 1);
 }
 
+/* System/event toasts (tiebreaker, time's up, etc.) appear higher so
+   they never overlap score toasts that fire at the same moment. */
+.game-toast.toast-high {
+    top: -16vh;
+}
+
 /* ── Mobile landscape HUD ── */
 #menu-toggle { display: none; }
 
