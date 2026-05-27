@@ -483,7 +483,7 @@ button:active {
    into its place (see :fullscreen and the max-width:900px media query). */
 #heart-decor {
     position: absolute;
-    bottom: calc(var(--bg-bottom, 0px) - 0.5rem);
+    bottom: calc(var(--bg-bottom, 0px) + max(0.75rem, env(safe-area-inset-bottom, 0.75rem)));
     right: calc(var(--bg-right, 0px) + max(0.75rem, env(safe-area-inset-right, 0.75rem)));
     height: calc(74px * var(--game-scale, 1));
     z-index: 99;
@@ -595,6 +595,7 @@ button:active {
 /* Extra life granted by a challenge — heart bounces in with a pink glow */
 #heart-decor img.heart-extra-in {
     animation: heart-extra-in 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+    align-self: center; /* keep vertically in line with the other hearts */
 }
 
 @keyframes heart-extra-in {
