@@ -87,6 +87,22 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     let ballReturning = false;
     let returnT = 0;
     const RETURN_DURATION = 0.35; // seconds
+
+    // ── MP ghost ball state ───────────────────────────────────────────────
+    // ghostX/Y          — opponent's last known resting position; drawn at 50%
+    //                     opacity during our own turn so they're always visible.
+    // isSpectateReturn  — true from spectated-score until the ghost arc lands.
+    //                     We stay in "ghost mode" until restoreAfterSpectate().
+    // spectateArcActive — set true when startReturn() begins the ghost arc.
+    //                     Guards the completion check so the ball naturally
+    //                     settling inside the cup (before ball_returned arrives)
+    //                     does NOT falsely complete the spectate.
+    // lastMpFF          — last FF state we broadcast; for change detection only.
+    let ghostX            = null;
+    let ghostY            = null;
+    let isSpectateReturn  = false;
+    let spectateArcActive = false;
+    let lastMpFF          = false;
     let returnFrom = { x: 0, y: 0 };
     let returnCtrl = { x: 0, y: 0 };
     let returnTo   = { x: 0, y: 0 };
@@ -129,23 +145,73 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         if (mpCfg.initialScore > 0) score = mpCfg.initialScore;
 
         // ── Engine state helpers for app.js ──────────────────────────────
+        // Driven by app.js: mirrors whether the opponent is fast-forwarding
+        // their throw.  While true and we are spectating, the physics
+        // accumulator runs 15× faster to match the opponent's experience.
+        mpCfg.spectateFF = false;
+
+        // Starts the ghost ball's return arc to a specific destination.
+        // Called by app.js when ball_returned arrives.  Payload values are
+        // normalized fractions of the SENDER's width/height — we multiply by
+        // our own width/height so the arc lands at the same relative spot
+        // even when the two players have different screen sizes.
+        // payload: { fromX, fromY, toX, toY } all in [0..1]
+        mpCfg.startGhostReturn = (payload) => {
+            if (!isSpectateReturn) return;
+            startReturn({
+                from: { x: payload.fromX * width, y: payload.fromY * height },
+                to:   { x: payload.toX   * width, y: payload.toY   * height },
+            });
+        };
+
         // True while the ball has been thrown and is still in the air —
         // physics running but onThrowComplete not yet called.
         mpCfg.isBallInFlight = () =>
             !isResting && !isAiming && !ballReturning && !ballAbsorbed;
 
-        // Cancel an active aim drag: puts the ball back at its spawn
-        // position as if the player never touched it. No-op if not aiming.
+        // Cancel an active aim drag.  The ball's x/y never change while
+        // aiming (only aimCurrent tracks the finger), so we just clear the
+        // aim state and let the ball sit exactly where it was — no teleport.
         mpCfg.cancelAim = () => {
             if (!isAiming) return;
             isTouchHeld = false;
-            resetBall(); // clears isAiming, sets isResting, resets position
+            isAiming  = false;
+            isResting = true;
+            ball.vx   = 0;
+            ball.vy   = 0;
         };
 
         // Trigger a miss with full consequences (streak break, life loss,
         // bonus wipe) and fire onThrowComplete — used by the turn timer.
         // handleMiss is a hoisted function declaration so this is safe here.
         mpCfg.forceMiss = () => handleMiss();
+
+        // Replay an opponent's throw on our canvas.  Sets the ball to the
+        // provided position+velocity and marks the engine in spectate mode.
+        // In spectate mode handleScore / handleMiss skip all state changes and
+        // instead call mpCfg.onSpectateComplete when the ball settles.
+        mpCfg.spectateThrow = ({ vx, vy, x, y }) => {
+            // Save our ball's current resting position so we can restore it
+            // exactly after the replay — the opponent's physics must never
+            // alter the player's own ball state.
+            mpCfg._savedBallX = ball.x;
+            mpCfg._savedBallY = ball.y;
+
+            ball.x  = x;
+            ball.y  = y;
+            ball.vx = vx;
+            ball.vy = vy;
+            isResting       = false;
+            isAiming        = false;
+            ballReturning   = false;
+            wasThrown       = true;
+            scoredThisThrow = false;
+            isBehindNet     = false;
+            wasAboveRim     = false;
+            wasAboveCupRim  = false;
+            isDisqualified  = false;
+            mpCfg.isSpectating = true;
+        };
     }
 
     // Action methods modifiers can call on the context. These touch engine
@@ -421,13 +487,12 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     function resetBall() {
         const minX = ball.radius * 2;
         const maxX = getSpawnMaxX();
-        // In multiplayer always use the fixed 30 % position so both players
-        // throw from the same spot AND refreshing never changes the position.
-        if (mpCfg) {
-            ball.x = minX + (maxX - minX) * 0.30;
-        } else {
-            ball.x = minX + Math.random() * (maxX - minX);
-        }
+        // MP: fixed 30 % so both players start from the same position.
+        // Random spawns after throws come from startReturn(), which is
+        // synchronised via the ball_returned broadcast.
+        ball.x = mpCfg
+            ? minX + (maxX - minX) * 0.30
+            : minX + Math.random() * (maxX - minX);
         ball.y = height * groundLevel - ball.radius;
         ball.vx = 0;
         ball.vy = 0;
@@ -446,14 +511,41 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         prevCupX = null;
     }
     
-    function startReturn() {
+    // overrideDest — when set, the arc flies to this exact position instead of
+    // a local random.  Used by mpCfg.startGhostReturn() so the spectated ball's
+    // return arc uses the sender's authoritative position (from ball_returned).
+    function startReturn(overrideDest = null) {
+        // In spectate mode the return arc is driven exclusively by the
+        // ball_returned broadcast (overrideDest).  Suppress any call without
+        // an overrideDest — that's either the local auto-scheduled 1400 ms
+        // timeout (we want the sender's authoritative position instead) or
+        // a stale call after the override arc already started.  This single
+        // invariant also prevents the "two arcs play, second one is random"
+        // race when ball_returned arrives before the timeout fires.
+        if (mpCfg && isSpectateReturn && !overrideDest) return;
+        // Don't start a second override arc if one is already running.
+        if (overrideDest && spectateArcActive) return;
+
         // Release the cup-locked ball — the return arc flies it back home.
         ballInCupOffsetX = null;
         const minX = ball.radius * 2;
         const maxX = getSpawnMaxX();
-        const targetX = minX + Math.random() * (maxX - minX);
-        const targetY = height * groundLevel - ball.radius;
-        returnFrom = { x: ball.x, y: ball.y };
+        const targetX = overrideDest ? overrideDest.to.x : minX + Math.random() * (maxX - minX);
+        const targetY = overrideDest ? overrideDest.to.y : height * groundLevel - ball.radius;
+
+        // Broadcast both endpoints in NORMALIZED coords (0..1 of width/height)
+        // so the ghost arc lands at the same relative spot regardless of the
+        // opponent's screen size (desktop 874x402 vs phone winW/winH).
+        if (mpCfg && !isSpectateReturn && mpCfg.onBallReturned) {
+            mpCfg.onBallReturned({
+                fromX: ball.x / width,
+                fromY: ball.y / height,
+                toX:   targetX  / width,
+                toY:   targetY  / height,
+            });
+        }
+
+        returnFrom = overrideDest?.from ?? { x: ball.x, y: ball.y };
         returnTo   = { x: targetX, y: targetY };
         returnCtrl = {
             x: (returnFrom.x + returnTo.x) / 2,
@@ -464,6 +556,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         scoredThisThrow = false;
         isResting = false;
         isAiming = false;
+        // Mark that the ghost arc is now actively running — used to guard the
+        // isSpectateReturn completion so a natural "rest inside cup" event while
+        // waiting for ball_returned doesn't falsely end the spectate phase.
+        if (isSpectateReturn) spectateArcActive = true;
         wasAboveRim = false;
         wasAboveCupRim = false;
         isBehindNet = false;
@@ -531,6 +627,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
     resizeCanvas();
     resetBall();
+    // In MP both players spawn at the same fixed position, so the ghost
+    // can be shown immediately — no need to wait for the first throw.
+    if (mpCfg) { ghostX = ball.x; ghostY = ball.y; }
     
     
 
@@ -631,6 +730,13 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             ball.vy = (ball.vy / speed) * maxSpeed;
         }
         wasThrown = true;
+
+        // Notify MP layer so the opponent can replay the throw live.
+        // Called after velocity is final (clamped) so the replay is exact.
+        if (mpCfg?.onThrowStart) {
+            mpCfg.onThrowStart({ vx: ball.vx, vy: ball.vy, x: ball.x, y: ball.y });
+        }
+
         syncContext();
         modifiers.emit('throw', gameCtx);
         director.notify('throw', gameCtx, modifiers);
@@ -978,6 +1084,56 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     }
     
     // Draw scene
+    // Draw a ball at (bx, by) at the given opacity.  Used for the MP ghost
+    // ball — no cup clipping or shadow, just the ball shape so it's light
+    // to render and clearly reads as a "ghost" at 0.5 alpha.
+    function drawSecondaryBall(bx, by, alpha) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.translate(bx, by);
+        ctx.rotate(bx / ball.radius);
+        if (gameMode === 'pingpong') {
+            ctx.beginPath();
+            ctx.arc(0, 0, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#f8fafc';
+            ctx.fill();
+            const g = ctx.createRadialGradient(
+                -ball.radius * 0.35, -ball.radius * 0.35, ball.radius * 0.1,
+                0, 0, ball.radius
+            );
+            g.addColorStop(0, 'rgba(255,255,255,1)');
+            g.addColorStop(0.6, 'rgba(226,232,240,0.8)');
+            g.addColorStop(1, 'rgba(100,116,139,0.9)');
+            ctx.beginPath();
+            ctx.arc(0, 0, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = g;
+            ctx.fill();
+        } else {
+            if (basketballImg.complete && basketballImg.naturalHeight !== 0) {
+                ctx.beginPath();
+                ctx.arc(0, 0, ball.radius, 0, Math.PI * 2);
+                ctx.clip();
+                const r = ball.radius * 1.05;
+                ctx.drawImage(basketballImg, -r, -r, r * 2, r * 2);
+                const g = ctx.createRadialGradient(
+                    -ball.radius * 0.35, -ball.radius * 0.35, ball.radius * 0.1,
+                    0, 0, ball.radius
+                );
+                g.addColorStop(0, 'rgba(255,255,255,0.4)');
+                g.addColorStop(0.6, 'rgba(255,255,255,0)');
+                g.addColorStop(1, 'rgba(0,0,0,0.25)');
+                ctx.fillStyle = g;
+                ctx.fill();
+            } else {
+                ctx.beginPath();
+                ctx.arc(0, 0, ball.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#ea580c';
+                ctx.fill();
+            }
+        }
+        ctx.restore();
+    }
+
     function draw() {
         const dpr = window.devicePixelRatio || 1;
 
@@ -1230,9 +1386,35 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             ctx.fill();
         }
         
+        // ── MP ghost / secondary ball ─────────────────────────────────────
+        // Two drawing modes in multiplayer:
+        //
+        //   Spectating (isSpectating || isSpectateReturn):
+        //     • Our saved ball → full opacity, drawn first (behind)
+        //     • The flying/returning ghost ball (= main `ball`) → 50% below
+        //
+        //   Our turn (not spectating):
+        //     • If ghostX is known: opponent's last resting spot → 50% behind
+        //     • Our ball → full opacity (normal render below)
+        if (mpCfg && !ballAbsorbed) {
+            const isSpec = mpCfg.isSpectating || isSpectateReturn;
+            if (isSpec && mpCfg._savedBallX != null) {
+                // Show our own resting ball at full opacity during the replay
+                drawSecondaryBall(mpCfg._savedBallX, mpCfg._savedBallY, 1.0);
+            } else if (!isSpec && ghostX != null) {
+                // Show opponent's ghost at 50% opacity while we're playing
+                drawSecondaryBall(ghostX, ghostY, 0.5);
+            }
+        }
+
         // Ball is invisible while resting inside the cup (scored but return
         // arc not yet started). The return arc itself IS the respawn animation.
         const ballInCup = gameMode === 'pingpong' && scoredThisThrow && !ballReturning;
+
+        // Main ball opacity: 50% while spectating (it's the ghost/opponent's
+        // ball running through our physics), 100% during our own turn.
+        const _isSpec = mpCfg && (mpCfg.isSpectating || isSpectateReturn);
+        if (_isSpec) ctx.save(), ctx.globalAlpha = 0.5;
 
         // Shadow
         const isOverCup = gameMode === 'pingpong' && ball.x > getCupX() - (110*scale*(gameCtx.targetScale??1))/2 && ball.x < getCupX() + (110*scale*(gameCtx.targetScale??1))/2;
@@ -1334,6 +1516,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         if (ballClipped) ctx.restore();
 
         }  // end if (!ballAbsorbed) ball-draw block
+
+        if (_isSpec) ctx.restore(); // restore globalAlpha after spectate ball
 
         // Foreground Targets
         if (gameMode === 'pingpong') {
@@ -1619,6 +1803,26 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         });
     }
 
+    // Restore our ball to the position it was in before we spectated the
+    // opponent's throw.  Clears all physics-tracking flags so nothing from
+    // the replay leaks into the player's next turn.
+    function restoreAfterSpectate() {
+        if (mpCfg) mpCfg.spectateFF = false; // opponent's FF state no longer relevant
+        ball.x  = mpCfg?._savedBallX ?? ball.x;
+        ball.y  = mpCfg?._savedBallY ?? ball.y;
+        ball.vx = 0;
+        ball.vy = 0;
+        isResting         = true;
+        wasThrown         = false;
+        scoredThisThrow   = false;
+        spectateArcActive = false;  // clear in all restore paths
+        ballInCupOffsetX  = null;
+        isBehindNet       = false;
+        wasAboveRim       = false;
+        wasAboveCupRim    = false;
+        isDisqualified    = false;
+    }
+
     // Both hearts flare back to full with a pop-and-glow animation.
     function refillLives() {
         getHearts().forEach(h => {
@@ -1647,6 +1851,16 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     }
 
     function handleScore() {
+        // In spectate mode: enter spectate-return phase and let the ball
+        // settle wherever it lands.  The return arc is driven exclusively
+        // by the ball_returned broadcast — startReturn() suppresses any
+        // local auto-call while isSpectateReturn is true.
+        if (mpCfg?.isSpectating) {
+            mpCfg.isSpectating = false;
+            isSpectateReturn   = true;
+            return;
+        }
+
         const prevBonus = Math.floor(consecutiveHits / 3);
         const basePoints = 1 + prevBonus;
         // Active challenge (e.g. Moving Target) sets a multiplier > 1.
@@ -1703,6 +1917,16 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     }
 
     function handleMiss() {
+        // In spectate mode: skip state changes, save ghost position, restore.
+        if (mpCfg?.isSpectating) {
+            mpCfg.isSpectating = false;
+            ghostX = ball.x;
+            ghostY = ball.y;
+            restoreAfterSpectate();
+            if (mpCfg.onSpectateComplete) mpCfg.onSpectateComplete();
+            return;
+        }
+
         wasThrown = false;
         const hadBonus = consecutiveHits >= 3;
         consecutiveHits = 0;
@@ -1874,10 +2098,24 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             updateScoreDisplay();
         }
 
-        // Holding space / touch fast-forwards by feeding the accumulator faster.
-        const fastForward = (isSpaceDown || isTouchHeld) && !isResting && !isAiming;
+        // Fast-forward: during our own throw use our input; during spectate
+        // mirror the opponent's FF state (broadcast via ff_change events).
+        const spectating  = mpCfg && (mpCfg.isSpectating || isSpectateReturn);
+        const fastForward = spectating
+            ? (mpCfg.spectateFF ?? false)
+            : ((isSpaceDown || isTouchHeld) && !isResting && !isAiming);
         const speedMul = fastForward ? 15 : 1;
         accumulator += frameTime * speedMul;
+
+        // Broadcast our own FF state changes so the opponent can mirror them.
+        // Only relevant while OUR ball is in the air, never during spectate.
+        if (mpCfg && !spectating) {
+            const myFF = (isSpaceDown || isTouchHeld) && !isResting && !isAiming;
+            if (myFF !== lastMpFF) {
+                lastMpFF = myFF;
+                if (mpCfg.onFFChange) mpCfg.onFFChange(myFF);
+            }
+        }
 
         const wasResting = isResting;
         const maxSteps = 8 * speedMul;   // catch-up cap — guards against a spiral
@@ -1897,6 +2135,19 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // Ball just came to rest after a throw without scoring = miss
         if (!wasResting && isResting && wasThrown && !scoredThisThrow) {
             handleMiss();
+        }
+
+        // Spectated score: the ghost arc just landed.
+        // Guard with spectateArcActive so the ball naturally coming to rest
+        // *inside the cup* (while we're still waiting for ball_returned) does
+        // NOT falsely complete the spectate — only the explicit arc landing does.
+        if (mpCfg && isSpectateReturn && spectateArcActive && !wasResting && isResting) {
+            isSpectateReturn  = false;
+            spectateArcActive = false;
+            ghostX = ball.x;
+            ghostY = ball.y;
+            restoreAfterSpectate();
+            if (mpCfg.onSpectateComplete) mpCfg.onSpectateComplete();
         }
 
         if (!isResting && !isAiming) {

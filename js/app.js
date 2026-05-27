@@ -364,8 +364,7 @@ async function router() {
             const myScoreEl   = document.getElementById('mp-score-mine');
             const oppScoreEl  = document.getElementById('mp-score-theirs');
             const turnEl      = document.getElementById('mp-turn-indicator');
-            const waitOv      = document.getElementById('mp-wait-overlay');
-            const waitTxt     = document.getElementById('mp-wait-text');
+            const gameScreen  = document.getElementById('game-screen');
             const myThrowsEl  = document.getElementById('mp-throws-mine');
             const oppThrowsEl = document.getElementById('mp-throws-theirs');
             const myStreakEl  = document.getElementById('mp-streak-mine');
@@ -380,8 +379,11 @@ async function router() {
             if (turnEl) turnEl.textContent = multiplayerConfig.isMyTurn
                 ? '🎯 Your Turn!'
                 : `⏳ ${oppName}'s Turn…`;
-            if (waitOv)  waitOv.classList.toggle('hidden', multiplayerConfig.isMyTurn);
-            if (waitTxt) waitTxt.textContent = `${oppName} is throwing…`;
+            // Glow the border red while input is locked (opponent's turn).
+            // Cleared on our turn AND during live spectate (ball is flying —
+            // no need to remind the player they're locked, they're watching).
+            const locked = !multiplayerConfig.isMyTurn && !isSpectating;
+            if (gameScreen) gameScreen.classList.toggle('mp-locked', locked);
         };
 
         // ── Small helper: show a toast inside the game canvas area ──────
@@ -462,6 +464,15 @@ async function router() {
             multiplayerConfig.forceMiss?.();
         };
 
+        // ── Spectate state (Phase 3b) ────────────────────────────────────
+        // isSpectating  — true while we are replaying the opponent's throw
+        //                 live on our canvas; suppresses the wait overlay.
+        // spectateSettled — throw replay finished but turn_end not yet received.
+        // pendingTurnEnd  — turn_end payload buffered while throw is in flight.
+        let isSpectating    = false;
+        let spectateSettled = false;
+        let pendingTurnEnd  = null;
+
         // ── Win-check + animated game-over overlay ────────────────────────
         let resultPending  = false; // prevent double-fire
         let tiebreakActive = false; // true once a tiebreaker round has started
@@ -470,8 +481,12 @@ async function router() {
             if (resultPending) return;
             resultPending = true;
 
-            // Block all input
+            // Block all input; clear spectate state so the wait overlay
+            // (which might be hidden for spectate) is properly ignored.
             multiplayerConfig.isMyTurn = false;
+            isSpectating    = false;
+            spectateSettled = false;
+            pendingTurnEnd  = null;
             clearTurnTimer();
             updateMpHud();
 
@@ -532,24 +547,53 @@ async function router() {
 
         const bcChannel = getRoomBroadcastChannel(code);
 
-        bcChannel.on('broadcast', { event: 'turn_end' }, ({ payload }) => {
-            if (payload.role === role) return; // ignore own echo
-
+        // Shared handler for opponent's turn ending — called either directly
+        // from the broadcast or deferred via pendingTurnEnd after spectate.
+        // `spectated` = true means the player watched the throw live; in that
+        // case isSpectating stays true until the timeout so the wait overlay
+        // does not flash back between the replay end and "Your Turn!".
+        const processTurnEnd = (payload, spectated = false) => {
             mpScores.opp       = payload.totalScore;
             mpScores.oppStreak = payload.streak ?? 0;
             mpScores.oppThrows++;
-            updateMpHud();
+            updateMpHud(); // isSpectating still true if spectated → wait overlay hidden
 
-            // Pause so both players see the updated score, then check for a
-            // winner before unlocking — avoids briefly showing "Your Turn!" if
-            // the game is actually over this round.
+            // Brief pause so both players see the updated score, then check for
+            // a winner before unlocking. Shorter after a live replay since both
+            // players already watched the ball settle.
             setTimeout(() => {
+                if (spectated) {
+                    isSpectating    = false;
+                    spectateSettled = false;
+                }
                 checkWin();
                 if (resultPending) return; // game over — don't unlock
                 multiplayerConfig.isMyTurn = true;
                 startTurnTimer();
                 updateMpHud();
-            }, 1000);
+            }, spectated ? 600 : 1000);
+        };
+
+        bcChannel.on('broadcast', { event: 'turn_end' }, ({ payload }) => {
+            if (payload.role === role) return; // ignore own echo
+
+            if (isSpectating && !spectateSettled) {
+                // Throw still in flight on our canvas — buffer and process
+                // once onSpectateComplete fires.
+                pendingTurnEnd = payload;
+                return;
+            }
+
+            if (spectateSettled) {
+                // Replay finished before turn_end arrived — process now
+                // with the spectated flag so the wait overlay stays hidden.
+                spectateSettled = false;
+                processTurnEnd(payload, true);
+                return;
+            }
+
+            // Normal (non-spectate) path
+            processTurnEnd(payload, false);
         });
 
         // Opponent called goToResult on their side — sync us to the result screen.
@@ -563,8 +607,79 @@ async function router() {
             goToResult(payload.outcome);
         });
 
+        // Opponent's scored ball has a confirmed return destination — start
+        // the ghost arc to that exact position.  startReturn() suppresses any
+        // local auto-scheduled arc while in spectate mode, so this broadcast
+        // is the one and only arc trigger.
+        bcChannel.on('broadcast', { event: 'ball_returned' }, ({ payload }) => {
+            if (multiplayerConfig) multiplayerConfig.startGhostReturn?.(payload);
+        });
+
+        // Opponent's fast-forward state changed — mirror it so our spectate
+        // physics run at the same speed as theirs.
+        bcChannel.on('broadcast', { event: 'ff_change' }, ({ payload }) => {
+            if (payload.role === role) return; // ignore own echo
+            if (multiplayerConfig) multiplayerConfig.spectateFF = payload.active;
+        });
+
+        // Opponent just released the ball — replay their throw live instead of
+        // showing the spinner.  The wait overlay is already hidden by
+        // updateMpHud() (isSpectating gate).  When the ball settles on our
+        // canvas, onSpectateComplete fires and the turn is handed back.
+        bcChannel.on('broadcast', { event: 'throw_start' }, ({ payload }) => {
+            if (resultPending) return;
+            isSpectating    = true;
+            spectateSettled = false;
+            pendingTurnEnd  = null;
+            updateMpHud(); // hides wait overlay immediately
+            multiplayerConfig.spectateThrow?.(payload);
+        });
+
         bcChannel.subscribe();
         destroyMp = () => supabase.removeChannel(bcChannel);
+
+        // ── onThrowStart — ball just released; broadcast so opponent can replay ─
+        multiplayerConfig.onThrowStart = ({ vx, vy, x, y }) => {
+            bcChannel.send({
+                type:    'broadcast',
+                event:   'throw_start',
+                payload: { vx, vy, x, y },
+            });
+        };
+
+        // ── onBallReturned — our scored ball's arc endpoints; tell opponent ─
+        // fromX/Y = ball position when arc starts; toX/Y = arc destination.
+        // Both must match so the ghost arc is pixel-identical on both screens.
+        multiplayerConfig.onBallReturned = ({ fromX, fromY, toX, toY }) => {
+            bcChannel.send({
+                type:    'broadcast',
+                event:   'ball_returned',
+                payload: { fromX, fromY, toX, toY },
+            });
+        };
+
+        // ── onFFChange — fast-forward state changed; opponent should mirror it ─
+        multiplayerConfig.onFFChange = (active) => {
+            bcChannel.send({
+                type:    'broadcast',
+                event:   'ff_change',
+                payload: { role, active },
+            });
+        };
+
+        // ── onSpectateComplete — engine signals the replayed throw settled ─
+        multiplayerConfig.onSpectateComplete = () => {
+            if (pendingTurnEnd) {
+                // turn_end arrived while ball was still in flight — process now
+                const p = pendingTurnEnd;
+                pendingTurnEnd = null;
+                processTurnEnd(p, true);
+            } else {
+                // turn_end hasn't arrived yet; mark settled so the broadcast
+                // handler knows to use the spectated path when it does arrive.
+                spectateSettled = true;
+            }
+        };
 
         // ── onThrowComplete — called by engine after each of our throws ───
         multiplayerConfig.onThrowComplete = async ({ scored, points, totalScore, streak }) => {

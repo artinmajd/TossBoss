@@ -117,14 +117,6 @@ export default function MultiplayerGame({ myName, oppName, targetScore, gameMode
                 </div>
             </div>
 
-            <!-- Wait overlay (opponent's turn) -->
-            <div id="mp-wait-overlay" class="mp-wait-overlay hidden">
-                <div class="mp-wait-content">
-                    <div class="mp-wait-spinner"></div>
-                    <p id="mp-wait-text">${oppName} is throwing…</p>
-                </div>
-            </div>
-
             <!-- Game-over flash (shown before navigating to result screen) -->
             <div id="mp-gameover-overlay" class="mp-gameover-overlay hidden">
                 <div class="mp-gameover-content">

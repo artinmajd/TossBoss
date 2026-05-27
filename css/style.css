@@ -2331,52 +2331,31 @@ button:disabled {
 }
 
 /* ── Wait overlay (opponent's turn) ────────────────────────── */
-.mp-wait-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 40;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(9, 14, 24, 0.55);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
-    transition: opacity 0.3s ease;
-    pointer-events: all;
+/* ── Locked-turn border glow ───────────────────────────────── */
+/* Applied to #game-screen while it's the opponent's turn.     */
+/* Input is still physically blocked by the engine; the glow   */
+/* just makes the lock state instantly visible.                */
+#game-screen.mp-locked {
+    box-shadow:
+        0 0  12px 3px rgba(248, 113, 113, 0.45),
+        0 0  30px 6px rgba(248, 113, 113, 0.20),
+        inset 0 0  18px 4px rgba(248, 113, 113, 0.08);
+    animation: mp-locked-pulse 2.2s ease-in-out infinite;
 }
 
-.mp-wait-overlay.hidden {
-    opacity: 0;
-    pointer-events: none;
-}
-
-.mp-wait-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-}
-
-.mp-wait-content p {
-    font-family: 'Orbitron', monospace;
-    font-size: clamp(0.75rem, 2.2vmin, 1.05rem);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-secondary);
-}
-
-.mp-wait-spinner {
-    width: 36px;
-    height: 36px;
-    border: 3px solid rgba(56, 189, 248, 0.2);
-    border-top-color: #38bdf8;
-    border-radius: 50%;
-    animation: mp-spin 0.9s linear infinite;
-}
-
-@keyframes mp-spin {
-    to { transform: rotate(360deg); }
+@keyframes mp-locked-pulse {
+    0%,100% {
+        box-shadow:
+            0 0  10px 2px rgba(248, 113, 113, 0.35),
+            0 0  24px 5px rgba(248, 113, 113, 0.15),
+            inset 0 0  14px 3px rgba(248, 113, 113, 0.05);
+    }
+    50% {
+        box-shadow:
+            0 0  18px 5px rgba(248, 113, 113, 0.60),
+            0 0  40px 10px rgba(248, 113, 113, 0.28),
+            inset 0 0  24px 6px rgba(248, 113, 113, 0.12);
+    }
 }
 
 /* ── Game-over flash overlay ───────────────────────────────── */
