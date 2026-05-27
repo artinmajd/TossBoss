@@ -1593,6 +1593,11 @@ button:active {
     z-index: 10;
 }
 
+/* Scale the title down so "MULTIPLAYER" (11 chars) fits the 400px card */
+#multiplayer-screen .logo-title {
+    font-size: clamp(1.1rem, 3.8vmin, 1.9rem);
+}
+
 /* Room-code input */
 .mp-section {
     display: flex;
