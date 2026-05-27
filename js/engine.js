@@ -124,6 +124,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             friction      = 0.97;
         }
         nhsRunStartHighScore = highScores[gameMode];
+        // Restore the player's accumulated score when re-entering after a
+        // browser refresh — the DB value is passed in via mpCfg.initialScore.
+        if (mpCfg.initialScore > 0) score = mpCfg.initialScore;
     }
 
     // Action methods modifiers can call on the context. These touch engine

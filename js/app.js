@@ -214,6 +214,14 @@ async function router() {
         const { room, error: roomErr } = await getRoomByCode(code);
         if (roomErr || !room) { window.location.hash = '#multiplayer'; return; }
 
+        // Game already started before this player refreshed — skip the waiting
+        // screen and go straight to the game.
+        if (room.status === 'playing') {
+            sessionStorage.setItem('mp_room_data', JSON.stringify(room));
+            window.location.hash = '#mp-game';
+            return;
+        }
+
         app.innerHTML = MultiplayerWaiting({ room, role });
 
         // ── Realtime subscription ─────────────────────────────────────────
@@ -314,17 +322,29 @@ async function router() {
         const mpScores = {
             mine:      role === 'host' ? (room.host_score  || 0) : (room.guest_score || 0),
             opp:       role === 'host' ? (room.guest_score || 0) : (room.host_score  || 0),
-            myThrows:  0,
-            oppThrows: 0,
             myStreak:  0,
             oppStreak: 0,
         };
 
+        // Restore throw parity from current_turn so win detection works after
+        // a browser refresh.  We only need the relative counts, not the
+        // absolute values: if it's my turn the counts are equal; if it's the
+        // opponent's turn I have thrown one more than them.
+        if (room.current_turn === role) {
+            mpScores.myThrows  = 0;
+            mpScores.oppThrows = 0;
+        } else {
+            mpScores.myThrows  = 1;
+            mpScores.oppThrows = 0;
+        }
+
         // multiplayerConfig is passed into initGame.
         // isMyTurn starts false — the countdown overlay enables it.
+        // initialScore restores the DB-persisted score after a refresh.
         const multiplayerConfig = {
             gameMode:        room.game_mode,
             isMyTurn:        false,
+            initialScore:    mpScores.mine,
             onThrowComplete: null,   // wired below
         };
 
