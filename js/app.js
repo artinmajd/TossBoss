@@ -222,6 +222,13 @@ async function router() {
             return;
         }
 
+        // Game is over — send to results if we have them, else back to lobby.
+        if (room.status === 'finished') {
+            const resultStr = sessionStorage.getItem('mp_result');
+            window.location.hash = resultStr ? '#mp-result' : '#multiplayer';
+            return;
+        }
+
         app.innerHTML = MultiplayerWaiting({ room, role });
 
         // ── Realtime subscription ─────────────────────────────────────────
@@ -314,6 +321,13 @@ async function router() {
         const { room: liveRoom } = await getRoomByCode(code);
         const room = liveRoom ?? JSON.parse(roomDataStr);
 
+        // Room is finished (or gone) — redirect to results if available, else lobby.
+        if (!liveRoom || liveRoom.status === 'finished') {
+            const resultStr = sessionStorage.getItem('mp_result');
+            window.location.hash = resultStr ? '#mp-result' : '#multiplayer';
+            return;
+        }
+
         const myName      = role === 'host' ? room.host_name  : room.guest_name;
         const oppName     = role === 'host' ? room.guest_name : room.host_name;
         const targetScore = room.target_score;
@@ -397,6 +411,10 @@ async function router() {
             // Block all input
             multiplayerConfig.isMyTurn = false;
             updateMpHud();
+
+            // Mark room finished so any refresh lands on the result screen, not
+            // back in the game. Fire-and-forget — no need to await.
+            supabase.from('rooms').update({ status: 'finished' }).eq('code', code).then(() => {});
 
             // Show in-game flash overlay
             const bannerText = { win: '🏆 You Win!', lose: '💀 You Lose…', tie: "🤝 It's a Tie!" };

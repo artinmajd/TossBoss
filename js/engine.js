@@ -383,13 +383,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     function resetBall() {
         const minX = ball.radius * 2;
         const maxX = width * 0.65;
-        // In multiplayer the very first ball is placed at a deterministic
-        // position (30 % of the valid range) so both players start from the
-        // same spot. Subsequent balls after each throw use the normal random
-        // placement.
-        if (mpCfg && !mpCfg._firstBallPlaced) {
+        // In multiplayer always use the fixed 30 % position so both players
+        // throw from the same spot AND refreshing never changes the position.
+        if (mpCfg) {
             ball.x = minX + (maxX - minX) * 0.30;
-            mpCfg._firstBallPlaced = true;
         } else {
             ball.x = minX + Math.random() * (maxX - minX);
         }
@@ -416,7 +413,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         ballInCupOffsetX = null;
         const minX = ball.radius * 2;
         const maxX = width * 0.65;
-        const targetX = minX + Math.random() * (maxX - minX);
+        // In multiplayer always return to the same fixed spot so ball position
+        // is deterministic and never changes across refreshes.
+        const targetX = mpCfg
+            ? minX + (maxX - minX) * 0.30
+            : minX + Math.random() * (maxX - minX);
         const targetY = height * groundLevel - ball.radius;
         returnFrom = { x: ball.x, y: ball.y };
         returnTo   = { x: targetX, y: targetY };
