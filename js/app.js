@@ -355,8 +355,21 @@ async function router() {
             if (waitTxt) waitTxt.textContent = `${oppName} is throwing…`;
         };
 
+        // ── Small helper: show a toast inside the game canvas area ──────
+        const showGameToast = (msg, type = 'bonus-up') => {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const el = document.createElement('div');
+            el.className = `game-toast toast-${type}`;
+            el.textContent = msg;
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 2500);
+        };
+
         // ── Win-check + animated game-over overlay ────────────────────────
-        let resultPending = false; // prevent double-fire
+        let resultPending  = false; // prevent double-fire
+        let tiebreakActive = false; // true once a tiebreaker round has started
+
         const goToResult = (outcome) => {
             if (resultPending) return;
             resultPending = true;
@@ -386,12 +399,20 @@ async function router() {
         };
 
         const checkWin = () => {
-            if (mpScores.myThrows !== mpScores.oppThrows) return;
+            if (mpScores.myThrows !== mpScores.oppThrows) return; // round not complete yet
+
             const myS = mpScores.mine, oppS = mpScores.opp;
-            if (myS < targetScore && oppS < targetScore) return;
-            if      (myS > oppS) goToResult('win');
-            else if (oppS > myS) goToResult('lose');
-            else                 goToResult('tie');
+
+            // Before any tiebreaker: at least one player must have reached target.
+            if (!tiebreakActive && myS < targetScore && oppS < targetScore) return;
+
+            if (myS > oppS) { goToResult('win');  return; }
+            if (oppS > myS) { goToResult('lose'); return; }
+
+            // Scores are equal after equal throws — start (or extend) a tiebreaker.
+            tiebreakActive = true;
+            showGameToast('🔥 TIEBREAKER! Keep playing!', 'bonus-up');
+            // Game continues normally; checkWin will fire again after the next round.
         };
 
         // ── Broadcast channel setup ──────────────────────────────────────
