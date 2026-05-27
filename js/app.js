@@ -445,6 +445,21 @@ async function router() {
         // Called when timer hits 0 — end the turn without a throw.
         const handleTurnTimeout = async () => {
             if (!multiplayerConfig.isMyTurn || resultPending) return;
+
+            // ── Ball already in the air ───────────────────────────────────
+            // The player threw before the timer reached 0. Don't interrupt —
+            // let onThrowComplete handle the turn end naturally when the ball
+            // lands. Just stop the visual countdown.
+            if (multiplayerConfig.isBallInFlight?.()) {
+                clearTurnTimer();
+                showGameToast('⏰ Time\'s up!', 'bonus-up');
+                return; // onThrowComplete will fire and end the turn
+            }
+
+            // ── Ball resting or mid-aim ───────────────────────────────────
+            // Cancel any drag the player was holding, then force-end the turn.
+            multiplayerConfig.cancelAim?.();
+
             multiplayerConfig.isMyTurn = false;
             mpScores.myThrows++;
             updateMpHud();

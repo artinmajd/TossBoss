@@ -127,6 +127,20 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // Restore the player's accumulated score when re-entering after a
         // browser refresh — the DB value is passed in via mpCfg.initialScore.
         if (mpCfg.initialScore > 0) score = mpCfg.initialScore;
+
+        // ── Engine state helpers for app.js ──────────────────────────────
+        // True while the ball has been thrown and is still in the air —
+        // physics running but onThrowComplete not yet called.
+        mpCfg.isBallInFlight = () =>
+            !isResting && !isAiming && !ballReturning && !ballAbsorbed;
+
+        // Cancel an active aim drag: puts the ball back at its spawn
+        // position as if the player never touched it. No-op if not aiming.
+        mpCfg.cancelAim = () => {
+            if (!isAiming) return;
+            isTouchHeld = false;
+            resetBall(); // clears isAiming, sets isResting, resets position
+        };
     }
 
     // Action methods modifiers can call on the context. These touch engine
