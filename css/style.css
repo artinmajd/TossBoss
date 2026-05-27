@@ -2203,16 +2203,21 @@ button:disabled {
 }
 
 .mp-hud-throws {
+    font-family: 'Orbitron', monospace;
     font-size: clamp(0.38rem, 1.05vmin, 0.55rem);
-    color: var(--text-secondary);
     font-weight: 600;
-    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
 }
 
 .mp-hud-streak-val {
+    font-family: 'Orbitron', monospace;
     font-size: clamp(0.38rem, 1.05vmin, 0.55rem);
-    color: #fb923c;
     font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #fb923c;
     min-width: 0.5rem;
 }
 
