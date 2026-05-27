@@ -48,7 +48,11 @@ export default function MultiplayerGame({ myName, oppName, targetScore, gameMode
                         <span class="mp-hud-target">/ ${targetScore}</span>
                         <span class="mp-turn-indicator" id="mp-turn-indicator">⏳ Waiting…</span>
                         <div class="mp-turn-timer hidden" id="mp-turn-timer">
-                            <span id="mp-timer-value">15</span>s
+                            <svg class="mp-timer-ring" viewBox="0 0 24 24" aria-hidden="true">
+                                <circle class="mp-timer-ring-bg"  cx="12" cy="12" r="9"/>
+                                <circle class="mp-timer-ring-arc" cx="12" cy="12" r="9" id="mp-timer-arc"/>
+                            </svg>
+                            <span class="mp-timer-num" id="mp-timer-value">15</span>
                         </div>
                     </div>
 

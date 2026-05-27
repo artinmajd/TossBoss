@@ -414,8 +414,15 @@ async function router() {
         const updateTimerDisplay = () => {
             const el  = document.getElementById('mp-turn-timer');
             const val = document.getElementById('mp-timer-value');
+            const arc = document.getElementById('mp-timer-arc');
             if (!el || !val) return;
             val.textContent = turnTimeLeft;
+            // Deplete the ring: offset 0 = full circle, 56.55 = empty
+            if (arc) {
+                const circumference = 56.55;
+                arc.style.strokeDashoffset =
+                    (circumference * (1 - turnTimeLeft / TURN_SECONDS)).toFixed(2);
+            }
             el.classList.remove('hidden', 'warning', 'danger');
             if      (turnTimeLeft <= 3) el.classList.add('danger');
             else if (turnTimeLeft <= 6) el.classList.add('warning');
