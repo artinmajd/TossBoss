@@ -380,9 +380,28 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
 
 
+    // Safe rightmost x for ball spawn — keeps the ball clear of the target in
+    // both modes.  Mirrors the physics/draw formulas so it stays in sync even
+    // if the target moves (modifier) or the image changes its natural size.
+    function getSpawnMaxX() {
+        if (gameMode === 'basketball') {
+            // Compute the hoop left-rim x the same way the physics loop does.
+            let hoopWidth = 140 * scale;
+            if (hoopImg.complete && hoopImg.naturalHeight !== 0) {
+                const S = (320 * scale) / hoopImg.naturalHeight;
+                hoopWidth = (874 - 169) * S;
+            }
+            // Stay well left of the left rim.
+            return width - hoopWidth - ball.radius * 4;
+        } else {
+            // Ping-pong: stay left of the cup's left rim plus a comfortable gap.
+            return getCupX() - 55 * scale - ball.radius * 4;
+        }
+    }
+
     function resetBall() {
         const minX = ball.radius * 2;
-        const maxX = width * 0.65;
+        const maxX = getSpawnMaxX();
         // In multiplayer always use the fixed 30 % position so both players
         // throw from the same spot AND refreshing never changes the position.
         if (mpCfg) {
@@ -412,7 +431,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // Release the cup-locked ball — the return arc flies it back home.
         ballInCupOffsetX = null;
         const minX = ball.radius * 2;
-        const maxX = width * 0.65;
+        const maxX = getSpawnMaxX();
         const targetX = minX + Math.random() * (maxX - minX);
         const targetY = height * groundLevel - ball.radius;
         returnFrom = { x: ball.x, y: ball.y };
