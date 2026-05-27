@@ -141,6 +141,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             isTouchHeld = false;
             resetBall(); // clears isAiming, sets isResting, resets position
         };
+
+        // Trigger a miss with full consequences (streak break, life loss,
+        // bonus wipe) and fire onThrowComplete — used by the turn timer.
+        // handleMiss is a hoisted function declaration so this is safe here.
+        mpCfg.forceMiss = () => handleMiss();
     }
 
     // Action methods modifiers can call on the context. These touch engine

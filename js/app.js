@@ -442,41 +442,27 @@ async function router() {
             }, 1000);
         };
 
-        // Called when timer hits 0 — end the turn without a throw.
-        const handleTurnTimeout = async () => {
+        // Called when timer hits 0 — end the turn as a miss.
+        const handleTurnTimeout = () => {
             if (!multiplayerConfig.isMyTurn || resultPending) return;
 
             // ── Ball already in the air ───────────────────────────────────
-            // The player threw before the timer reached 0. Don't interrupt —
-            // let onThrowComplete handle the turn end naturally when the ball
-            // lands. Just stop the visual countdown.
+            // The player threw before time ran out. Stop the visual timer and
+            // wait — the engine will call onThrowComplete when the ball lands,
+            // applying the real result (score or miss) with full consequences.
             if (multiplayerConfig.isBallInFlight?.()) {
                 clearTurnTimer();
                 showGameToast('⏰ Time\'s up!', 'bonus-up');
-                return; // onThrowComplete will fire and end the turn
+                return;
             }
 
             // ── Ball resting or mid-aim ───────────────────────────────────
-            // Cancel any drag the player was holding, then force-end the turn.
+            // Cancel any drag, then trigger a proper miss in the engine.
+            // handleMiss resets streak/lives/bonus-mode and calls
+            // onThrowComplete, which handles broadcast + DB + checkWin.
             multiplayerConfig.cancelAim?.();
-
-            multiplayerConfig.isMyTurn = false;
-            mpScores.myThrows++;
-            updateMpHud();
             showGameToast('⏰ Time\'s up!', 'bonus-up');
-
-            bcChannel.send({
-                type: 'broadcast', event: 'turn_end',
-                payload: { role, scored: false, points: 0, totalScore: mpScores.mine, streak: mpScores.myStreak },
-            });
-
-            const scoreCol = role === 'host' ? 'host_score' : 'guest_score';
-            const nextTurn = role === 'host' ? 'guest'      : 'host';
-            await supabase.from('rooms').update({
-                [scoreCol]: mpScores.mine, current_turn: nextTurn,
-            }).eq('code', code);
-
-            checkWin();
+            multiplayerConfig.forceMiss?.();
         };
 
         // ── Win-check + animated game-over overlay ────────────────────────
