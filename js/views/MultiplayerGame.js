@@ -43,10 +43,13 @@ export default function MultiplayerGame({ myName, oppName, targetScore, gameMode
                         </div>
                     </div>
 
-                    <!-- Center: target + turn label -->
+                    <!-- Center: target + turn label + timer -->
                     <div class="mp-hud-center-col">
                         <span class="mp-hud-target">/ ${targetScore}</span>
                         <span class="mp-turn-indicator" id="mp-turn-indicator">⏳ Waiting…</span>
+                        <div class="mp-turn-timer hidden" id="mp-turn-timer">
+                            <span id="mp-timer-value">15</span>s
+                        </div>
                     </div>
 
                     <!-- Opponent side -->

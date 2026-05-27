@@ -2209,6 +2209,27 @@ button:disabled {
     min-width: 0.5rem;
 }
 
+/* ── Turn timer ────────────────────────────────────────────── */
+.mp-turn-timer {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.5rem, 1.4vmin, 0.72rem);
+    font-weight: 700;
+    color: #94a3b8;
+    letter-spacing: 0.05em;
+    transition: color 0.3s ease;
+    margin-top: 0.15rem;
+}
+.mp-turn-timer.hidden   { display: none; }
+.mp-turn-timer.warning  { color: #fb923c; }
+.mp-turn-timer.danger   {
+    color: #ef4444;
+    animation: mp-timer-pulse 0.5s ease-in-out infinite alternate;
+}
+@keyframes mp-timer-pulse {
+    from { opacity: 1;    transform: scale(1);    }
+    to   { opacity: 0.65; transform: scale(1.15); }
+}
+
 /* ── Countdown overlay ─────────────────────────────────────── */
 .mp-countdown-overlay {
     position: absolute;

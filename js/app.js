@@ -400,6 +400,63 @@ async function router() {
             setTimeout(() => el.remove(), 2500);
         };
 
+        // ── 15-second turn timer ─────────────────────────────────────────
+        const TURN_SECONDS = 15;
+        let turnTimer    = null;
+        let turnTimeLeft = TURN_SECONDS;
+
+        const clearTurnTimer = () => {
+            if (turnTimer) { clearInterval(turnTimer); turnTimer = null; }
+            const el = document.getElementById('mp-turn-timer');
+            if (el) el.classList.add('hidden');
+        };
+
+        const updateTimerDisplay = () => {
+            const el  = document.getElementById('mp-turn-timer');
+            const val = document.getElementById('mp-timer-value');
+            if (!el || !val) return;
+            val.textContent = turnTimeLeft;
+            el.classList.remove('hidden', 'warning', 'danger');
+            if      (turnTimeLeft <= 3) el.classList.add('danger');
+            else if (turnTimeLeft <= 6) el.classList.add('warning');
+        };
+
+        const startTurnTimer = () => {
+            clearTurnTimer();
+            turnTimeLeft = TURN_SECONDS;
+            updateTimerDisplay();
+            turnTimer = setInterval(() => {
+                turnTimeLeft--;
+                updateTimerDisplay();
+                if (turnTimeLeft <= 0) {
+                    clearTurnTimer();
+                    handleTurnTimeout();
+                }
+            }, 1000);
+        };
+
+        // Called when timer hits 0 — end the turn without a throw.
+        const handleTurnTimeout = async () => {
+            if (!multiplayerConfig.isMyTurn || resultPending) return;
+            multiplayerConfig.isMyTurn = false;
+            mpScores.myThrows++;
+            updateMpHud();
+            showGameToast('⏰ Time\'s up!', 'bonus-up');
+
+            bcChannel.send({
+                type: 'broadcast', event: 'turn_end',
+                payload: { role, scored: false, points: 0, totalScore: mpScores.mine, streak: mpScores.myStreak },
+            });
+
+            const scoreCol = role === 'host' ? 'host_score' : 'guest_score';
+            const nextTurn = role === 'host' ? 'guest'      : 'host';
+            await supabase.from('rooms').update({
+                [scoreCol]: mpScores.mine, current_turn: nextTurn,
+            }).eq('code', code);
+
+            checkWin();
+        };
+
         // ── Win-check + animated game-over overlay ────────────────────────
         let resultPending  = false; // prevent double-fire
         let tiebreakActive = false; // true once a tiebreaker round has started
@@ -410,6 +467,7 @@ async function router() {
 
             // Block all input
             multiplayerConfig.isMyTurn = false;
+            clearTurnTimer();
             updateMpHud();
 
             // Mark room finished so any refresh lands on the result screen, not
@@ -480,6 +538,7 @@ async function router() {
             // Pause so both players see the updated score, then unlock.
             setTimeout(() => {
                 multiplayerConfig.isMyTurn = true;
+                startTurnTimer();
                 updateMpHud();
                 checkWin();
             }, 1000);
@@ -502,6 +561,7 @@ async function router() {
         // ── onThrowComplete — called by engine after each of our throws ───
         multiplayerConfig.onThrowComplete = async ({ scored, points, totalScore, streak }) => {
             multiplayerConfig.isMyTurn = false;
+            clearTurnTimer();
             mpScores.mine     = totalScore;
             mpScores.myStreak = streak;
             mpScores.myThrows++;
@@ -549,7 +609,10 @@ async function router() {
                 if (countdownEl) countdownEl.textContent = 'GO!';
                 setTimeout(() => {
                     if (countdownOv) countdownOv.classList.add('hidden');
-                    if (room.current_turn === role) multiplayerConfig.isMyTurn = true;
+                    if (room.current_turn === role) {
+                        multiplayerConfig.isMyTurn = true;
+                        startTurnTimer();
+                    }
                     updateMpHud();
                 }, 700);
             }
@@ -558,6 +621,7 @@ async function router() {
 
         // ── Quit button — delete room and go back to lobby ─────────────────
         document.getElementById('mp-btn-quit')?.addEventListener('click', async () => {
+            clearTurnTimer();
             if (destroyMp)   { destroyMp();   destroyMp   = null; }
             if (destroyGame) { destroyGame(); destroyGame = null; }
             await supabase.from('rooms').delete().eq('code', code);
