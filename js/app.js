@@ -416,6 +416,17 @@ async function router() {
             // back in the game. Fire-and-forget — no need to await.
             supabase.from('rooms').update({ status: 'finished' }).eq('code', code).then(() => {});
 
+            // Explicitly notify the opponent the game is over, in case they are
+            // stuck on the wait overlay and never independently reach checkWin.
+            // Payload uses the OPPONENT's perspective so they can blindly apply it.
+            const oppOutcome = outcome === 'win' ? 'lose' : outcome === 'lose' ? 'win' : 'tie';
+            bcChannel.send({
+                type:    'broadcast',
+                event:   'game_over',
+                // myScore / oppScore are FROM THE RECEIVER'S perspective
+                payload: { outcome: oppOutcome, myScore: mpScores.opp, oppScore: mpScores.mine },
+            });
+
             // Show in-game flash overlay
             const bannerText = { win: '🏆 You Win!', lose: '💀 You Lose…', tie: "🤝 It's a Tie!" };
             const textEl    = document.getElementById('mp-gameover-text');
@@ -472,6 +483,17 @@ async function router() {
                 updateMpHud();
                 checkWin();
             }, 1000);
+        });
+
+        // Opponent called goToResult on their side — sync us to the result screen.
+        // This is the authoritative path for the player stuck on wait overlay.
+        bcChannel.on('broadcast', { event: 'game_over' }, ({ payload }) => {
+            if (resultPending) return; // already heading to result, ignore echo
+            // Apply authoritative final scores from the sender's data.
+            mpScores.mine = payload.myScore;
+            mpScores.opp  = payload.oppScore;
+            updateMpHud();
+            goToResult(payload.outcome);
         });
 
         bcChannel.subscribe();
