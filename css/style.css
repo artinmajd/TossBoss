@@ -2198,7 +2198,9 @@ button:disabled {
 .mp-hud-stats {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.3rem;
+    width: 100%;
     min-height: 0.85rem;
 }
 
