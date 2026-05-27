@@ -474,10 +474,11 @@ async function router() {
                 payload: { role, scored, points, totalScore, streak },
             });
 
-            // Persist score + flip turn in DB
+            // Persist score + flip turn in DB (must be awaited — Supabase v2
+            // queries are lazy and won't execute without await / .then()).
             const scoreCol = role === 'host' ? 'host_score' : 'guest_score';
             const nextTurn = role === 'host' ? 'guest'      : 'host';
-            supabase.from('rooms').update({
+            await supabase.from('rooms').update({
                 [scoreCol]:   totalScore,
                 current_turn: nextTurn,
             }).eq('code', code);
@@ -516,10 +517,10 @@ async function router() {
         setTimeout(countdownTick, 1000);
 
         // ── Quit button — delete room and go back to lobby ─────────────────
-        document.getElementById('mp-btn-quit')?.addEventListener('click', () => {
+        document.getElementById('mp-btn-quit')?.addEventListener('click', async () => {
             if (destroyMp)   { destroyMp();   destroyMp   = null; }
             if (destroyGame) { destroyGame(); destroyGame = null; }
-            supabase.from('rooms').delete().eq('code', code); // fire-and-forget
+            await supabase.from('rooms').delete().eq('code', code);
             sessionStorage.removeItem('mp_room_code');
             sessionStorage.removeItem('mp_role');
             sessionStorage.removeItem('mp_room_data');
@@ -568,8 +569,8 @@ async function router() {
         });
 
         // ── Home — delete the room before leaving ──────────────────────────
-        document.getElementById('btn-mp-result-home')?.addEventListener('click', () => {
-            supabase.from('rooms').delete().eq('code', result.code); // fire-and-forget
+        document.getElementById('btn-mp-result-home')?.addEventListener('click', async () => {
+            await supabase.from('rooms').delete().eq('code', result.code);
             sessionStorage.removeItem('mp_room_code');
             sessionStorage.removeItem('mp_role');
             sessionStorage.removeItem('mp_room_data');
