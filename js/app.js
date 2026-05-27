@@ -545,12 +545,15 @@ async function router() {
             mpScores.oppThrows++;
             updateMpHud();
 
-            // Pause so both players see the updated score, then unlock.
+            // Pause so both players see the updated score, then check for a
+            // winner before unlocking — avoids briefly showing "Your Turn!" if
+            // the game is actually over this round.
             setTimeout(() => {
+                checkWin();
+                if (resultPending) return; // game over — don't unlock
                 multiplayerConfig.isMyTurn = true;
                 startTurnTimer();
                 updateMpHud();
-                checkWin();
             }, 1000);
         });
 
