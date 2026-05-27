@@ -98,11 +98,12 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     //                     settling inside the cup (before ball_returned arrives)
     //                     does NOT falsely complete the spectate.
     // lastMpFF          — last FF state we broadcast; for change detection only.
-    let ghostX            = null;
-    let ghostY            = null;
-    let isSpectateReturn  = false;
-    let spectateArcActive = false;
-    let lastMpFF          = false;
+    let ghostX             = null;
+    let ghostY             = null;
+    let isSpectateReturn   = false;
+    let spectateArcActive  = false;
+    let pendingGhostReturn = null; // ball_returned payload buffered while bg-throttled
+    let lastMpFF           = false;
     let returnFrom = { x: 0, y: 0 };
     let returnCtrl = { x: 0, y: 0 };
     let returnTo   = { x: 0, y: 0 };
@@ -156,8 +157,14 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // our own width/height so the arc lands at the same relative spot
         // even when the two players have different screen sizes.
         // payload: { fromX, fromY, toX, toY } all in [0..1]
+        // Buffer the latest payload so it isn't lost if it arrives BEFORE
+        // isSpectateReturn flips on.  That race happens when this tab is
+        // backgrounded — websocket broadcasts keep arriving but rAF-driven
+        // physics is throttled, so handleScore (which sets isSpectateReturn)
+        // hasn't fired yet.  When the tab is foregrounded again and the
+        // physics catches up, handleScore consumes the buffered payload.
         mpCfg.startGhostReturn = (payload) => {
-            if (!isSpectateReturn) return;
+            if (!isSpectateReturn) { pendingGhostReturn = payload; return; }
             startReturn({
                 from: { x: payload.fromX * width, y: payload.fromY * height },
                 to:   { x: payload.toX   * width, y: payload.toY   * height },
@@ -1858,6 +1865,13 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         if (mpCfg?.isSpectating) {
             mpCfg.isSpectating = false;
             isSpectateReturn   = true;
+            // If ball_returned already arrived (background-tab race) it was
+            // buffered — apply it now that isSpectateReturn is on.
+            if (pendingGhostReturn) {
+                const p = pendingGhostReturn;
+                pendingGhostReturn = null;
+                mpCfg.startGhostReturn(p);
+            }
             return;
         }
 
