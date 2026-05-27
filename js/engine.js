@@ -413,11 +413,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         ballInCupOffsetX = null;
         const minX = ball.radius * 2;
         const maxX = width * 0.65;
-        // In multiplayer always return to the same fixed spot so ball position
-        // is deterministic and never changes across refreshes.
-        const targetX = mpCfg
-            ? minX + (maxX - minX) * 0.30
-            : minX + Math.random() * (maxX - minX);
+        const targetX = minX + Math.random() * (maxX - minX);
         const targetY = height * groundLevel - ball.radius;
         returnFrom = { x: ball.x, y: ball.y };
         returnTo   = { x: targetX, y: targetY };
