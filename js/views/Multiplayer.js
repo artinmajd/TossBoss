@@ -106,9 +106,9 @@ export default function Multiplayer({ session = null, storedName = '', replayCod
                         <span class="mp-slider-value" id="mp-target-display">50 pts</span>
                     </div>
                     <input id="mp-target-slider" class="mp-slider" type="range"
-                           min="5" max="150" step="5" value="50">
+                           min="2" max="150" step="1" value="50">
                     <div class="mp-slider-ends">
-                        <span>5</span><span>150</span>
+                        <span>2</span><span>150</span>
                     </div>
                 </div>
 
