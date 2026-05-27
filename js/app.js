@@ -374,8 +374,16 @@ async function router() {
             if (oppScoreEl)  oppScoreEl.textContent   = mpScores.opp;
             if (myThrowsEl)  myThrowsEl.textContent   = `${mpScores.myThrows} shots`;
             if (oppThrowsEl) oppThrowsEl.textContent  = `${mpScores.oppThrows} shots`;
-            if (myStreakEl)  myStreakEl.textContent    = mpScores.myStreak  > 0 ? `streak ${mpScores.myStreak}`  : '';
-            if (oppStreakEl) oppStreakEl.textContent   = mpScores.oppStreak > 0 ? `streak ${mpScores.oppStreak}` : '';
+            if (myStreakEl) {
+                const s = mpScores.myStreak;
+                myStreakEl.textContent    = s > 0 ? `streak ${s}` : '';
+                myStreakEl.style.display  = s > 0 ? '' : 'none';
+            }
+            if (oppStreakEl) {
+                const s = mpScores.oppStreak;
+                oppStreakEl.textContent   = s > 0 ? `streak ${s}` : '';
+                oppStreakEl.style.display = s > 0 ? '' : 'none';
+            }
             if (turnEl) turnEl.textContent = multiplayerConfig.isMyTurn
                 ? '🎯 Your Turn!'
                 : `⏳ ${oppName}'s Turn…`;

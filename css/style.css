@@ -2220,7 +2220,6 @@ button:disabled {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: #fb923c;
-    min-width: 0.5rem;
 }
 
 /* ── Turn timer ────────────────────────────────────────────── */
