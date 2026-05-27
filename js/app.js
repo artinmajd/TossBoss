@@ -340,17 +340,12 @@ async function router() {
             oppStreak: 0,
         };
 
-        // Restore throw parity from current_turn so win detection works after
-        // a browser refresh.  We only need the relative counts, not the
-        // absolute values: if it's my turn the counts are equal; if it's the
-        // opponent's turn I have thrown one more than them.
-        if (room.current_turn === role) {
-            mpScores.myThrows  = 0;
-            mpScores.oppThrows = 0;
-        } else {
-            mpScores.myThrows  = 1;
-            mpScores.oppThrows = 0;
-        }
+        // Always start at 0/0. checkWin only needs equality, not absolute
+        // values, so this is correct for both fresh game-start and refresh:
+        // the counts naturally reach parity again after the current round
+        // completes, at which point win detection fires correctly.
+        mpScores.myThrows  = 0;
+        mpScores.oppThrows = 0;
 
         // multiplayerConfig is passed into initGame.
         // isMyTurn starts false — the countdown overlay enables it.
