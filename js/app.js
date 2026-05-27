@@ -454,7 +454,7 @@ async function router() {
             // applying the real result (score or miss) with full consequences.
             if (multiplayerConfig.isBallInFlight?.()) {
                 clearTurnTimer();
-                showGameToast('⏰ Time\\'s up!', 'bonus-up', true);
+                showGameToast("⏰ Time's up!", 'bonus-up', true);
                 return;
             }
 
@@ -463,7 +463,7 @@ async function router() {
             // handleMiss resets streak/lives/bonus-mode and calls
             // onThrowComplete, which handles broadcast + DB + checkWin.
             multiplayerConfig.cancelAim?.();
-            showGameToast('⏰ Time\\'s up!', 'bonus-up', true);
+            showGameToast("⏰ Time's up!", 'bonus-up', true);
             multiplayerConfig.forceMiss?.();
         };
 
