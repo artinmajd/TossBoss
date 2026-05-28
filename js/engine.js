@@ -2286,6 +2286,15 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // Ball just came to rest after a throw without scoring = miss
         if (!wasResting && isResting && wasThrown && !scoredThisThrow) {
             handleMiss();
+            // Basketball: if the ball bounced to rest inside the forbidden zone
+            // (too close to the hoop to throw from), arc it back to a safe position.
+            // This is the same protection getSpawnMaxX() applies after a score,
+            // now applied after a miss too.  The arc is purely visual — the miss
+            // and turn-end logic above already fired; the respawn just ensures the
+            // player's next turn starts from a fair position.
+            if (gameMode === 'basketball' && isResting && ball.x > getSpawnMaxX()) {
+                setTimeout(startReturn, 300);
+            }
         }
 
         // Spectated score: the ghost arc just landed.
