@@ -2140,7 +2140,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             }
         }
 
-        const wasResting = isResting;
+        const wasResting       = isResting;
+        const wasBallReturning = ballReturning;
         const maxSteps = 8 * speedMul;   // catch-up cap — guards against a spiral
         let stepsRan = 0;
         while (accumulator >= dt && stepsRan < maxSteps) {
@@ -2164,7 +2165,14 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // Guard with spectateArcActive so the ball naturally coming to rest
         // *inside the cup* (while we're still waiting for ball_returned) does
         // NOT falsely complete the spectate — only the explicit arc landing does.
-        if (mpCfg && isSpectateReturn && spectateArcActive && !wasResting && isResting) {
+        // Detect arc completion via ballReturning going true → false, not via
+        // isResting transition.  The ball can already be resting inside the
+        // cup before the arc starts (handleScore spectate path doesn't move
+        // it while we wait for ball_returned), so wasResting may already be
+        // true at the frame the arc completes and the resting-transition
+        // check would never fire — leaving the player's ball stranded at
+        // returnTo because restoreAfterSpectate is never called.
+        if (mpCfg && isSpectateReturn && spectateArcActive && wasBallReturning && !ballReturning) {
             isSpectateReturn  = false;
             spectateArcActive = false;
             ghostX = ball.x;
