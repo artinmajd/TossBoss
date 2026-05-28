@@ -793,7 +793,12 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             const homeX    = getCupX() - (gameCtx.targetOffset?.x || 0);
             const safeMaxX = homeX - (gameCtx.targetSwingAmpX || 0) - 55 * scale - ball.radius * 2;
             if (ball.x > safeMaxX) {
-                startReturn();
+                // Arc to the closest safe spot (just left of the swing zone)
+                // rather than a random position — keeps the respawn fair.
+                startReturn({
+                    from: { x: ball.x, y: ball.y },
+                    to:   { x: safeMaxX, y: height * groundLevel - ball.radius },
+                });
                 return;
             }
         }
