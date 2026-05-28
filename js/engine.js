@@ -483,8 +483,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                 const S = (320 * scale) / hoopImg.naturalHeight;
                 hoopWidth = (874 - 169) * S;
             }
-            // Stay well left of the left rim.
-            return width - hoopWidth - ball.radius * 4;
+            // Stay well left of the left rim AND guarantee the player has a
+            // scorable throw angle.  ball.radius*4 clears the rim physically;
+            // the extra 110*scale ensures the ball is never spawned so close
+            // to the basket that shooting near-vertically is the only option.
+            return width - hoopWidth - ball.radius * 4 - 110 * scale;
         } else {
             // Ping-pong: stay left of the cup's left rim plus a comfortable gap.
             return getCupX() - 55 * scale - ball.radius * 4;
