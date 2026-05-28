@@ -1073,6 +1073,24 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                 wasAboveRim = false;
             }
 
+            // Tunnel guard: a fast shot (vy > netDepth/dt ≈ 4320 px/s, which
+            // gravity can produce late in a steep arc) can jump from above the
+            // rim to past the entire net zone in one physics tick, so the
+            // ball.y-in-net-range check above never fires.  Detect the rim
+            // crossing directly: if prevBall was above the rim plane and ball
+            // is now below it, within the hoop's horizontal opening, from a
+            // valid above-rim approach — it's a score regardless of how far
+            // into the net the ball has already traveled.
+            if (!scoredThisThrow && wasThrown && !isDisqualified && wasAboveRim
+                && prevBall.y < hoopRimY && ball.y > hoopRimY
+                && ball.x > hoopLeftRim && ball.x < hoopRightRim) {
+                scoredThisThrow = true;
+                wasThrown = false;
+                const _specBBtunnel = mpCfg?.isSpectating;
+                handleScore();
+                if (!_specBBtunnel) setTimeout(startReturn, 1400);
+            }
+
             // Reset depth state if the ball exits the net area
             if (ball.y > hoopRimY + clearDepth || ball.y < hoopRimY || ball.x < hoopLeftRim || ball.x > hoopRightRim) {
                 isBehindNet = false;
