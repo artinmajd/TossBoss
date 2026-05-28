@@ -874,8 +874,14 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                         // cup is moving (e.g. Moving Target challenge). The cup
                         // doesn't move vertically, so Y physics continue normally.
                         ballInCupOffsetX = ball.x - cupX;
+                        // Capture spectate state BEFORE handleScore (which clears it).
+                        // For spectated scores the return arc is driven by the
+                        // ball_returned broadcast, not the auto-timeout — skip it,
+                        // otherwise it can fire after the arc completes and start a
+                        // second random arc that respawns the player's ball.
+                        const _specPP = mpCfg?.isSpectating;
                         handleScore();
-                        setTimeout(startReturn, 1400);
+                        if (!_specPP) setTimeout(startReturn, 1400);
                     }
 
                     // Inner-wall side pushes — only fire when the ball is
@@ -1023,8 +1029,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                         if (wasAboveRim) {
                             scoredThisThrow = true;
                             wasThrown = false;
+                            // See pingpong site for rationale — skip the auto
+                            // return-timeout when the score is being spectated.
+                            const _specBB = mpCfg?.isSpectating;
                             handleScore();
-                            setTimeout(startReturn, 1400);
+                            if (!_specBB) setTimeout(startReturn, 1400);
                         }
                     }
                 }
