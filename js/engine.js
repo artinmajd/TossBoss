@@ -91,11 +91,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     //   phase 1 — ball rises straight out of the cup opening (RETURN_RISE_DURATION s)
     //   phase 2 — normal Bézier arc to the spawn position
     // For all other returns (miss, basketball, MP override) only phase 2 runs.
-    let returnPhase    = 2;
-    let returnRiseFrom = { x: 0, y: 0 };
-    let returnRiseTo   = { x: 0, y: 0 };
-    let returnRiseT    = 0;
-    const RETURN_RISE_DURATION = 0.2; // seconds
+    let returnPhase       = 2;
+    let returnRiseFrom    = { x: 0, y: 0 };
+    let returnRiseTo      = { x: 0, y: 0 };
+    let returnRiseT       = 0;
+    let returnRiseDuration = 0.2; // computed per return so phase-1 speed matches phase-2
 
     // ── MP ghost ball state ───────────────────────────────────────────────
     // ghostX/Y          — opponent's last known resting position; drawn at 50%
@@ -593,6 +593,19 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             returnRiseT    = 0;
             returnPhase    = 1;
 
+            // Scale phase-1 duration so the ball travels at roughly the same
+            // average speed as the phase-2 arc.  riseDistance / arcDistance
+            // gives the fraction of arc-length covered by the rise; applying
+            // that fraction to RETURN_DURATION keeps the two speeds matched.
+            const riseDistance = ball.radius * 5;
+            const arcDistance  = Math.hypot(
+                targetX  - cupCenterX,
+                targetY  - returnRiseTo.y,
+            );
+            returnRiseDuration = arcDistance > 0
+                ? Math.max(0.06, (riseDistance / arcDistance) * RETURN_DURATION)
+                : 0.12;
+
             // Store the arc destination; returnFrom/returnCtrl are computed
             // at the end of phase 1 using the ball's actual exit position.
             returnTo = { x: targetX, y: targetY };
@@ -809,7 +822,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         if (ballReturning) {
             if (returnPhase === 1) {
                 // Phase 1 — rise straight out of the cup with a smoothstep ease.
-                returnRiseT = Math.min(returnRiseT + dt / RETURN_RISE_DURATION, 1);
+                returnRiseT = Math.min(returnRiseT + dt / returnRiseDuration, 1);
                 const re = returnRiseT * returnRiseT * (3 - 2 * returnRiseT);
                 ball.x = returnRiseFrom.x + (returnRiseTo.x - returnRiseFrom.x) * re;
                 ball.y = returnRiseFrom.y + (returnRiseTo.y - returnRiseFrom.y) * re;
