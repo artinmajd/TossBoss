@@ -2244,7 +2244,8 @@ button:disabled {
     width:  clamp(11px, 2.2vmin, 16px);
     height: clamp(11px, 2.2vmin, 16px);
     display: block;
-    margin-left: clamp(-5px, -1.1vmin, -8px);
+    /* 50% overlap — mirrors how the full-size hearts stack */
+    margin-left: calc(clamp(11px, 2.2vmin, 16px) * -0.5);
     transform-origin: center;
     transition: opacity 0.18s ease, filter 0.18s ease, transform 0.18s ease;
 }

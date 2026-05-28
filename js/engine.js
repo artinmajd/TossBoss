@@ -1844,12 +1844,18 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
     // Both hearts flare back to full with a pop-and-glow animation.
     function refillLives() {
-        getHearts().forEach(h => {
+        const hearts = getHearts();
+        hearts.forEach(h => {
             h.classList.remove('heart-refill', 'heart-dim');
             void h.offsetWidth;   // restart the animation
             h.classList.add('heart-refill');
             setTimeout(() => h.classList.remove('heart-refill'), 600);
         });
+        // Notify opponent: all lives restored, streak broken on reset.
+        if (mpCfg?.onHeartsChange) {
+            const maxLives = 2 + gameCtx.extraLives;
+            mpCfg.onHeartsChange({ lives: maxLives, maxLives, onStreak: consecutiveHits >= 3 });
+        }
     }
 
     // Hearts catch fire while a scoring streak (bonus tier) is active.
@@ -1998,6 +2004,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             }
             // Last life lost: dim the final heart, then flare both back to full.
             getHearts().forEach(h => h.classList.add('heart-dim'));
+            if (mpCfg?.onHeartsChange) {
+                const maxLives = 2 + gameCtx.extraLives;
+                mpCfg.onHeartsChange({ lives: 0, maxLives, onStreak: false });
+            }
             setTimeout(refillLives, 280);
         } else {
             updateLives();   // first miss: dim one heart
