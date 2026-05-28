@@ -86,7 +86,16 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     // Return animation state
     let ballReturning = false;
     let returnT = 0;
-    const RETURN_DURATION = 0.35; // seconds
+    const RETURN_DURATION = 0.35; // seconds — Bézier arc phase
+    // Two-phase return for ping-pong scored balls:
+    //   phase 1 — ball rises straight out of the cup opening (RETURN_RISE_DURATION s)
+    //   phase 2 — normal Bézier arc to the spawn position
+    // For all other returns (miss, basketball, MP override) only phase 2 runs.
+    let returnPhase    = 2;
+    let returnRiseFrom = { x: 0, y: 0 };
+    let returnRiseTo   = { x: 0, y: 0 };
+    let returnRiseT    = 0;
+    const RETURN_RISE_DURATION = 0.2; // seconds
 
     // ── MP ghost ball state ───────────────────────────────────────────────
     // ghostX/Y          — opponent's last known resting position; drawn at 50%
@@ -542,6 +551,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // Don't start a second override arc if one is already running.
         if (overrideDest && spectateArcActive) return;
 
+        // Detect if the ball is sitting inside the ping-pong cup (scored, hidden,
+        // waiting to be returned). Must be read BEFORE clearing scoredThisThrow.
+        const risingFromCup = gameMode === 'pingpong' && scoredThisThrow && !overrideDest;
+
         // Release the cup-locked ball — the return arc flies it back home.
         ballInCupOffsetX = null;
         const minX = ball.radius * 2;
@@ -562,13 +575,39 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             });
         }
 
-        returnFrom = overrideDest?.from ?? { x: ball.x, y: ball.y };
-        returnTo   = { x: targetX, y: targetY };
-        returnCtrl = {
-            x: (returnFrom.x + returnTo.x) / 2,
-            y: Math.min(returnFrom.y, returnTo.y) - height * 0.22
-        };
-        returnT = 0;
+        if (risingFromCup) {
+            // Phase 1: rise straight up from the cup opening so the ball is
+            // visually clear of the rim before the arc sweeps it away.
+            const ts      = gameCtx.targetScale ?? 1;
+            const floorY  = height * groundLevel;
+            const cupRimY = floorY - 130 * scale * ts;
+            const cupCenterX = getCupX();
+
+            // Snap the ball to the cup opening — it was invisible while inside,
+            // so this is the first position the player sees on this return.
+            ball.x = cupCenterX;
+            ball.y = cupRimY;
+
+            returnRiseFrom = { x: cupCenterX, y: cupRimY };
+            returnRiseTo   = { x: cupCenterX, y: cupRimY - ball.radius * 5 };
+            returnRiseT    = 0;
+            returnPhase    = 1;
+
+            // Store the arc destination; returnFrom/returnCtrl are computed
+            // at the end of phase 1 using the ball's actual exit position.
+            returnTo = { x: targetX, y: targetY };
+        } else {
+            // Normal return (miss / basketball / MP spectate override).
+            returnFrom = overrideDest?.from ?? { x: ball.x, y: ball.y };
+            returnTo   = { x: targetX, y: targetY };
+            returnCtrl = {
+                x: (returnFrom.x + returnTo.x) / 2,
+                y: Math.min(returnFrom.y, returnTo.y) - height * 0.22,
+            };
+            returnPhase = 2;
+            returnT     = 0;
+        }
+
         ballReturning = true;
         scoredThisThrow = false;
         isResting = false;
@@ -768,6 +807,25 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             ball.x = getCupX() + ballInCupOffsetX;
         }
         if (ballReturning) {
+            if (returnPhase === 1) {
+                // Phase 1 — rise straight out of the cup with a smoothstep ease.
+                returnRiseT = Math.min(returnRiseT + dt / RETURN_RISE_DURATION, 1);
+                const re = returnRiseT * returnRiseT * (3 - 2 * returnRiseT);
+                ball.x = returnRiseFrom.x + (returnRiseTo.x - returnRiseFrom.x) * re;
+                ball.y = returnRiseFrom.y + (returnRiseTo.y - returnRiseFrom.y) * re;
+                if (returnRiseT >= 1) {
+                    // Transition to phase 2 — kick off the Bézier arc from here.
+                    returnPhase = 2;
+                    returnFrom  = { x: ball.x, y: ball.y };
+                    returnCtrl  = {
+                        x: (returnFrom.x + returnTo.x) / 2,
+                        y: Math.min(returnFrom.y, returnTo.y) - height * 0.22,
+                    };
+                    returnT = 0;
+                }
+                return;
+            }
+            // Phase 2 — Bézier arc to the spawn position.
             returnT = Math.min(returnT + dt / RETURN_DURATION, 1);
             // ease-out cubic — fast start, soft landing
             const e = 1 - Math.pow(1 - returnT, 3);
