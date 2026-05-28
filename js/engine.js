@@ -784,8 +784,22 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             }
             return;
         }
+        // During the Moving Target challenge the cup sweeps left by up to
+        // targetSwingAmpX px from its home.  If the ball somehow came to rest
+        // inside that danger zone (missed shot that rolled right, etc.) arc it
+        // back to a safe position immediately — no score, no miss, no streak
+        // change; just a clean respawn so the cup never traps a sitting ball.
+        if (isResting && gameMode === 'pingpong' && (gameCtx.targetSwingAmpX || 0) > 0 && !scoredThisThrow) {
+            const homeX    = getCupX() - (gameCtx.targetOffset?.x || 0);
+            const safeMaxX = homeX - (gameCtx.targetSwingAmpX || 0) - 55 * scale - ball.radius * 2;
+            if (ball.x > safeMaxX) {
+                startReturn();
+                return;
+            }
+        }
+
         if (isAiming || isResting) return;
-        
+
         const floorY = height * groundLevel;
         
         ball.vy += gravity * pixelsPerMeter * dt;
