@@ -2222,6 +2222,51 @@ button:disabled {
     color: #fb923c;
 }
 
+/* ── Opponent mini hearts (beside their score) ─────────────── */
+
+/* Row that holds the score digit + the mini hearts */
+.mp-score-hearts-row {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+/* Container for the 2 (or 3) mini hearts */
+.mp-opp-hearts {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    pointer-events: none;
+}
+
+/* Each mini heart image */
+.mp-opp-heart {
+    width:  clamp(11px, 2.2vmin, 16px);
+    height: clamp(11px, 2.2vmin, 16px);
+    display: block;
+    margin-left: clamp(-5px, -1.1vmin, -8px);
+    transform-origin: center;
+    transition: opacity 0.18s ease, filter 0.18s ease, transform 0.18s ease;
+}
+.mp-opp-heart:first-child {
+    margin-left: 0;
+}
+
+/* Dim state — matches the full-size heart-dim visuals */
+.mp-opp-heart.mp-opp-heart-dim {
+    opacity: 0.22;
+    filter: grayscale(0.85) brightness(0.55);
+    transform: scale(0.78);
+}
+
+/* Fire state — same flickering flame as full-size hearts */
+.mp-opp-heart.mp-opp-heart-fire {
+    animation: heart-fire 0.55s ease-in-out infinite;
+}
+.mp-opp-heart.mp-opp-heart-fire:nth-child(2) {
+    animation-delay: -0.28s;
+}
+
 /* ── Turn timer ────────────────────────────────────────────── */
 .mp-turn-timer {
     position: relative;

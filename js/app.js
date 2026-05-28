@@ -615,6 +615,11 @@ async function router() {
             if (multiplayerConfig) multiplayerConfig.startGhostReturn?.(payload);
         });
 
+        // Opponent's heart state changed — update mini hearts in our HUD.
+        bcChannel.on('broadcast', { event: 'hearts_update' }, ({ payload }) => {
+            updateOppHearts(payload);
+        });
+
         // Opponent's fast-forward state changed — mirror it so our spectate
         // physics run at the same speed as theirs.
         bcChannel.on('broadcast', { event: 'ff_change' }, ({ payload }) => {
@@ -634,6 +639,29 @@ async function router() {
             updateMpHud(); // hides wait overlay immediately
             multiplayerConfig.spectateThrow?.(payload);
         });
+
+        // ── updateOppHearts — rebuild/sync the mini hearts beside opponent's score ─
+        const updateOppHearts = ({ lives, maxLives, onStreak }) => {
+            const container = document.getElementById('mp-opp-hearts');
+            if (!container) return;
+            // Rebuild hearts if count changed (extra life granted/removed).
+            const current = container.querySelectorAll('.mp-opp-heart');
+            if (current.length !== maxLives) {
+                container.innerHTML = '';
+                for (let i = 0; i < maxLives; i++) {
+                    const img = document.createElement('img');
+                    img.src = 'assets/heart.webp?v=2';
+                    img.alt = '';
+                    img.className = 'mp-opp-heart';
+                    container.appendChild(img);
+                }
+            }
+            container.querySelectorAll('.mp-opp-heart').forEach((h, i) => {
+                const lit = i < lives;
+                h.classList.toggle('mp-opp-heart-dim',  !lit);
+                h.classList.toggle('mp-opp-heart-fire', onStreak && lit);
+            });
+        };
 
         bcChannel.subscribe();
         destroyMp = () => supabase.removeChannel(bcChannel);
@@ -664,6 +692,16 @@ async function router() {
                 type:    'broadcast',
                 event:   'ff_change',
                 payload: { role, active },
+            });
+        };
+
+        // ── onHeartsChange — our hearts state changed; tell opponent so they
+        //    can update the mini hearts displayed next to our score in their HUD ─
+        multiplayerConfig.onHeartsChange = ({ lives, maxLives, onStreak }) => {
+            bcChannel.send({
+                type:    'broadcast',
+                event:   'hearts_update',
+                payload: { lives, maxLives, onStreak },
             });
         };
 

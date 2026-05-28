@@ -59,7 +59,13 @@ export default function MultiplayerGame({ myName, oppName, targetScore, gameMode
                     <!-- Opponent side -->
                     <div class="mp-hud-side mp-hud-opp-side" id="mp-hud-theirs">
                         <span class="mp-hud-pname">${oppName}</span>
-                        <span class="mp-hud-pscore" id="mp-score-theirs">0</span>
+                        <div class="mp-score-hearts-row">
+                            <span class="mp-hud-pscore" id="mp-score-theirs">0</span>
+                            <div id="mp-opp-hearts" class="mp-opp-hearts">
+                                <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
+                                <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
+                            </div>
+                        </div>
                         <div class="mp-hud-stats">
                             <span class="mp-hud-throws" id="mp-throws-theirs">0↑</span>
                             <span class="mp-hud-streak-val" id="mp-streak-theirs"></span>

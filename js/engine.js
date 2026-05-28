@@ -1817,6 +1817,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             h.classList.remove('heart-refill');
             h.classList.toggle('heart-dim', !lit);
         });
+        if (mpCfg?.onHeartsChange) {
+            mpCfg.onHeartsChange({ lives, maxLives: 2 + gameCtx.extraLives, onStreak: consecutiveHits >= 3 });
+        }
     }
 
     // Restore our ball to the position it was in before we spectated the
@@ -1864,6 +1867,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                 setTimeout(() => h.classList.remove('heart-fire-out'), 600);
             }
         });
+        if (mpCfg?.onHeartsChange) {
+            const lives = (2 + gameCtx.extraLives) - consecutiveMisses;
+            mpCfg.onHeartsChange({ lives, maxLives: 2 + gameCtx.extraLives, onStreak: onFire });
+        }
     }
 
     function handleScore() {
