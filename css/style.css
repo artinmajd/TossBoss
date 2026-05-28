@@ -1529,6 +1529,88 @@ button:active {
     flex-shrink: 0;
 }
 
+/* ── Leaderboard: landscape-phone compact layout ────────────────────────────
+   On short landscape viewports (phones held sideways) collapse the page to
+   match the compact in-game leaderboard modal style.                        */
+@media (max-height: 500px) and (orientation: landscape) {
+    #leaderboard-screen {
+        padding: 0.4rem;
+        align-items: center;
+    }
+
+    #leaderboard-screen .leaderboard-content {
+        padding: 0.6rem 0.9rem 0.6rem;
+        width: min(560px, 97vw);
+        max-width: none;
+        max-height: 97vh;
+        gap: 0;                        /* tighten inner flex gap */
+        border-radius: 1rem;
+    }
+
+    /* Shrink the big neon title into a compact label */
+    #leaderboard-screen .logo-title {
+        font-size: 0.9rem;
+        letter-spacing: 0.08em;
+        margin-bottom: 0;
+        animation: none;               /* skip flicker — saves CPU on mobile */
+    }
+
+    /* Tighter tab strip */
+    #leaderboard-screen .leaderboard-tabs {
+        margin: 0.35rem 0 0.35rem;
+        gap: 0.35rem;
+    }
+    #leaderboard-screen .tab-btn {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    #leaderboard-screen .tab-icon {
+        width: 14px;
+        height: 14px;
+    }
+
+    /* Compact table header */
+    #leaderboard-screen .lb-table-header {
+        padding: 0 0.75rem 0.3rem;
+        margin-bottom: 0.25rem;
+        gap: 0.5rem;
+    }
+    #leaderboard-screen .lb-col-rank,
+    #leaderboard-screen .lb-col-name,
+    #leaderboard-screen .lb-col-score,
+    #leaderboard-screen .lb-col-streak {
+        font-size: 0.62rem;
+    }
+    #leaderboard-screen .lb-col-score,
+    #leaderboard-screen .lb-col-streak {
+        width: 4.5rem;
+    }
+
+    /* List — no artificial min-height; let flexbox own the space */
+    #leaderboard-screen #leaderboard-list {
+        min-height: 0;
+        gap: 0.25rem;
+    }
+
+    /* Compact rows */
+    #leaderboard-screen .lb-row {
+        padding: 0.4rem 0.75rem;
+        gap: 0.5rem;
+        border-radius: 0.6rem;
+    }
+    #leaderboard-screen .lb-rank  { font-size: 0.85rem; width: 1.6rem; }
+    #leaderboard-screen .lb-name  { font-size: 0.82rem; }
+    #leaderboard-screen .lb-score,
+    #leaderboard-screen .lb-streak { font-size: 0.85rem; width: 4.5rem; }
+
+    /* Slim back button */
+    #leaderboard-screen .play-btn {
+        padding: 0.35rem 0.75rem;
+        font-size: 0.78rem;
+        margin-top: 0.35rem;
+    }
+}
+
 /* Auth Screen */
 #auth-screen {
     display: flex;
