@@ -1817,9 +1817,6 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             h.classList.remove('heart-refill');
             h.classList.toggle('heart-dim', !lit);
         });
-        if (mpCfg?.onHeartsChange) {
-            mpCfg.onHeartsChange({ lives, maxLives: 2 + gameCtx.extraLives, onStreak: consecutiveHits >= 3 });
-        }
     }
 
     // Restore our ball to the position it was in before we spectated the
@@ -1844,18 +1841,12 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
     // Both hearts flare back to full with a pop-and-glow animation.
     function refillLives() {
-        const hearts = getHearts();
-        hearts.forEach(h => {
+        getHearts().forEach(h => {
             h.classList.remove('heart-refill', 'heart-dim');
             void h.offsetWidth;   // restart the animation
             h.classList.add('heart-refill');
             setTimeout(() => h.classList.remove('heart-refill'), 600);
         });
-        // Notify opponent: all lives restored, streak broken on reset.
-        if (mpCfg?.onHeartsChange) {
-            const maxLives = 2 + gameCtx.extraLives;
-            mpCfg.onHeartsChange({ lives: maxLives, maxLives, onStreak: consecutiveHits >= 3 });
-        }
     }
 
     // Hearts catch fire while a scoring streak (bonus tier) is active.
@@ -1873,10 +1864,6 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                 setTimeout(() => h.classList.remove('heart-fire-out'), 600);
             }
         });
-        if (mpCfg?.onHeartsChange) {
-            const lives = (2 + gameCtx.extraLives) - consecutiveMisses;
-            mpCfg.onHeartsChange({ lives, maxLives: 2 + gameCtx.extraLives, onStreak: onFire });
-        }
     }
 
     function handleScore() {
@@ -1949,7 +1936,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         if (!mpCfg) director.notify('score', gameCtx, modifiers);
 
         // Notify multiplayer layer — app.js will broadcast + flip turn.
-        if (mpCfg?.onThrowComplete) mpCfg.onThrowComplete({ scored: true, points, totalScore: score, streak: consecutiveHits });
+        if (mpCfg?.onThrowComplete) {
+            const lives = (2 + gameCtx.extraLives) - consecutiveMisses; // =2 after score
+            mpCfg.onThrowComplete({ scored: true, points, totalScore: score, streak: consecutiveHits, lives });
+        }
     }
 
     function handleMiss() {
@@ -1984,7 +1974,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             syncContext();
             modifiers.emit('miss', gameCtx);
             if (!mpCfg) director.notify('miss', gameCtx, modifiers);
-            if (mpCfg?.onThrowComplete) mpCfg.onThrowComplete({ scored: false, points: 0, totalScore: score, streak: consecutiveHits });
+            if (mpCfg?.onThrowComplete) {
+                // hadBonus path: misses reset to 0, so 2 lives remain
+                const lives = (2 + gameCtx.extraLives) - consecutiveMisses;
+                mpCfg.onThrowComplete({ scored: false, points: 0, totalScore: score, streak: consecutiveHits, lives });
+            }
             return;
         }
 
@@ -2004,10 +1998,6 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             }
             // Last life lost: dim the final heart, then flare both back to full.
             getHearts().forEach(h => h.classList.add('heart-dim'));
-            if (mpCfg?.onHeartsChange) {
-                const maxLives = 2 + gameCtx.extraLives;
-                mpCfg.onHeartsChange({ lives: 0, maxLives, onStreak: false });
-            }
             setTimeout(refillLives, 280);
         } else {
             updateLives();   // first miss: dim one heart
@@ -2017,7 +2007,12 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         syncContext();
         modifiers.emit('miss', gameCtx);
         if (!mpCfg) director.notify('miss', gameCtx, modifiers);
-        if (mpCfg?.onThrowComplete) mpCfg.onThrowComplete({ scored: false, points: 0, totalScore: score });
+        if (mpCfg?.onThrowComplete) {
+            // After reset: consecutiveMisses=0 → lives=2
+            // After first miss: consecutiveMisses=1 → lives=1
+            const lives = (2 + gameCtx.extraLives) - consecutiveMisses;
+            mpCfg.onThrowComplete({ scored: false, points: 0, totalScore: score, streak: consecutiveHits, lives });
+        }
     }
 
     function animate() {

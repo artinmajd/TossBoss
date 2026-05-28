@@ -547,6 +547,30 @@ async function router() {
 
         const bcChannel = getRoomBroadcastChannel(code);
 
+        // ── updateOppHearts — rebuild/sync the mini hearts beside opponent's score ─
+        // Called from processTurnEnd (turn_end payload carries lives + streak).
+        const updateOppHearts = ({ lives, maxLives, onStreak }) => {
+            const container = document.getElementById('mp-opp-hearts');
+            if (!container) return;
+            // Rebuild hearts if count changed (extra life granted/removed).
+            const current = container.querySelectorAll('.mp-opp-heart');
+            if (current.length !== maxLives) {
+                container.innerHTML = '';
+                for (let i = 0; i < maxLives; i++) {
+                    const img = document.createElement('img');
+                    img.src = 'assets/heart.webp?v=2';
+                    img.alt = '';
+                    img.className = 'mp-opp-heart';
+                    container.appendChild(img);
+                }
+            }
+            container.querySelectorAll('.mp-opp-heart').forEach((h, i) => {
+                const lit = i < lives;
+                h.classList.toggle('mp-opp-heart-dim',  !lit);
+                h.classList.toggle('mp-opp-heart-fire', onStreak && lit);
+            });
+        };
+
         // Shared handler for opponent's turn ending — called either directly
         // from the broadcast or deferred via pendingTurnEnd after spectate.
         // `spectated` = true means the player watched the throw live; in that
@@ -556,6 +580,12 @@ async function router() {
             mpScores.opp       = payload.totalScore;
             mpScores.oppStreak = payload.streak ?? 0;
             mpScores.oppThrows++;
+            // Sync opponent mini hearts — lives and fire state are in the payload.
+            updateOppHearts({
+                lives:    payload.lives    ?? 2,
+                maxLives: payload.maxLives ?? 2,
+                onStreak: (payload.streak ?? 0) >= 3,
+            });
             updateMpHud(); // isSpectating still true if spectated → wait overlay hidden
 
             // Brief pause so both players see the updated score, then check for
@@ -615,11 +645,6 @@ async function router() {
             if (multiplayerConfig) multiplayerConfig.startGhostReturn?.(payload);
         });
 
-        // Opponent's heart state changed — update mini hearts in our HUD.
-        bcChannel.on('broadcast', { event: 'hearts_update' }, ({ payload }) => {
-            updateOppHearts(payload);
-        });
-
         // Opponent's fast-forward state changed — mirror it so our spectate
         // physics run at the same speed as theirs.
         bcChannel.on('broadcast', { event: 'ff_change' }, ({ payload }) => {
@@ -639,29 +664,6 @@ async function router() {
             updateMpHud(); // hides wait overlay immediately
             multiplayerConfig.spectateThrow?.(payload);
         });
-
-        // ── updateOppHearts — rebuild/sync the mini hearts beside opponent's score ─
-        const updateOppHearts = ({ lives, maxLives, onStreak }) => {
-            const container = document.getElementById('mp-opp-hearts');
-            if (!container) return;
-            // Rebuild hearts if count changed (extra life granted/removed).
-            const current = container.querySelectorAll('.mp-opp-heart');
-            if (current.length !== maxLives) {
-                container.innerHTML = '';
-                for (let i = 0; i < maxLives; i++) {
-                    const img = document.createElement('img');
-                    img.src = 'assets/heart.webp?v=2';
-                    img.alt = '';
-                    img.className = 'mp-opp-heart';
-                    container.appendChild(img);
-                }
-            }
-            container.querySelectorAll('.mp-opp-heart').forEach((h, i) => {
-                const lit = i < lives;
-                h.classList.toggle('mp-opp-heart-dim',  !lit);
-                h.classList.toggle('mp-opp-heart-fire', onStreak && lit);
-            });
-        };
 
         bcChannel.subscribe();
         destroyMp = () => supabase.removeChannel(bcChannel);
@@ -695,16 +697,6 @@ async function router() {
             });
         };
 
-        // ── onHeartsChange — our hearts state changed; tell opponent so they
-        //    can update the mini hearts displayed next to our score in their HUD ─
-        multiplayerConfig.onHeartsChange = ({ lives, maxLives, onStreak }) => {
-            bcChannel.send({
-                type:    'broadcast',
-                event:   'hearts_update',
-                payload: { lives, maxLives, onStreak },
-            });
-        };
-
         // ── onSpectateComplete — engine signals the replayed throw settled ─
         multiplayerConfig.onSpectateComplete = () => {
             if (pendingTurnEnd) {
@@ -720,7 +712,7 @@ async function router() {
         };
 
         // ── onThrowComplete — called by engine after each of our throws ───
-        multiplayerConfig.onThrowComplete = async ({ scored, points, totalScore, streak }) => {
+        multiplayerConfig.onThrowComplete = async ({ scored, points, totalScore, streak, lives, maxLives }) => {
             multiplayerConfig.isMyTurn = false;
             clearTurnTimer();
             mpScores.mine     = totalScore;
@@ -728,11 +720,12 @@ async function router() {
             mpScores.myThrows++;
             updateMpHud();
 
-            // Broadcast to opponent
+            // Broadcast to opponent — includes lives + maxLives so they can
+            // update the mini hearts shown next to our score in their HUD.
             bcChannel.send({
                 type:    'broadcast',
                 event:   'turn_end',
-                payload: { role, scored, points, totalScore, streak },
+                payload: { role, scored, points, totalScore, streak, lives: lives ?? 2, maxLives: maxLives ?? 2 },
             });
 
             // Persist score + flip turn in DB (must be awaited — Supabase v2
