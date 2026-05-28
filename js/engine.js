@@ -540,9 +540,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         const targetX = overrideDest ? overrideDest.to.x : minX + Math.random() * (maxX - minX);
         const targetY = overrideDest ? overrideDest.to.y : height * groundLevel - ball.radius;
 
-        // Broadcast both endpoints in NORMALIZED coords (0..1 of width/height)
-        // so the ghost arc lands at the same relative spot regardless of the
-        // opponent's screen size (desktop 874x402 vs phone winW/winH).
+        // Broadcast both endpoints in NORMALIZED coords (0..1 of width/height).
+        // Every device now runs the engine in the same 874x402 playfield, so
+        // raw pixel coords would work too — but normalized is robust against
+        // any future change to the playfield size.
         if (mpCfg && !isSpectateReturn && mpCfg.onBallReturned) {
             mpCfg.onBallReturned({
                 fromX: ball.x / width,
@@ -588,24 +589,21 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         const prevW = width;
         const prevH = height;
 
-        const isPhone = window.matchMedia('(pointer: coarse) and (max-height: 500px)').matches;
-        if (isPhone) {
-            // Small phones in landscape: fill the screen edge-to-edge.
-            width = winW;
-            height = winH;
-            viewScale   = 1;
-            viewOffsetX = 0;
-            viewOffsetY = 0;
-        } else {
-            // Desktop: a fixed playfield, centered with contain-fit. Resizing
-            // the window only changes the display scale, never the gameplay,
-            // so a windowed game plays identically to a fullscreen one.
-            width = DESKTOP_W;
-            height = DESKTOP_H;
-            viewScale = Math.min(winW / width, winH / height);
-            viewOffsetX = (winW - width * viewScale) / 2;
-            viewOffsetY = (winH - height * viewScale) / 2;
-        }
+        // Single fixed playfield for every device — desktop, iPhone, iPad,
+        // Android, anything. The view is contain-fit into the available
+        // viewport with letterbox margins. This guarantees the physics
+        // coordinate space is identical across all devices, so multiplayer
+        // broadcasts (which carry raw pixel positions/velocities for the
+        // throw replay) produce identical trajectories on both screens
+        // regardless of native viewport size. iPhone 17 happens to be
+        // 874×402 (no letterbox), iPhone 16 Pro Max is 956×440 (uniform
+        // ~9% upscale, sub-pixel letterbox), desktop is whatever the
+        // window allows.
+        width  = DESKTOP_W;
+        height = DESKTOP_H;
+        viewScale   = Math.min(winW / width, winH / height);
+        viewOffsetX = (winW - width  * viewScale) / 2;
+        viewOffsetY = (winH - height * viewScale) / 2;
 
         scale = Math.min(1, Math.max(0.4, height / 650));
         ball.radius = baseRadius * scale;
