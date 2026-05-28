@@ -490,7 +490,13 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             return width - hoopWidth - ball.radius * 4 - 110 * scale;
         } else {
             // Ping-pong: stay left of the cup's left rim plus a comfortable gap.
-            return getCupX() - 55 * scale - ball.radius * 4;
+            // When a moving-target challenge is active the cup swings left by up
+            // to targetSwingAmpX px from its home position — use the leftmost
+            // the cup can ever reach so the spawned ball is always outside the
+            // full range of motion, not just outside where it happens to be now.
+            const homeX    = getCupX() - (gameCtx.targetOffset?.x || 0);
+            const swingAmp = gameCtx.targetSwingAmpX || 0;
+            return homeX - swingAmp - 55 * scale - ball.radius * 4;
         }
     }
 

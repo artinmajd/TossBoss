@@ -63,6 +63,9 @@ export default function movingTarget() {
             amp         = mode === 'pingpong' ? ctx.width * AMP_X : ctx.height * AMP_Y;
             badgeHidden = false;
             ctx.scoreMultiplier = 2;
+            // Tell the engine the full swing radius so getSpawnMaxX() keeps
+            // the ball outside the cup's entire range of motion.
+            if (mode === 'pingpong') ctx.targetSwingAmpX = amp;
             ctx.showChallengeBadge('MOVING TARGET', '2X');
             // The previous throw was eaten by the black hole — give the
             // player a fresh ball at the launch position so they can throw
@@ -76,6 +79,7 @@ export default function movingTarget() {
             ctx.scoreMultiplier = 1;
             ctx.targetOffset.x = 0;
             ctx.targetOffset.y = 0;
+            ctx.targetSwingAmpX = 0;
             ctx.hideChallengeBadge();
         },
 

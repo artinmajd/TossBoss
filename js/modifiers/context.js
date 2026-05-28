@@ -30,6 +30,9 @@ export function createGameContext({ ball, ctx2d, tester = null }) {
         // --- modifier-writable fields (engine reads these) ---
         targetOffset: { x: 0, y: 0 }, // added to cup X / hoop Y for moving-target challenge
         targetScale: 1,               // multiplied into cup/hoop dimensions; 1 = normal size
+        targetSwingAmpX: 0,           // max horizontal swing radius of the cup (pingpong);
+                                      // getSpawnMaxX uses this so the ball never spawns inside
+                                      // the cup's full range of motion during a moving challenge
         scoreMultiplier: 1,           // points are multiplied by this in handleScore
         extraLives: 0,                // extra lives granted by a challenge (added on top of the base 2)
         blackHoleConsumed: false,     // black hole sets this when the ball is absorbed;
