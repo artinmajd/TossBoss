@@ -17,25 +17,48 @@ function playerRow(player, index) {
         </div>`;
 }
 
-function emptyRow(index) {
+// A single dashed "waiting for players…" row, shown only while there's room.
+function waitingRow() {
     return `
-        <div class="mp-player-row mp-player-row-empty" data-slot="${index}">
+        <div class="mp-player-row mp-player-row-empty">
             <span class="mp-player-avatar">➕</span>
-            <span class="mp-player-name">Waiting for player…</span>
+            <span class="mp-player-name">Waiting for players…</span>
             <span class="mp-ready-dot mp-dot-waiting"></span>
         </div>`;
 }
 
-// Builds the inner HTML of the players list (filled rows + empty slots).
+// Builds the inner HTML of the players list: every joined player, plus a
+// single dashed "waiting" row while the room isn't full (Option A — the list
+// grows dynamically rather than showing a fixed number of empty slots).
 // Exported so app.js can re-render the list when the room updates in realtime.
 export function renderWaitingPlayers(room) {
     const players    = Array.isArray(room.players) ? room.players : [];
     const maxPlayers = room.max_players ?? 8;
-    let rows = '';
-    for (let i = 0; i < maxPlayers; i++) {
-        rows += i < players.length ? playerRow(players[i], i) : emptyRow(i);
-    }
+    let rows = players.map((p, i) => playerRow(p, i)).join('');
+    if (players.length < maxPlayers) rows += waitingRow();
     return rows;
+}
+
+// Status line text for the waiting room, given current fill state.
+export function waitingStatus(room, isHost) {
+    const players    = Array.isArray(room.players) ? room.players : [];
+    const maxPlayers = room.max_players ?? 8;
+    const full       = players.length >= maxPlayers;
+    const canStart   = players.length >= 2;
+
+    if (full) {
+        return isHost
+            ? '🔒 Room is full — start whenever you’re ready.'
+            : '🔒 Room is full — waiting for host to start…';
+    }
+    if (canStart) {
+        return isHost
+            ? '✅ Ready! Start now, or wait for more players.'
+            : '✅ Waiting for host to start…';
+    }
+    return isHost
+        ? 'Share the code with your friends.'
+        : 'Waiting for more players…';
 }
 
 export default function MultiplayerWaiting({ room, role }) {
@@ -46,15 +69,8 @@ export default function MultiplayerWaiting({ room, role }) {
 
     const modeLabel = room.game_mode === 'pingpong' ? '🏓 Ping Pong' : '🏀 Basketball';
 
-    // Filled rows + empty placeholder rows up to capacity.
-    let rows = '';
-    for (let i = 0; i < maxPlayers; i++) {
-        rows += i < players.length ? playerRow(players[i], i) : emptyRow(i);
-    }
-
-    const statusMsg = canStart
-        ? (isHost ? "✅ Ready! Start when everyone has joined." : '✅ Waiting for host to start…')
-        : (isHost ? 'Share the code with your friends.'        : 'Waiting for more players…');
+    const rows      = renderWaitingPlayers(room);
+    const statusMsg = waitingStatus(room, isHost);
 
     return `
         <div id="mp-waiting-screen" class="view-screen">
@@ -76,7 +92,8 @@ export default function MultiplayerWaiting({ room, role }) {
                 <div class="mp-game-info">
                     <span class="mp-info-chip">${modeLabel}</span>
                     <span class="mp-info-chip">🎯 ${room.target_score} pts</span>
-                    <span class="mp-info-chip" id="mp-count-chip">👥 ${players.length}/${maxPlayers}</span>
+                    <span class="mp-info-chip" id="mp-count-chip">👥 ${players.length}/${maxPlayers}</span>${players.length >= maxPlayers ? `
+                    <span class="mp-info-chip mp-chip-full" id="mp-full-chip">🔒 Full</span>` : ''}
                 </div>
 
                 <div class="mp-players-list" id="mp-players-list">

@@ -2103,6 +2103,13 @@ button:disabled {
     white-space: nowrap;
 }
 
+/* "Full" chip — amber accent so it reads as a status, not just info */
+.mp-chip-full {
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.12);
+    border-color: rgba(251, 191, 36, 0.4);
+}
+
 .mp-players-list {
     display: flex;
     flex-direction: column;

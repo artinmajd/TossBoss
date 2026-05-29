@@ -3,7 +3,7 @@ import Game from './views/Game.js';
 import Auth from './views/Auth.js';
 import Leaderboard from './views/Leaderboard.js';
 import Multiplayer from './views/Multiplayer.js';
-import MultiplayerWaiting, { renderWaitingPlayers } from './views/MultiplayerWaiting.js';
+import MultiplayerWaiting, { renderWaitingPlayers, waitingStatus } from './views/MultiplayerWaiting.js';
 import MultiplayerGame from './views/MultiplayerGame.js';
 import MultiplayerResult from './views/MultiplayerResult.js';
 import { initGame } from './engine.js';
@@ -127,18 +127,6 @@ async function router() {
         slider.addEventListener('input', syncSlider);
         syncSlider();   // initialise fill on load
 
-        // ── Players slider (2–8) ──────────────────────────────────────────
-        const playersSlider  = document.getElementById('mp-players-slider');
-        const playersDisplay = document.getElementById('mp-players-display');
-        const syncPlayers = () => {
-            const min = +playersSlider.min, max = +playersSlider.max, val = +playersSlider.value;
-            const pct = ((val - min) / (max - min) * 100).toFixed(1) + '%';
-            playersSlider.style.setProperty('--val', pct);
-            playersDisplay.textContent = `${val} players`;
-        };
-        playersSlider.addEventListener('input', syncPlayers);
-        syncPlayers();
-
         // ── Game-mode buttons ─────────────────────────────────────────────
         let selectedMode = 'pingpong';
         document.getElementById('mp-mode-pp').addEventListener('click', () => {
@@ -195,13 +183,14 @@ async function router() {
 
             const playerId    = await getPlayerId();
             const targetScore = +document.getElementById('mp-target-slider').value;
-            const maxPlayers  = +document.getElementById('mp-players-slider').value;
 
             storePlayerName(name);
 
+            // max_players defaults to 8 (the hard cap) in createRoom — the
+            // lobby grows dynamically as players join, no up-front choice.
             const { room, error } = await createRoom({
                 hostId: playerId, hostName: name,
-                gameMode: selectedMode, targetScore, maxPlayers,
+                gameMode: selectedMode, targetScore,
             });
 
             confirmBtn.disabled = false;
@@ -262,18 +251,29 @@ async function router() {
             const players    = Array.isArray(updatedRoom.players) ? updatedRoom.players : [];
             const maxPlayers = updatedRoom.max_players ?? 8;
             const canStart   = players.length >= 2;
+            const full       = players.length >= maxPlayers;
 
-            const listEl  = document.getElementById('mp-players-list');
-            const chipEl  = document.getElementById('mp-count-chip');
+            const listEl   = document.getElementById('mp-players-list');
+            const chipEl   = document.getElementById('mp-count-chip');
             const startBtn = document.getElementById('btn-mp-start');
-            const msgEl   = document.getElementById('mp-waiting-msg');
-            if (listEl) listEl.innerHTML = renderWaitingPlayers(updatedRoom);
-            if (chipEl) chipEl.textContent = `👥 ${players.length}/${maxPlayers}`;
+            const msgEl    = document.getElementById('mp-waiting-msg');
+            const infoRow  = chipEl?.parentElement;
+
+            if (listEl)  listEl.innerHTML = renderWaitingPlayers(updatedRoom);
+            if (chipEl)  chipEl.textContent = `👥 ${players.length}/${maxPlayers}`;
             if (startBtn) startBtn.disabled = !canStart;
-            if (msgEl) {
-                msgEl.textContent = canStart
-                    ? (role === 'host' ? "✅ Ready! Start when everyone has joined." : '✅ Waiting for host to start…')
-                    : (role === 'host' ? 'Share the code with your friends.'        : 'Waiting for more players…');
+            if (msgEl)   msgEl.textContent = waitingStatus(updatedRoom, role === 'host');
+
+            // Add / remove the "🔒 Full" chip as the room fills or empties.
+            let fullChip = document.getElementById('mp-full-chip');
+            if (full && !fullChip && infoRow) {
+                fullChip = document.createElement('span');
+                fullChip.className = 'mp-info-chip mp-chip-full';
+                fullChip.id = 'mp-full-chip';
+                fullChip.textContent = '🔒 Full';
+                infoRow.appendChild(fullChip);
+            } else if (!full && fullChip) {
+                fullChip.remove();
             }
         });
 
