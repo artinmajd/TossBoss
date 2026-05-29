@@ -2270,8 +2270,7 @@ button:disabled {
 }
 
 .mp-self-timer-wrap.timer-running::before { opacity: 1; }
-.mp-self-timer-wrap.timer-warning         { --timer-color: #fb923c; }
-.mp-self-timer-wrap.timer-danger          { --timer-color: #ef4444; }
+/* --timer-color is set smoothly by JS (smoothTimerTick) — no CSS overrides */
 
 /* Active turn: opponent cards scale and brighten directly */
 .mp-player-card.mp-card-active {

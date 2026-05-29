@@ -452,14 +452,35 @@ async function router() {
             wrap.classList.toggle('timer-danger',  turnTimeLeft <= 3);
         };
 
-        // rAF loop — updates --timer-pct every frame for smooth depletion.
+        // Colour stops for the timer ring: green → orange → red
+        const TIMER_GREEN  = [74,  222, 128];
+        const TIMER_ORANGE = [251, 146, 60 ];
+        const TIMER_RED    = [239, 68,  68 ];
+        const lerpRgb = ([r1,g1,b1], [r2,g2,b2], t) =>
+            `rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;
+
+        // rAF loop — updates --timer-pct and --timer-color every frame.
         const smoothTimerTick = (now) => {
             if (!timerStartedAt) return;
             const wrap = document.getElementById('mp-card-mine-wrap');
             if (!wrap) return;
             const elapsed   = (now - timerStartedAt) / 1000;
             const remaining = Math.max(0, TURN_SECONDS - elapsed);
-            wrap.style.setProperty('--timer-pct', `${(remaining / TURN_SECONDS * 100).toFixed(2)}%`);
+
+            wrap.style.setProperty('--timer-pct',
+                `${(remaining / TURN_SECONDS * 100).toFixed(2)}%`);
+
+            // Smooth colour: green (≥6 s) → orange (6–3 s) → red (≤3 s)
+            let color;
+            if (remaining >= 6) {
+                color = lerpRgb(TIMER_GREEN, TIMER_ORANGE, 0);
+            } else if (remaining >= 3) {
+                color = lerpRgb(TIMER_GREEN, TIMER_ORANGE, 1 - (remaining - 3) / 3);
+            } else {
+                color = lerpRgb(TIMER_ORANGE, TIMER_RED, 1 - remaining / 3);
+            }
+            wrap.style.setProperty('--timer-color', color);
+
             if (remaining > 0) timerRaf = requestAnimationFrame(smoothTimerTick);
         };
 
