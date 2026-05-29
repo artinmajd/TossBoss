@@ -32,6 +32,7 @@ export default function MultiplayerGame({ myName, oppName, targetScore, gameMode
                     </svg>
                 </button>
 
+                <div class="mp-hud-main">
                 <!-- My glass card -->
                 <div class="mp-player-card" id="mp-card-mine">
                     <span class="mp-hud-pname">${myName}</span>
@@ -76,6 +77,7 @@ export default function MultiplayerGame({ myName, oppName, targetScore, gameMode
                         <span class="mp-hud-streak-val" id="mp-streak-theirs"></span>
                     </div>
                 </div>
+                </div> <!-- /.mp-hud-main -->
             </div>
 
             <!-- Canvas -->
