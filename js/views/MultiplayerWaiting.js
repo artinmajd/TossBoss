@@ -1,15 +1,60 @@
 // Waiting room shown after a room is created or joined.
-// Both players see each other's names; host sees the Start Game button.
+// Renders every player in room.players plus empty slots up to max_players.
+// The host (players[0]) sees the Start Game button (enabled at 2+ players).
 
 const esc = s => String(s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+// One row of the players list. index 0 = host (crown).
+function playerRow(player, index) {
+    const avatar = index === 0 ? '👑' : '⚔️';
+    return `
+        <div class="mp-player-row" data-slot="${index}">
+            <span class="mp-player-avatar">${avatar}</span>
+            <span class="mp-player-name">${esc(player.name)}</span>
+            <span class="mp-ready-dot mp-dot-ready"></span>
+        </div>`;
+}
+
+function emptyRow(index) {
+    return `
+        <div class="mp-player-row mp-player-row-empty" data-slot="${index}">
+            <span class="mp-player-avatar">➕</span>
+            <span class="mp-player-name">Waiting for player…</span>
+            <span class="mp-ready-dot mp-dot-waiting"></span>
+        </div>`;
+}
+
+// Builds the inner HTML of the players list (filled rows + empty slots).
+// Exported so app.js can re-render the list when the room updates in realtime.
+export function renderWaitingPlayers(room) {
+    const players    = Array.isArray(room.players) ? room.players : [];
+    const maxPlayers = room.max_players ?? 8;
+    let rows = '';
+    for (let i = 0; i < maxPlayers; i++) {
+        rows += i < players.length ? playerRow(players[i], i) : emptyRow(i);
+    }
+    return rows;
+}
+
 export default function MultiplayerWaiting({ room, role }) {
-    const isHost    = role === 'host';
-    const guestReady = !!room.guest_name;
+    const isHost     = role === 'host';
+    const players    = Array.isArray(room.players) ? room.players : [];
+    const maxPlayers = room.max_players ?? 8;
+    const canStart   = players.length >= 2;
 
     const modeLabel = room.game_mode === 'pingpong' ? '🏓 Ping Pong' : '🏀 Basketball';
+
+    // Filled rows + empty placeholder rows up to capacity.
+    let rows = '';
+    for (let i = 0; i < maxPlayers; i++) {
+        rows += i < players.length ? playerRow(players[i], i) : emptyRow(i);
+    }
+
+    const statusMsg = canStart
+        ? (isHost ? "✅ Ready! Start when everyone has joined." : '✅ Waiting for host to start…')
+        : (isHost ? 'Share the code with your friends.'        : 'Waiting for more players…');
 
     return `
         <div id="mp-waiting-screen" class="view-screen">
@@ -31,34 +76,18 @@ export default function MultiplayerWaiting({ room, role }) {
                 <div class="mp-game-info">
                     <span class="mp-info-chip">${modeLabel}</span>
                     <span class="mp-info-chip">🎯 ${room.target_score} pts</span>
+                    <span class="mp-info-chip" id="mp-count-chip">👥 ${players.length}/${maxPlayers}</span>
                 </div>
 
-                <div class="mp-players-list">
-                    <div class="mp-player-row">
-                        <span class="mp-player-avatar">👑</span>
-                        <span class="mp-player-name">${esc(room.host_name)}</span>
-                        <span class="mp-ready-dot mp-dot-ready"></span>
-                    </div>
-                    <div class="mp-player-row">
-                        <span class="mp-player-avatar">⚔️</span>
-                        <span class="mp-player-name" id="mp-guest-name-el">
-                            ${guestReady ? esc(room.guest_name) : 'Waiting for opponent…'}
-                        </span>
-                        <span class="mp-ready-dot ${guestReady ? 'mp-dot-ready' : 'mp-dot-waiting'}"
-                              id="mp-guest-dot"></span>
-                    </div>
+                <div class="mp-players-list" id="mp-players-list">
+                    ${rows}
                 </div>
 
-                <p class="mp-waiting-status" id="mp-waiting-msg">
-                    ${guestReady
-                        ? (isHost ? '✅ Both players ready! Start when you\'re ready.' : '✅ Both players ready! Waiting for host…')
-                        : (isHost ? 'Share the code with your friend.' : 'Waiting for host to start the game…')
-                    }
-                </p>
+                <p class="mp-waiting-status" id="mp-waiting-msg">${statusMsg}</p>
 
                 ${isHost ? `
                 <button id="btn-mp-start" class="play-btn mp-create-btn"
-                        ${!guestReady ? 'disabled' : ''}>
+                        ${!canStart ? 'disabled' : ''}>
                     Start Game
                 </button>` : ''}
 

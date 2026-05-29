@@ -2121,6 +2121,16 @@ button:disabled {
     padding: 0.55rem 0.85rem;
 }
 
+/* Empty / unfilled slot — dimmed dashed row */
+.mp-player-row-empty {
+    border-style: dashed;
+    opacity: 0.5;
+}
+.mp-player-row-empty .mp-player-name {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
 .mp-player-avatar {
     font-size: clamp(0.95rem, 2.2vmin, 1.15rem);
     flex-shrink: 0;

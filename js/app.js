@@ -3,7 +3,7 @@ import Game from './views/Game.js';
 import Auth from './views/Auth.js';
 import Leaderboard from './views/Leaderboard.js';
 import Multiplayer from './views/Multiplayer.js';
-import MultiplayerWaiting from './views/MultiplayerWaiting.js';
+import MultiplayerWaiting, { renderWaitingPlayers } from './views/MultiplayerWaiting.js';
 import MultiplayerGame from './views/MultiplayerGame.js';
 import MultiplayerResult from './views/MultiplayerResult.js';
 import { initGame } from './engine.js';
@@ -246,25 +246,34 @@ async function router() {
 
         // ── Realtime subscription ─────────────────────────────────────────
         destroyMp = subscribeToRoom(code, updatedRoom => {
-            // Guest joined — update host's waiting screen
-            if (updatedRoom.guest_name) {
-                const nameEl  = document.getElementById('mp-guest-name-el');
-                const dotEl   = document.getElementById('mp-guest-dot');
-                const startBtn = document.getElementById('btn-mp-start');
-                const msgEl   = document.getElementById('mp-waiting-msg');
-                if (nameEl)  nameEl.textContent = updatedRoom.guest_name;
-                if (dotEl)   { dotEl.classList.replace('mp-dot-waiting', 'mp-dot-ready'); }
-                if (startBtn){ startBtn.disabled = false; }
-                if (msgEl && role === 'host')
-                    msgEl.textContent = "✅ Both players ready! Start when you're ready.";
-                if (msgEl && role === 'guest')
-                    msgEl.textContent = '✅ Both players ready! Waiting for host…';
-            }
-
             // Host started the game — save room data and navigate to game screen.
             if (updatedRoom.status === 'playing') {
                 sessionStorage.setItem('mp_room_data', JSON.stringify(updatedRoom));
                 window.location.hash = '#mp-game';
+                return;
+            }
+            // Room was reset/deleted out from under us — bail to lobby.
+            if (updatedRoom.status === 'finished') {
+                window.location.hash = '#multiplayer';
+                return;
+            }
+
+            // Re-render the players list (someone joined / left).
+            const players    = Array.isArray(updatedRoom.players) ? updatedRoom.players : [];
+            const maxPlayers = updatedRoom.max_players ?? 8;
+            const canStart   = players.length >= 2;
+
+            const listEl  = document.getElementById('mp-players-list');
+            const chipEl  = document.getElementById('mp-count-chip');
+            const startBtn = document.getElementById('btn-mp-start');
+            const msgEl   = document.getElementById('mp-waiting-msg');
+            if (listEl) listEl.innerHTML = renderWaitingPlayers(updatedRoom);
+            if (chipEl) chipEl.textContent = `👥 ${players.length}/${maxPlayers}`;
+            if (startBtn) startBtn.disabled = !canStart;
+            if (msgEl) {
+                msgEl.textContent = canStart
+                    ? (role === 'host' ? "✅ Ready! Start when everyone has joined." : '✅ Waiting for host to start…')
+                    : (role === 'host' ? 'Share the code with your friends.'        : 'Waiting for more players…');
             }
         });
 
