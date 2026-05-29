@@ -102,11 +102,6 @@ export default function Game() {
 
             <div id="toast-container"></div>
 
-            <!-- Heads-up shown when the ball is stuck under the hoop (basketball) -->
-            <div id="deadzone-msg" class="deadzone-msg hidden">
-                🏀 Oof, bad luck! You're jammed under the rim — shoot your way out!
-            </div>
-
             <div id="lb-modal" class="lb-modal-overlay" style="display:none;">
                 <div class="lb-modal-card">
                     <div class="lb-modal-header">

@@ -35,7 +35,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
     const cupImg = new Image();
     cupImg.src = 'assets/cup.webp';
-    
+
+    // Kick off loading the comic font used by the dead-zone speech bubble —
+    // canvas won't fetch a web font on its own, so trigger it explicitly.
+    if (document.fonts?.load) document.fonts.load("400 20px 'Bangers'").catch(() => {});
+
     // Physics parameters
     const gravity = 9.8;
     const pixelsPerMeter = 100;
@@ -1432,7 +1436,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                 ctx.stroke();
             }
         }
-    
+
+        // Stuck-under-the-rim speech bubble — drawn here so the aiming line,
+        // ball and front net (all drawn after this) render on top of it.
+        if (deadZoneActive()) drawDeadZoneBubble();
+
         // Aiming visual
         if (isAiming) {
             let dx = aimStart.x - aimCurrent.x;
@@ -1910,19 +1918,78 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         setTimeout(() => toast.remove(), 1000);
     }
 
-    // Basketball: show the "stuck under the rim" heads-up while the ball is
-    // resting in the no-spawn zone under the hoop (a previous miss left it in a
-    // near-impossible spot). Shown for single-player always, and in multiplayer
-    // only while it's our turn. Hides the moment the ball is aimed/thrown or the
-    // turn ends — driven per frame so it needs no explicit show/hide wiring.
-    function updateDeadZoneMsg() {
-        const el = document.getElementById('deadzone-msg');
-        if (!el) return;
-        const inZone = gameMode === 'basketball'
-            && isResting && !isAiming && !ballReturning && !ballAbsorbed
+    // Basketball: true while the ball is parked in the no-spawn zone under the
+    // hoop (a previous miss left it in a near-impossible spot). Single-player
+    // always; multiplayer only on our turn. Stays true through aiming (so the
+    // bubble shows behind the aiming line) and clears once the ball is thrown.
+    function deadZoneActive() {
+        return gameMode === 'basketball'
+            && (isResting || isAiming) && !ballReturning && !ballAbsorbed
             && ball.x > getSpawnMaxX()
             && (!mpCfg || mpCfg.isMyTurn);
-        el.classList.toggle('hidden', !inZone);
+    }
+
+    // Comic-book speech bubble drawn ON the canvas, coming out of the ball.
+    // Drawn early in draw() (before the aiming line, ball and front net) so
+    // those render on top of it — i.e. the bubble sits behind them.
+    function drawDeadZoneBubble() {
+        const lines = ['OOPS, BAD LUCK!', "LET'S GET OUTTA HERE FIRST!"];
+        const c = ctx;
+        const fpx = Math.max(12, Math.round(20 * scale));
+        c.save();
+        c.font = `400 ${fpx}px 'Bangers', 'Comic Sans MS', system-ui, sans-serif`;
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+
+        let maxW = 0;
+        for (const l of lines) maxW = Math.max(maxW, c.measureText(l).width);
+        const padX = 14 * scale, padY = 9 * scale, lineH = fpx * 1.1;
+        const bw = maxW + padX * 2;
+        const bh = lines.length * lineH + padY * 2;
+        const r  = 13 * scale;
+
+        // Bubble sits above the ball; clamp inside the playfield.
+        let bx     = ball.x;
+        let bottom = ball.y - ball.radius - 22 * scale;
+        let top    = bottom - bh;
+        let left   = bx - bw / 2;
+        if (left < 6 * scale)             { left = 6 * scale; bx = left + bw / 2; }
+        if (left + bw > width - 6 * scale){ left = width - 6 * scale - bw; bx = left + bw / 2; }
+        if (top < 6 * scale)              { top = 6 * scale; bottom = top + bh; }
+
+        // Tail base on the bubble's bottom edge, nearest the ball; apex tucks
+        // just under the ball (the ball, drawn later, hides the very tip).
+        const tailX    = Math.max(left + r + 8 * scale, Math.min(left + bw - r - 8 * scale, ball.x));
+        const tailHalf = 9 * scale;
+
+        c.beginPath();
+        c.moveTo(left + r, top);
+        c.lineTo(left + bw - r, top);
+        c.arcTo(left + bw, top, left + bw, top + r, r);
+        c.lineTo(left + bw, bottom - r);
+        c.arcTo(left + bw, bottom, left + bw - r, bottom, r);
+        c.lineTo(tailX + tailHalf, bottom);
+        c.lineTo(ball.x, ball.y - ball.radius * 0.5);  // tail apex at the ball
+        c.lineTo(tailX - tailHalf, bottom);
+        c.lineTo(left + r, bottom);
+        c.arcTo(left, bottom, left, bottom - r, r);
+        c.lineTo(left, top + r);
+        c.arcTo(left, top, left + r, top, r);
+        c.closePath();
+
+        c.fillStyle    = 'rgba(255, 255, 255, 0.97)';
+        c.shadowColor  = 'rgba(0, 0, 0, 0.35)';
+        c.shadowBlur   = 10 * scale;
+        c.shadowOffsetY = 3 * scale;
+        c.fill();
+        c.shadowColor  = 'transparent';
+        c.lineWidth    = Math.max(2, 3 * scale);
+        c.strokeStyle  = '#0f172a';
+        c.stroke();
+
+        c.fillStyle = '#1e293b';
+        lines.forEach((l, i) => c.fillText(l, bx, top + padY + lineH / 2 + i * lineH));
+        c.restore();
     }
 
     function updateScoreDisplay() {
@@ -2369,8 +2436,6 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         } else {
             draw();
         }
-
-        updateDeadZoneMsg();
 
         if (!mpCfg) director.tick(gameCtx, modifiers);
         animationId = requestAnimationFrame(animate);

@@ -99,11 +99,6 @@ export default function MultiplayerGame({ myName, targetScore, gameMode }) {
 
             <div id="toast-container"></div>
 
-            <!-- Heads-up shown when our ball is stuck under the hoop (basketball) -->
-            <div id="deadzone-msg" class="deadzone-msg hidden">
-                🏀 Oof, bad luck! You're jammed under the rim — shoot your way out!
-            </div>
-
             <div id="heart-decor" aria-hidden="true">
                 <img src="assets/heart.webp?v=2" alt="">
                 <img src="assets/heart.webp?v=2" alt="">

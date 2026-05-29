@@ -2103,36 +2103,6 @@ button:disabled {
     white-space: nowrap;
 }
 
-/* Heads-up banner when the ball is stuck under the hoop (basketball). Centered
-   in the upper play area, glassy amber pill; sits above the canvas. */
-.deadzone-msg {
-    position: absolute;
-    top: 28%;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 30;
-    max-width: min(86vw, 30rem);
-    text-align: center;
-    font-size: clamp(0.72rem, 2vmin, 0.95rem);
-    font-weight: 700;
-    line-height: 1.3;
-    color: #fde68a;
-    background: rgba(120, 53, 15, 0.55);
-    border: 1px solid rgba(251, 191, 36, 0.5);
-    border-radius: 0.9rem;
-    padding: 0.5rem 0.9rem;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
-    pointer-events: none;
-    animation: deadzone-in 0.3s ease both;
-}
-.deadzone-msg.hidden { display: none; }
-@keyframes deadzone-in {
-    from { opacity: 0; transform: translateX(-50%) translateY(-6px); }
-    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-
 /* "Full" chip — amber accent so it reads as a status, not just info */
 .mp-chip-full {
     color: #fbbf24;
