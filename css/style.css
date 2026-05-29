@@ -2232,6 +2232,7 @@ button:disabled {
     overflow: visible;
     --timer-color: #4ade80;
     transition: transform 0.3s ease;
+    margin-left: 0.5rem;
 }
 
 /* Inner card — glass effect fully preserved */
