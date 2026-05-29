@@ -1311,4 +1311,15 @@ function bindAuthForm() {
 }
 
 window.addEventListener('hashchange', router);
-window.addEventListener('DOMContentLoaded', router);
+window.addEventListener('DOMContentLoaded', () => {
+    // A fresh launch should never open straight into the single-player game
+    // view. On iOS, "Add to Home Screen" captures whatever URL was showing
+    // (often .../#game), so the installed app would otherwise always start in
+    // the game. Normalize that one route to home on load. The #mp-* routes are
+    // left intact — they intentionally recover/rejoin a room on reload.
+    if (window.location.hash === '#game') {
+        window.location.hash = '#home';   // triggers hashchange → router()
+        return;
+    }
+    router();
+});
