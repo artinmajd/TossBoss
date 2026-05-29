@@ -2225,8 +2225,10 @@ button:disabled {
     overflow-x: auto;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    /* room for the active card's scale-up + glow without vertical clipping */
-    padding: 4px 2px 8px;
+    /* No top padding so opponent cards align with the own card's top; the
+       active card scales DOWNWARD (transform-origin top), so only the bottom
+       needs room. */
+    padding: 0 2px 8px;
     scrollbar-width: none;       /* Firefox */
     pointer-events: auto;        /* HUD is pointer-events:none — re-enable here so it scrolls */
 }
