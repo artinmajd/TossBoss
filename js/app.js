@@ -360,6 +360,29 @@ async function router() {
         app.innerHTML = MultiplayerGame({ myName, oppName, targetScore, gameMode: room.game_mode });
 
         // ── HUD helpers ──────────────────────────────────────────────────
+
+        // Sync the mini hearts in the local player's glass card.
+        const updateMyHearts = ({ lives, maxLives = 2, onStreak = false }) => {
+            const container = document.getElementById('mp-mine-hearts');
+            if (!container) return;
+            const current = container.querySelectorAll('.mp-opp-heart');
+            if (current.length !== maxLives) {
+                container.innerHTML = '';
+                for (let i = 0; i < maxLives; i++) {
+                    const img = document.createElement('img');
+                    img.src = 'assets/heart.webp?v=2';
+                    img.alt = '';
+                    img.className = 'mp-opp-heart';
+                    container.appendChild(img);
+                }
+            }
+            container.querySelectorAll('.mp-opp-heart').forEach((h, i) => {
+                const lit = i < lives;
+                h.classList.toggle('mp-opp-heart-dim',  !lit);
+                h.classList.toggle('mp-opp-heart-fire', onStreak && lit);
+            });
+        };
+
         const updateMpHud = () => {
             const myScoreEl   = document.getElementById('mp-score-mine');
             const oppScoreEl  = document.getElementById('mp-score-theirs');
@@ -369,6 +392,8 @@ async function router() {
             const oppThrowsEl = document.getElementById('mp-throws-theirs');
             const myStreakEl  = document.getElementById('mp-streak-mine');
             const oppStreakEl = document.getElementById('mp-streak-theirs');
+            const myCard      = document.getElementById('mp-card-mine');
+            const oppCard     = document.getElementById('mp-card-theirs');
 
             if (myScoreEl)   myScoreEl.textContent   = mpScores.mine;
             if (oppScoreEl)  oppScoreEl.textContent   = mpScores.opp;
@@ -379,9 +404,12 @@ async function router() {
             if (turnEl) turnEl.textContent = multiplayerConfig.isMyTurn
                 ? '🎯 Your Turn!'
                 : `⏳ ${oppName}'s Turn…`;
+
+            // Highlight the active player's card with a blue glow.
+            if (myCard)  myCard.classList.toggle('mp-card-active',  multiplayerConfig.isMyTurn);
+            if (oppCard) oppCard.classList.toggle('mp-card-active', !multiplayerConfig.isMyTurn);
+
             // Glow the border red while input is locked (opponent's turn).
-            // Cleared on our turn AND during live spectate (ball is flying —
-            // no need to remind the player they're locked, they're watching).
             const locked = !multiplayerConfig.isMyTurn && !isSpectating;
             if (gameScreen) gameScreen.classList.toggle('mp-locked', locked);
         };
@@ -718,6 +746,7 @@ async function router() {
             mpScores.mine     = totalScore;
             mpScores.myStreak = streak;
             mpScores.myThrows++;
+            updateMyHearts({ lives: lives ?? 2, maxLives: maxLives ?? 2, onStreak: (streak ?? 0) >= 3 });
             updateMpHud();
 
             // Broadcast to opponent — includes lives + maxLives so they can
@@ -785,6 +814,7 @@ async function router() {
             window.location.hash = '#multiplayer';
         });
 
+        updateMyHearts({ lives: 2, maxLives: 2, onStreak: false });
         updateMpHud();
         return;
     }

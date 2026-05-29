@@ -32,44 +32,48 @@ export default function MultiplayerGame({ myName, oppName, targetScore, gameMode
                     </svg>
                 </button>
 
-                <div class="mp-hud-scores">
-                    <!-- My side -->
-                    <div class="mp-hud-side" id="mp-hud-mine">
-                        <span class="mp-hud-pname">${myName}</span>
+                <!-- My glass card -->
+                <div class="mp-player-card" id="mp-card-mine">
+                    <span class="mp-hud-pname">${myName}</span>
+                    <div class="mp-card-score-row">
                         <span class="mp-hud-pscore" id="mp-score-mine">0</span>
-                        <div class="mp-hud-stats">
-                            <span class="mp-hud-throws" id="mp-throws-mine">0↑</span>
-                            <span class="mp-hud-streak-val" id="mp-streak-mine"></span>
+                        <div id="mp-mine-hearts" class="mp-opp-hearts">
+                            <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
+                            <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
                         </div>
                     </div>
+                    <div class="mp-hud-stats">
+                        <span class="mp-hud-throws" id="mp-throws-mine">shots: 0</span>
+                        <span class="mp-hud-streak-val" id="mp-streak-mine"></span>
+                    </div>
+                </div>
 
-                    <!-- Center: target + turn label + timer -->
-                    <div class="mp-hud-center-col">
-                        <span class="mp-hud-target">/ ${targetScore}</span>
-                        <span class="mp-turn-indicator" id="mp-turn-indicator">⏳ Waiting…</span>
-                        <div class="mp-turn-timer hidden" id="mp-turn-timer">
-                            <svg class="mp-timer-ring" viewBox="0 0 24 24" aria-hidden="true">
-                                <circle class="mp-timer-ring-bg"  cx="12" cy="12" r="9"/>
-                                <circle class="mp-timer-ring-arc" cx="12" cy="12" r="9" id="mp-timer-arc"/>
-                            </svg>
-                            <span class="mp-timer-num" id="mp-timer-value">15</span>
+                <!-- Center: target + turn label + timer -->
+                <div class="mp-hud-center-col">
+                    <span class="mp-hud-target">/ ${targetScore}</span>
+                    <span class="mp-turn-indicator" id="mp-turn-indicator">⏳ Waiting…</span>
+                    <div class="mp-turn-timer hidden" id="mp-turn-timer">
+                        <svg class="mp-timer-ring" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle class="mp-timer-ring-bg"  cx="12" cy="12" r="9"/>
+                            <circle class="mp-timer-ring-arc" cx="12" cy="12" r="9" id="mp-timer-arc"/>
+                        </svg>
+                        <span class="mp-timer-num" id="mp-timer-value">15</span>
+                    </div>
+                </div>
+
+                <!-- Opponent glass card -->
+                <div class="mp-player-card" id="mp-card-theirs">
+                    <span class="mp-hud-pname">${oppName}</span>
+                    <div class="mp-card-score-row">
+                        <span class="mp-hud-pscore" id="mp-score-theirs">0</span>
+                        <div id="mp-opp-hearts" class="mp-opp-hearts">
+                            <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
+                            <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
                         </div>
                     </div>
-
-                    <!-- Opponent side -->
-                    <div class="mp-hud-side mp-hud-opp-side" id="mp-hud-theirs">
-                        <span class="mp-hud-pname">${oppName}</span>
-                        <div class="mp-score-hearts-row">
-                            <span class="mp-hud-pscore" id="mp-score-theirs">0</span>
-                            <div id="mp-opp-hearts" class="mp-opp-hearts">
-                                <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
-                                <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
-                            </div>
-                        </div>
-                        <div class="mp-hud-stats">
-                            <span class="mp-hud-throws" id="mp-throws-theirs">0↑</span>
-                            <span class="mp-hud-streak-val" id="mp-streak-theirs"></span>
-                        </div>
+                    <div class="mp-hud-stats">
+                        <span class="mp-hud-throws" id="mp-throws-theirs">shots: 0</span>
+                        <span class="mp-hud-streak-val" id="mp-streak-theirs"></span>
                     </div>
                 </div>
             </div>

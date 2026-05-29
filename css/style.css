@@ -2195,28 +2195,51 @@ button:disabled {
     flex-shrink: 0;
 }
 
-/* Score panel — stretches to fill remaining width */
-.mp-hud-scores {
+/* ── Player glass cards ────────────────────────────────────────── */
+.mp-player-card {
     flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: rgba(15, 23, 42, 0.72);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.75rem;
-    padding: 0.35rem 0.75rem;
-}
-
-/* Each player's name + score column */
-.mp-hud-side {
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    flex: 1;
-    min-width: 0;
+    gap: 0.08rem;
+    padding: clamp(0.3rem, 1.1vmin, 0.55rem) clamp(0.45rem, 1.8vmin, 0.85rem);
+    background: rgba(10, 18, 36, 0.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 0.875rem;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 4px 22px rgba(0, 0, 0, 0.5);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    pointer-events: none;
 }
+
+/* Active turn: blue glow on the current player's card */
+.mp-player-card.mp-card-active {
+    border-color: rgba(56, 189, 248, 0.55);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.10),
+        0 0 0 1px rgba(56, 189, 248, 0.18),
+        0 4px 28px rgba(56, 189, 248, 0.16);
+}
+
+.mp-player-card.mp-card-active .mp-hud-pscore {
+    color: #e0f2fe;
+    text-shadow: 0 0 18px rgba(56, 189, 248, 0.45);
+}
+
+/* Score digit + mini hearts side-by-side */
+.mp-card-score-row {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+/* Legacy — kept so nothing breaks if referenced, but no longer in HTML */
+.mp-hud-scores { display: contents; }
+.mp-hud-side   { display: contents; }
 
 .mp-hud-pname {
     font-family: 'Orbitron', monospace;
@@ -2238,11 +2261,6 @@ button:disabled {
     color: var(--text-primary);
     line-height: 1.1;
     transition: color 0.25s ease;
-}
-
-/* Opponent's name/score right-aligned */
-.mp-hud-opp-side {
-    align-items: center;
 }
 
 /* Center column: target score + turn indicator */
@@ -2304,14 +2322,7 @@ button:disabled {
     color: #fb923c;
 }
 
-/* ── Opponent mini hearts (beside their score) ─────────────── */
-
-/* Row that holds the score digit + the mini hearts */
-.mp-score-hearts-row {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-}
+/* ── Mini hearts (both cards) ──────────────────────────────── */
 
 /* Container for the 2 (or 3) mini hearts */
 .mp-opp-hearts {
