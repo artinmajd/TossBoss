@@ -57,11 +57,9 @@ export default function MultiplayerGame({ myName, targetScore, gameMode }) {
                     </div>
                 </div>
 
-                <!-- Spacer pushes opponent cards to the right -->
-                <div class="mp-hud-spacer"></div>
-
                 <!-- Opponent cards — built dynamically by app.js, one per other
-                     player, in turn order (queued against the right edge). -->
+                     player, in turn order. Right-aligned, and scrolls
+                     horizontally when there are too many to fit. -->
                 <div id="mp-opp-cards" class="mp-opp-cards-row"></div>
             </div>
 

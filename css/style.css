@@ -2214,16 +2214,26 @@ button:disabled {
 
 /* ── Player glass cards ────────────────────────────────────────── */
 
-/* Flexible gap — pushes opponent cards to the right edge */
-.mp-hud-spacer { flex: 1; }
-
-/* Opponent cards container — queued against the right edge, in turn order */
+/* Opponent cards container — takes the remaining width, right-aligns the
+   cards, and scrolls horizontally when there are too many to fit. */
 .mp-opp-cards-row {
+    flex: 1 1 0;
+    min-width: 0;
     display: flex;
     align-items: flex-start;
+    justify-content: flex-end;   /* queue against the right edge when they fit */
     gap: 0.35rem;
-    min-width: 0;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    /* room for the active card's scale-up + glow without vertical clipping */
+    padding: 4px 2px 8px;
+    scrollbar-width: none;       /* Firefox */
 }
+.mp-opp-cards-row::-webkit-scrollbar { display: none; }  /* WebKit */
+
+/* Cards must not shrink inside the scroll row, or they'd squash instead of scroll */
+.mp-opp-cards-row .mp-player-card { flex-shrink: 0; }
 
 .mp-player-card {
     position: relative;

@@ -390,6 +390,7 @@ async function router() {
 
         // ── Build opponent cards — one per other player, in turn order ─────
         const oppCardsRow = document.getElementById('mp-opp-cards');
+        let lastScrolledTurn = -1;  // only auto-scroll when the active turn changes
         const buildOppCards = () => {
             if (!oppCardsRow) return;
             oppCardsRow.innerHTML = players
@@ -463,6 +464,16 @@ async function router() {
             // Red border while input is locked (someone else's turn, not spectating).
             const locked = !multiplayerConfig.isMyTurn && !isSpectating;
             if (gameScreen) gameScreen.classList.toggle('mp-locked', locked);
+
+            // Auto-scroll the opponents row to the active player's card (smooth),
+            // but only when the active turn actually changes — so we don't fight
+            // the user's manual scrolling on every HUD refresh. The own card is
+            // always visible on the left, so only opponent turns need scrolling.
+            if (currentTurn !== lastScrolledTurn) {
+                lastScrolledTurn = currentTurn;
+                const activeOpp = oppCardsRow?.querySelector('.mp-player-card.mp-card-active');
+                activeOpp?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
         };
 
         // ── Small helper: show a toast inside the game canvas area ──────
