@@ -1,7 +1,7 @@
 // Multiplayer game screen — stripped-down game canvas with MP HUD.
 // No mode switching, no leaderboard, no challenges/black holes.
 
-export default function MultiplayerGame({ myName, oppName, targetScore, gameMode }) {
+export default function MultiplayerGame({ myName, targetScore, gameMode }) {
     const modeClass = gameMode === 'pingpong' ? ' bg-pingpong' : '';
 
     return `
@@ -60,46 +60,9 @@ export default function MultiplayerGame({ myName, oppName, targetScore, gameMode
                 <!-- Spacer pushes opponent cards to the right -->
                 <div class="mp-hud-spacer"></div>
 
-                <!-- Opponent cards queue from the right (newest joins leftmost) -->
-                <!-- Prototype placeholders — remove when multi-player is wired -->
-                <div class="mp-player-card mp-card-empty">
-                    <span class="mp-hud-pname">Player 3</span>
-                    <div class="mp-card-score-row">
-                        <span class="mp-hud-pscore">—</span>
-                        <span class="mp-card-target">/ ${targetScore}</span>
-                    </div>
-                    <div class="mp-hud-stats">
-                        <span class="mp-hud-throws">shots: 0</span>
-                    </div>
-                </div>
-
-                <div class="mp-player-card mp-card-empty">
-                    <span class="mp-hud-pname">Player 4</span>
-                    <div class="mp-card-score-row">
-                        <span class="mp-hud-pscore">—</span>
-                        <span class="mp-card-target">/ ${targetScore}</span>
-                    </div>
-                    <div class="mp-hud-stats">
-                        <span class="mp-hud-throws">shots: 0</span>
-                    </div>
-                </div>
-
-                <!-- Direct opponent -->
-                <div class="mp-player-card" id="mp-card-theirs">
-                    <span class="mp-hud-pname">${oppName}</span>
-                    <div class="mp-card-score-row">
-                        <span class="mp-hud-pscore" id="mp-score-theirs">0</span>
-                        <span class="mp-card-target">/ ${targetScore}</span>
-                        <div id="mp-opp-hearts" class="mp-opp-hearts">
-                            <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
-                            <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
-                        </div>
-                    </div>
-                    <div class="mp-hud-stats">
-                        <span class="mp-hud-throws" id="mp-throws-theirs">shots: 0</span>
-                        <span class="mp-hud-streak-val" id="mp-streak-theirs"></span>
-                    </div>
-                </div>
+                <!-- Opponent cards — built dynamically by app.js, one per other
+                     player, in turn order (queued against the right edge). -->
+                <div id="mp-opp-cards" class="mp-opp-cards-row"></div>
             </div>
 
             <!-- Canvas -->

@@ -2210,6 +2210,14 @@ button:disabled {
 /* Flexible gap — pushes opponent cards to the right edge */
 .mp-hud-spacer { flex: 1; }
 
+/* Opponent cards container — queued against the right edge, in turn order */
+.mp-opp-cards-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
 .mp-player-card {
     position: relative;
     flex: 0 0 clamp(4rem, 12vw, 6.5rem);

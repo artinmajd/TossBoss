@@ -350,53 +350,73 @@ async function router() {
             return;
         }
 
-        const myName      = role === 'host' ? room.host_name  : room.guest_name;
-        const oppName     = role === 'host' ? room.guest_name : room.host_name;
         const targetScore = room.target_score;
+        const myId        = await getPlayerId();
 
-        // Mutable scores/stats — shared with the engine via closure.
-        const mpScores = {
-            mine:      role === 'host' ? (room.host_score  || 0) : (room.guest_score || 0),
-            opp:       role === 'host' ? (room.guest_score || 0) : (room.host_score  || 0),
-            myStreak:  0,
-            oppStreak: 0,
-        };
+        // ── Local mirror of players[] (turn order = array order) ───────────
+        // DB-persisted score/throws are kept so a refresh restores state.
+        const players = (Array.isArray(room.players) ? room.players : []).map(p => ({
+            id:       p.id,
+            name:     p.name,
+            score:    p.score    ?? 0,
+            streak:   p.streak   ?? 0,
+            lives:    p.lives    ?? 2,
+            maxLives: p.maxLives ?? 2,
+            throws:   p.throws   ?? 0,
+        }));
 
-        // Always start at 0/0. checkWin only needs equality, not absolute
-        // values, so this is correct for both fresh game-start and refresh:
-        // the counts naturally reach parity again after the current round
-        // completes, at which point win detection fires correctly.
-        mpScores.myThrows  = 0;
-        mpScores.oppThrows = 0;
+        const myIndex = players.findIndex(p => p.id === myId);
+        if (myIndex === -1) { window.location.hash = '#multiplayer'; return; }
+        let currentTurn = room.current_turn ?? 0;
+
+        const myPlayer    = () => players[myIndex];
+        const pIndexById  = id => players.findIndex(p => p.id === id);
+        const escHtml = s => String(s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        const heartImgs = n => Array.from({ length: n },
+            () => '<img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">').join('');
 
         // multiplayerConfig is passed into initGame.
         // isMyTurn starts false — the countdown overlay enables it.
-        // initialScore restores the DB-persisted score after a refresh.
         const multiplayerConfig = {
             gameMode:        room.game_mode,
             isMyTurn:        false,
-            initialScore:    mpScores.mine,
+            initialScore:    myPlayer().score,
             onThrowComplete: null,   // wired below
         };
 
-        app.innerHTML = MultiplayerGame({ myName, oppName, targetScore, gameMode: room.game_mode });
+        app.innerHTML = MultiplayerGame({ myName: myPlayer().name, targetScore, gameMode: room.game_mode });
+
+        // ── Build opponent cards — one per other player, in turn order ─────
+        const oppCardsRow = document.getElementById('mp-opp-cards');
+        const buildOppCards = () => {
+            if (!oppCardsRow) return;
+            oppCardsRow.innerHTML = players
+                .filter(p => p.id !== myId)
+                .map(p => `
+                    <div class="mp-player-card" data-pid="${p.id}">
+                        <span class="mp-hud-pname">${escHtml(p.name)}</span>
+                        <div class="mp-card-score-row">
+                            <span class="mp-hud-pscore mp-card-score">${p.score}</span>
+                            <span class="mp-card-target">/ ${targetScore}</span>
+                            <div class="mp-opp-hearts mp-card-hearts">${heartImgs(p.maxLives)}</div>
+                        </div>
+                        <div class="mp-hud-stats">
+                            <span class="mp-hud-throws mp-card-throws">shots: ${p.throws}</span>
+                            <span class="mp-hud-streak-val mp-card-streak"></span>
+                        </div>
+                    </div>`).join('');
+        };
+        buildOppCards();
 
         // ── HUD helpers ──────────────────────────────────────────────────
 
-        // Sync the mini hearts in the local player's glass card.
-        const updateMyHearts = ({ lives, maxLives = 2, onStreak = false }) => {
-            const container = document.getElementById('mp-mine-hearts');
+        // Sync the mini hearts inside a given container to a player's state.
+        const syncHearts = (container, { lives, maxLives = 2, onStreak = false }) => {
             if (!container) return;
-            const current = container.querySelectorAll('.mp-opp-heart');
-            if (current.length !== maxLives) {
-                container.innerHTML = '';
-                for (let i = 0; i < maxLives; i++) {
-                    const img = document.createElement('img');
-                    img.src = 'assets/heart.webp?v=2';
-                    img.alt = '';
-                    img.className = 'mp-opp-heart';
-                    container.appendChild(img);
-                }
+            if (container.querySelectorAll('.mp-opp-heart').length !== maxLives) {
+                container.innerHTML = heartImgs(maxLives);
             }
             container.querySelectorAll('.mp-opp-heart').forEach((h, i) => {
                 const lit = i < lives;
@@ -406,31 +426,41 @@ async function router() {
         };
 
         const updateMpHud = () => {
-            const myScoreEl   = document.getElementById('mp-score-mine');
-            const oppScoreEl  = document.getElementById('mp-score-theirs');
-            const gameScreen  = document.getElementById('game-screen');
-            const myThrowsEl  = document.getElementById('mp-throws-mine');
-            const oppThrowsEl = document.getElementById('mp-throws-theirs');
-            const myStreakEl  = document.getElementById('mp-streak-mine');
-            const oppStreakEl = document.getElementById('mp-streak-theirs');
-            const myCard      = document.getElementById('mp-card-mine');
-            const oppCard     = document.getElementById('mp-card-theirs');
+            const gameScreen = document.getElementById('game-screen');
 
-            if (myScoreEl)   myScoreEl.textContent   = mpScores.mine;
-            if (oppScoreEl)  oppScoreEl.textContent   = mpScores.opp;
-            if (myThrowsEl)  myThrowsEl.textContent  = `shots: ${mpScores.myThrows}`;
-            if (oppThrowsEl) oppThrowsEl.textContent = `shots: ${mpScores.oppThrows}`;
-            if (myStreakEl)  myStreakEl.textContent  = `streak: ${mpScores.myStreak  ?? 0}`;
-            if (oppStreakEl) oppStreakEl.textContent = `streak: ${mpScores.oppStreak ?? 0}`;
+            // Own card
+            const me = myPlayer();
+            const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+            setTxt('mp-score-mine',  me.score);
+            setTxt('mp-throws-mine', `shots: ${me.throws}`);
+            setTxt('mp-streak-mine', `streak: ${me.streak ?? 0}`);
+            syncHearts(document.getElementById('mp-mine-hearts'),
+                { lives: me.lives, maxLives: me.maxLives, onStreak: (me.streak ?? 0) >= 3 });
 
-            // Scale + brighten the active player's card; shrink the other.
-            if (myCard)  myCard.classList.toggle('mp-card-active',  multiplayerConfig.isMyTurn);
-            if (oppCard) oppCard.classList.toggle('mp-card-active', !multiplayerConfig.isMyTurn);
-            // Scale the own-card wrapper so the timer ring scales with it.
+            // Opponent cards
+            players.forEach((p, idx) => {
+                if (p.id === myId) return;
+                const card = oppCardsRow?.querySelector(`[data-pid="${p.id}"]`);
+                if (!card) return;
+                const sc = card.querySelector('.mp-card-score');
+                const th = card.querySelector('.mp-card-throws');
+                const st = card.querySelector('.mp-card-streak');
+                if (sc) sc.textContent = p.score;
+                if (th) th.textContent = `shots: ${p.throws}`;
+                if (st) st.textContent = `streak: ${p.streak ?? 0}`;
+                syncHearts(card.querySelector('.mp-card-hearts'),
+                    { lives: p.lives, maxLives: p.maxLives, onStreak: (p.streak ?? 0) >= 3 });
+                card.classList.toggle('mp-card-active', idx === currentTurn);
+            });
+
+            // Own card active state + wrapper scale (so the timer ring scales too)
+            const isMine = currentTurn === myIndex;
+            const myCard = document.getElementById('mp-card-mine');
+            if (myCard) myCard.classList.toggle('mp-card-active', isMine);
             const myWrap = document.getElementById('mp-card-mine-wrap');
-            if (myWrap) myWrap.classList.toggle('mp-wrap-active', multiplayerConfig.isMyTurn);
+            if (myWrap) myWrap.classList.toggle('mp-wrap-active', isMine);
 
-            // Red border on game screen while input is locked (opponent's turn).
+            // Red border while input is locked (someone else's turn, not spectating).
             const locked = !multiplayerConfig.isMyTurn && !isSpectating;
             if (gameScreen) gameScreen.classList.toggle('mp-locked', locked);
         };
@@ -602,12 +632,18 @@ async function router() {
         let resultPending  = false; // prevent double-fire
         let tiebreakActive = false; // true once a tiebreaker round has started
 
-        const goToResult = (outcome) => {
+        // Players ranked by score (desc). Used for the overlay + result screen.
+        const computeStandings = () =>
+            [...players]
+                .sort((a, b) => b.score - a.score)
+                .map((p, i) => ({ id: p.id, name: p.name, score: p.score, rank: i + 1 }));
+
+        // End the game. Idempotent. `broadcast` = also tell everyone else
+        // (the detector broadcasts; receivers of game_over call with false).
+        const finishGame = (broadcast = true) => {
             if (resultPending) return;
             resultPending = true;
 
-            // Block all input; clear spectate state so the wait overlay
-            // (which might be hidden for spectate) is properly ignored.
             multiplayerConfig.isMyTurn = false;
             isSpectating    = false;
             spectateSettled = false;
@@ -615,56 +651,56 @@ async function router() {
             clearTurnTimer();
             updateMpHud();
 
-            // Mark room finished so any refresh lands on the result screen, not
-            // back in the game. Fire-and-forget — no need to await.
+            // Mark room finished so any refresh lands on the result screen.
             supabase.from('rooms').update({ status: 'finished' }).eq('code', code).then(() => {});
 
-            // Explicitly notify the opponent the game is over, in case they are
-            // stuck on the wait overlay and never independently reach checkWin.
-            // Payload uses the OPPONENT's perspective so they can blindly apply it.
-            const oppOutcome = outcome === 'win' ? 'lose' : outcome === 'lose' ? 'win' : 'tie';
-            bcChannel.send({
-                type:    'broadcast',
-                event:   'game_over',
-                // myScore / oppScore are FROM THE RECEIVER'S perspective
-                payload: { outcome: oppOutcome, myScore: mpScores.opp, oppScore: mpScores.mine },
-            });
+            const standings = computeStandings();
+            const topScore  = standings[0].score;
+            const leaders   = standings.filter(p => p.score === topScore);
+            const myScore   = myPlayer().score;
+            // win = sole top scorer; tie = tied at the top; else lose.
+            const outcome = (myScore === topScore)
+                ? (leaders.length > 1 ? 'tie' : 'win')
+                : 'lose';
 
-            // Show in-game flash overlay
+            if (broadcast) {
+                // Send the authoritative final players[] so everyone agrees.
+                bcChannel.send({ type: 'broadcast', event: 'game_over', payload: { players } });
+            }
+
             const bannerText = { win: '🏆 You Win!', lose: '💀 You Lose…', tie: "🤝 It's a Tie!" };
-            const textEl    = document.getElementById('mp-gameover-text');
-            const scoresEl  = document.getElementById('mp-gameover-scores');
-            const overlay   = document.getElementById('mp-gameover-overlay');
-            if (textEl)   textEl.textContent   = bannerText[outcome] ?? bannerText.tie;
-            if (scoresEl) scoresEl.textContent = `${mpScores.mine} — ${mpScores.opp}`;
+            const textEl   = document.getElementById('mp-gameover-text');
+            const scoresEl = document.getElementById('mp-gameover-scores');
+            const overlay  = document.getElementById('mp-gameover-overlay');
+            if (textEl)   textEl.textContent = bannerText[outcome] ?? bannerText.tie;
+            if (scoresEl) scoresEl.textContent =
+                standings.map(p => `${p.name}: ${p.score}`).join('   ·   ');
             if (overlay)  overlay.classList.remove('hidden');
 
             setTimeout(() => {
                 sessionStorage.setItem('mp_result', JSON.stringify({
-                    outcome,
-                    myScore:  mpScores.mine,
-                    oppScore: mpScores.opp,
-                    myName, oppName, role, code,
+                    outcome, standings, myId,
+                    myName: myPlayer().name, role, code,
                 }));
                 window.location.hash = '#mp-result';
             }, 2500);
         };
 
         const checkWin = () => {
-            if (mpScores.myThrows !== mpScores.oppThrows) return; // round not complete yet
+            // A round is complete only when every player has thrown equally.
+            const throwsArr = players.map(p => p.throws);
+            if (Math.min(...throwsArr) !== Math.max(...throwsArr)) return;
 
-            const myS = mpScores.mine, oppS = mpScores.opp;
-
+            const topScore = Math.max(...players.map(p => p.score));
             // Before any tiebreaker: at least one player must have reached target.
-            if (!tiebreakActive && myS < targetScore && oppS < targetScore) return;
+            if (!tiebreakActive && topScore < targetScore) return;
 
-            if (myS > oppS) { goToResult('win');  return; }
-            if (oppS > myS) { goToResult('lose'); return; }
+            const leaders = players.filter(p => p.score === topScore);
+            if (leaders.length === 1) { finishGame(true); return; }
 
-            // Scores are equal after equal throws — start (or extend) a tiebreaker.
+            // Multiple players tied for the lead — play another round.
             tiebreakActive = true;
             showGameToast('🔥 TIEBREAKER! Keep playing!', 'bonus-up', true);
-            // Game continues normally; checkWin will fire again after the next round.
         };
 
         // ── Broadcast channel setup ──────────────────────────────────────
@@ -672,65 +708,35 @@ async function router() {
 
         const bcChannel = getRoomBroadcastChannel(code);
 
-        // ── updateOppHearts — rebuild/sync the mini hearts beside opponent's score ─
-        // Called from processTurnEnd (turn_end payload carries lives + streak).
-        const updateOppHearts = ({ lives, maxLives, onStreak }) => {
-            const container = document.getElementById('mp-opp-hearts');
-            if (!container) return;
-            // Rebuild hearts if count changed (extra life granted/removed).
-            const current = container.querySelectorAll('.mp-opp-heart');
-            if (current.length !== maxLives) {
-                container.innerHTML = '';
-                for (let i = 0; i < maxLives; i++) {
-                    const img = document.createElement('img');
-                    img.src = 'assets/heart.webp?v=2';
-                    img.alt = '';
-                    img.className = 'mp-opp-heart';
-                    container.appendChild(img);
-                }
-            }
-            container.querySelectorAll('.mp-opp-heart').forEach((h, i) => {
-                const lit = i < lives;
-                h.classList.toggle('mp-opp-heart-dim',  !lit);
-                h.classList.toggle('mp-opp-heart-fire', onStreak && lit);
-            });
-        };
-
-        // Shared handler for opponent's turn ending — called either directly
-        // from the broadcast or deferred via pendingTurnEnd after spectate.
-        // `spectated` = true means the player watched the throw live; in that
-        // case isSpectating stays true until the timeout so the wait overlay
-        // does not flash back between the replay end and "Your Turn!".
+        // Apply a player's finished turn to local state and advance the turn.
+        // `spectated` = true means we watched the throw live, so the unlock
+        // pause is shorter and spectate state is cleared on unlock.
         const processTurnEnd = (payload, spectated = false) => {
-            mpScores.opp       = payload.totalScore;
-            mpScores.oppStreak = payload.streak ?? 0;
-            mpScores.oppThrows++;
-            // Sync opponent mini hearts — lives and fire state are in the payload.
-            updateOppHearts({
-                lives:    payload.lives    ?? 2,
-                maxLives: payload.maxLives ?? 2,
-                onStreak: (payload.streak ?? 0) >= 3,
-            });
-            updateMpHud(); // isSpectating still true if spectated → wait overlay hidden
+            const idx = pIndexById(payload.senderId);
+            if (idx !== -1) {
+                players[idx].score    = payload.score    ?? players[idx].score;
+                players[idx].streak   = payload.streak   ?? 0;
+                players[idx].lives    = payload.lives    ?? 2;
+                players[idx].maxLives = payload.maxLives ?? 2;
+                players[idx].throws   = payload.throws   ?? players[idx].throws + 1;
+            }
+            currentTurn = payload.nextTurn ?? ((currentTurn + 1) % players.length);
+            updateMpHud();
 
-            // Brief pause so both players see the updated score, then check for
-            // a winner before unlocking. Shorter after a live replay since both
-            // players already watched the ball settle.
             setTimeout(() => {
-                if (spectated) {
-                    isSpectating    = false;
-                    spectateSettled = false;
-                }
+                if (spectated) { isSpectating = false; spectateSettled = false; }
                 checkWin();
                 if (resultPending) return; // game over — don't unlock
-                multiplayerConfig.isMyTurn = true;
-                startTurnTimer();
+                if (currentTurn === myIndex) {
+                    multiplayerConfig.isMyTurn = true;
+                    startTurnTimer();
+                }
                 updateMpHud();
             }, spectated ? 600 : 1000);
         };
 
         bcChannel.on('broadcast', { event: 'turn_end' }, ({ payload }) => {
-            if (payload.role === role) return; // ignore own echo
+            if (payload.senderId === myId) return; // ignore own echo
 
             if (isSpectating && !spectateSettled) {
                 // Throw still in flight on our canvas — buffer and process
@@ -738,132 +744,132 @@ async function router() {
                 pendingTurnEnd = payload;
                 return;
             }
-
             if (spectateSettled) {
-                // Replay finished before turn_end arrived — process now
-                // with the spectated flag so the wait overlay stays hidden.
                 spectateSettled = false;
                 processTurnEnd(payload, true);
                 return;
             }
-
-            // Normal (non-spectate) path
             processTurnEnd(payload, false);
         });
 
-        // Opponent called goToResult on their side — sync us to the result screen.
-        // This is the authoritative path for the player stuck on wait overlay.
+        // Someone detected the game is over — apply authoritative standings.
         bcChannel.on('broadcast', { event: 'game_over' }, ({ payload }) => {
-            if (resultPending) return; // already heading to result, ignore echo
-            // Apply authoritative final scores from the sender's data.
-            mpScores.mine = payload.myScore;
-            mpScores.opp  = payload.oppScore;
+            if (resultPending) return;
+            (payload.players || []).forEach(fp => {
+                const i = pIndexById(fp.id);
+                if (i !== -1) players[i] = { ...players[i], ...fp };
+            });
             updateMpHud();
-            goToResult(payload.outcome);
+            finishGame(false); // already broadcast by the detector
         });
 
-        // Opponent's scored ball has a confirmed return destination — start
+        // A thrower's scored ball has a confirmed return destination — start
         // the ghost arc to that exact position.  startReturn() suppresses any
-        // local auto-scheduled arc while in spectate mode, so this broadcast
-        // is the one and only arc trigger.
+        // local auto-scheduled arc while in spectate mode.
         bcChannel.on('broadcast', { event: 'ball_returned' }, ({ payload }) => {
-            if (multiplayerConfig) multiplayerConfig.startGhostReturn?.(payload);
+            if (payload.senderId === myId) return; // ignore own echo
+            multiplayerConfig.startGhostReturn?.(payload);
         });
 
-        // Opponent's fast-forward state changed — mirror it so our spectate
+        // A thrower's fast-forward state changed — mirror it so our spectate
         // physics run at the same speed as theirs.
         bcChannel.on('broadcast', { event: 'ff_change' }, ({ payload }) => {
-            if (payload.role === role) return; // ignore own echo
-            if (multiplayerConfig) multiplayerConfig.spectateFF = payload.active;
+            if (payload.senderId === myId) return; // ignore own echo
+            multiplayerConfig.spectateFF = payload.active;
         });
 
-        // Opponent just released the ball — replay their throw live instead of
-        // showing the spinner.  The wait overlay is already hidden by
-        // updateMpHud() (isSpectating gate).  When the ball settles on our
-        // canvas, onSpectateComplete fires and the turn is handed back.
+        // The active player released the ball — replay their throw live.
         bcChannel.on('broadcast', { event: 'throw_start' }, ({ payload }) => {
             if (resultPending) return;
+            if (payload.senderId === myId) return; // ignore own echo
             isSpectating    = true;
             spectateSettled = false;
             pendingTurnEnd  = null;
-            updateMpHud(); // hides wait overlay immediately
+            updateMpHud(); // hides the locked state immediately
             multiplayerConfig.spectateThrow?.(payload);
         });
 
         bcChannel.subscribe();
         destroyMp = () => supabase.removeChannel(bcChannel);
 
-        // ── onThrowStart — ball just released; broadcast so opponent can replay ─
+        // ── onThrowStart — ball just released; broadcast so others can replay ─
         multiplayerConfig.onThrowStart = ({ vx, vy, x, y }) => {
             bcChannel.send({
                 type:    'broadcast',
                 event:   'throw_start',
-                payload: { vx, vy, x, y },
+                payload: { senderId: myId, vx, vy, x, y },
             });
         };
 
-        // ── onBallReturned — our scored ball's arc endpoints; tell opponent ─
-        // fromX/Y = ball position when arc starts; toX/Y = arc destination.
-        // Both must match so the ghost arc is pixel-identical on both screens.
+        // ── onBallReturned — our scored ball's arc endpoints; tell spectators ─
         multiplayerConfig.onBallReturned = ({ fromX, fromY, toX, toY }) => {
             bcChannel.send({
                 type:    'broadcast',
                 event:   'ball_returned',
-                payload: { fromX, fromY, toX, toY },
+                payload: { senderId: myId, fromX, fromY, toX, toY },
             });
         };
 
-        // ── onFFChange — fast-forward state changed; opponent should mirror it ─
+        // ── onFFChange — fast-forward state changed; spectators mirror it ─
         multiplayerConfig.onFFChange = (active) => {
             bcChannel.send({
                 type:    'broadcast',
                 event:   'ff_change',
-                payload: { role, active },
+                payload: { senderId: myId, active },
             });
         };
 
         // ── onSpectateComplete — engine signals the replayed throw settled ─
         multiplayerConfig.onSpectateComplete = () => {
             if (pendingTurnEnd) {
-                // turn_end arrived while ball was still in flight — process now
                 const p = pendingTurnEnd;
                 pendingTurnEnd = null;
                 processTurnEnd(p, true);
             } else {
-                // turn_end hasn't arrived yet; mark settled so the broadcast
-                // handler knows to use the spectated path when it does arrive.
                 spectateSettled = true;
             }
         };
 
-        // ── onThrowComplete — called by engine after each of our throws ───
+        // ── onThrowComplete — called by engine after each of OUR throws ───
         multiplayerConfig.onThrowComplete = async ({ scored, points, totalScore, streak, lives, maxLives }) => {
             multiplayerConfig.isMyTurn = false;
             clearTurnTimer();
-            mpScores.mine     = totalScore;
-            mpScores.myStreak = streak;
-            mpScores.myThrows++;
-            updateMyHearts({ lives: lives ?? 2, maxLives: maxLives ?? 2, onStreak: (streak ?? 0) >= 3 });
+
+            const me = myPlayer();
+            me.score    = totalScore;
+            me.streak   = streak ?? 0;
+            me.lives    = lives ?? 2;
+            me.maxLives = maxLives ?? 2;
+            me.throws  += 1;
+
+            const nextTurn = (currentTurn + 1) % players.length;
+            currentTurn = nextTurn;
             updateMpHud();
 
-            // Broadcast to opponent — includes lives + maxLives so they can
-            // update the mini hearts shown next to our score in their HUD.
+            // Broadcast our finished turn (stats + whose turn is next).
             bcChannel.send({
                 type:    'broadcast',
                 event:   'turn_end',
-                payload: { role, scored, points, totalScore, streak, lives: lives ?? 2, maxLives: maxLives ?? 2 },
+                payload: {
+                    senderId: myId,
+                    score:    me.score,
+                    streak:   me.streak,
+                    lives:    me.lives,
+                    maxLives: me.maxLives,
+                    throws:   me.throws,
+                    nextTurn,
+                },
             });
 
-            // Persist score + flip turn in DB (must be awaited — Supabase v2
-            // queries are lazy and won't execute without await / .then()).
-            const scoreCol = role === 'host' ? 'host_score' : 'guest_score';
-            const nextTurn = role === 'host' ? 'guest'      : 'host';
-            await supabase.from('rooms').update({
-                [scoreCol]:   totalScore,
-                current_turn: nextTurn,
-            }).eq('code', code);
+            // Persist the full players[] + new turn index (one writer at a time,
+            // so writing the whole array is safe). Await — Supabase is lazy.
+            await supabase.from('rooms')
+                .update({ players, current_turn: nextTurn })
+                .eq('code', code);
 
             checkWin();
+            // After my throw the turn moves on; my client re-enables only when a
+            // future turn_end rotates back to me (handled in processTurnEnd).
         };
 
         // ── Start engine ─────────────────────────────────────────────────
@@ -889,7 +895,7 @@ async function router() {
                 if (countdownEl) countdownEl.textContent = 'GO!';
                 setTimeout(() => {
                     if (countdownOv) countdownOv.classList.add('hidden');
-                    if (room.current_turn === role) {
+                    if (currentTurn === myIndex) {
                         multiplayerConfig.isMyTurn = true;
                         startTurnTimer();
                     }
@@ -911,7 +917,6 @@ async function router() {
             window.location.hash = '#multiplayer';
         });
 
-        updateMyHearts({ lives: 2, maxLives: 2, onStreak: false });
         updateMpHud();
         return;
     }
