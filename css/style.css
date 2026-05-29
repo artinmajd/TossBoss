@@ -2183,10 +2183,10 @@ button:disabled {
     right: 0;
     z-index: 20;
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0 max(0.75rem, env(safe-area-inset-left, 0.75rem));
-    pointer-events: none;   /* canvas beneath stays interactive */
+    align-items: flex-start;  /* cards anchor at top so scale grows downward */
+    gap: 0.35rem;
+    padding: 0 max(0.6rem, env(safe-area-inset-left, 0.6rem));
+    pointer-events: none;
 }
 
 /* Quit button re-enables pointer events */
@@ -2197,25 +2197,18 @@ button:disabled {
 
 /* ── Player glass cards ────────────────────────────────────────── */
 
-/* Wrapper that takes the remaining HUD width and centers its three
-   children (left card + center col + right card) so the center column
-   stays visually centered regardless of card width. */
-.mp-hud-main {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-}
+/* Flexible gap — pushes opponent cards to the right edge */
+.mp-hud-spacer { flex: 1; }
 
 .mp-player-card {
-    flex: 0 0 clamp(4.5rem, 14vw, 7.5rem);
+    position: relative;
+    flex: 0 0 clamp(4rem, 12vw, 6.5rem);
     min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.08rem;
-    padding: clamp(0.3rem, 1.1vmin, 0.55rem) clamp(0.45rem, 1.8vmin, 0.85rem);
+    padding: clamp(0.28rem, 1vmin, 0.5rem) clamp(0.35rem, 1.4vmin, 0.7rem);
     background: rgba(15, 42, 100, 0.38);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -2225,42 +2218,71 @@ button:disabled {
         inset 0 1px 0 rgba(255, 255, 255, 0.14),
         inset 0 -1px 0 rgba(0, 0, 0, 0.12),
         0 4px 18px rgba(0, 0, 0, 0.28);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease,
+                background 0.3s ease, transform 0.3s ease;
     pointer-events: none;
 }
 
-/* Active turn: blue glow on the current player's card */
+/* Own card — wider than opponents */
+.mp-card-self {
+    flex: 0 0 clamp(5.5rem, 18vw, 9rem);
+}
+
+/* Active turn: card scales up slightly and brightens */
 .mp-player-card.mp-card-active {
-    background: rgba(15, 48, 115, 0.50);
-    border-color: rgba(56, 189, 248, 0.6);
+    transform: scale(1.07);
+    transform-origin: top center;
+    z-index: 1;
+    background: rgba(15, 52, 125, 0.60);
+    border-color: rgba(56, 189, 248, 0.68);
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.18),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.10),
-        0 0 0 1px rgba(56, 189, 248, 0.2),
-        0 4px 28px rgba(56, 189, 248, 0.18);
+        inset 0 1px 0 rgba(255, 255, 255, 0.20),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+        0 0 0 1px rgba(56, 189, 248, 0.22),
+        0 6px 30px rgba(56, 189, 248, 0.20);
 }
 
 .mp-player-card.mp-card-active .mp-hud-pscore {
     color: #e0f2fe;
-    text-shadow: 0 0 18px rgba(56, 189, 248, 0.45);
+    text-shadow: 0 0 16px rgba(56, 189, 248, 0.5);
+}
+
+/* Score + target fraction + hearts row */
+.mp-card-score-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* "/ 10" fraction beside the score */
+.mp-card-target {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.38rem, 1.05vmin, 0.55rem);
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
+
+/* Turn timer inside own card — larger than old centre-col version */
+.mp-card-self .mp-turn-timer {
+    width:  clamp(2rem, 5.5vmin, 3rem);
+    height: clamp(2rem, 5.5vmin, 3rem);
+    margin-top: 0.25rem;
+}
+.mp-card-self .mp-timer-num {
+    font-size: clamp(0.5rem, 1.4vmin, 0.75rem);
 }
 
 /* Empty / waiting player slot */
 .mp-player-card.mp-card-empty {
-    opacity: 0.4;
+    opacity: 0.38;
     border-style: dashed;
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.18);
     background: rgba(15, 42, 100, 0.18);
 }
 
-/* Score digit + mini hearts side-by-side */
-.mp-card-score-row {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-}
-
-/* Legacy — kept so nothing breaks if referenced, but no longer in HTML */
+/* Legacy no-ops */
 .mp-hud-scores { display: contents; }
 .mp-hud-side   { display: contents; }
 
@@ -2286,22 +2308,9 @@ button:disabled {
     transition: color 0.25s ease;
 }
 
-/* Center column: target score + turn indicator */
-.mp-hud-center-col {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.15rem;
-    flex-shrink: 0;
-}
-
-.mp-hud-target {
-    font-family: 'Orbitron', monospace;
-    font-size: clamp(0.5rem, 1.4vmin, 0.7rem);
-    font-weight: 700;
-    color: var(--text-secondary);
-    letter-spacing: 0.06em;
-}
+/* Centre column removed — kept as no-op so nothing hard-errors */
+.mp-hud-center-col { display: none; }
+.mp-hud-target     { display: none; }
 
 .mp-turn-indicator {
     font-family: 'Orbitron', monospace;

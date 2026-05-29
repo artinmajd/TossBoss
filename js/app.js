@@ -386,7 +386,6 @@ async function router() {
         const updateMpHud = () => {
             const myScoreEl   = document.getElementById('mp-score-mine');
             const oppScoreEl  = document.getElementById('mp-score-theirs');
-            const turnEl      = document.getElementById('mp-turn-indicator');
             const gameScreen  = document.getElementById('game-screen');
             const myThrowsEl  = document.getElementById('mp-throws-mine');
             const oppThrowsEl = document.getElementById('mp-throws-theirs');
@@ -401,15 +400,12 @@ async function router() {
             if (oppThrowsEl) oppThrowsEl.textContent = `shots: ${mpScores.oppThrows}`;
             if (myStreakEl)  myStreakEl.textContent  = `streak: ${mpScores.myStreak  ?? 0}`;
             if (oppStreakEl) oppStreakEl.textContent = `streak: ${mpScores.oppStreak ?? 0}`;
-            if (turnEl) turnEl.textContent = multiplayerConfig.isMyTurn
-                ? '🎯 Your Turn!'
-                : `⏳ ${oppName}'s Turn…`;
 
-            // Highlight the active player's card with a blue glow.
+            // Scale + brighten the active player's card; shrink the other.
             if (myCard)  myCard.classList.toggle('mp-card-active',  multiplayerConfig.isMyTurn);
             if (oppCard) oppCard.classList.toggle('mp-card-active', !multiplayerConfig.isMyTurn);
 
-            // Glow the border red while input is locked (opponent's turn).
+            // Red border on game screen while input is locked (opponent's turn).
             const locked = !multiplayerConfig.isMyTurn && !isSpectating;
             if (gameScreen) gameScreen.classList.toggle('mp-locked', locked);
         };

@@ -32,12 +32,12 @@ export default function MultiplayerGame({ myName, oppName, targetScore, gameMode
                     </svg>
                 </button>
 
-                <div class="mp-hud-main">
-                <!-- My glass card -->
-                <div class="mp-player-card" id="mp-card-mine">
+                <!-- Own card — always left, wider, contains the turn timer -->
+                <div class="mp-player-card mp-card-self" id="mp-card-mine">
                     <span class="mp-hud-pname">${myName}</span>
                     <div class="mp-card-score-row">
                         <span class="mp-hud-pscore" id="mp-score-mine">0</span>
+                        <span class="mp-card-target">/ ${targetScore}</span>
                         <div id="mp-mine-hearts" class="mp-opp-hearts">
                             <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
                             <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
@@ -47,27 +47,7 @@ export default function MultiplayerGame({ myName, oppName, targetScore, gameMode
                         <span class="mp-hud-throws" id="mp-throws-mine">shots: 0</span>
                         <span class="mp-hud-streak-val" id="mp-streak-mine"></span>
                     </div>
-                </div>
-
-                <!-- Placeholder card (future player slot) -->
-                <div class="mp-player-card mp-card-empty">
-                    <span class="mp-hud-pname">Player 3</span>
-                    <div class="mp-card-score-row">
-                        <span class="mp-hud-pscore">—</span>
-                        <div class="mp-opp-hearts">
-                            <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
-                            <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
-                        </div>
-                    </div>
-                    <div class="mp-hud-stats">
-                        <span class="mp-hud-throws">shots: 0</span>
-                    </div>
-                </div>
-
-                <!-- Center: target + turn label + timer -->
-                <div class="mp-hud-center-col">
-                    <span class="mp-hud-target">/ ${targetScore}</span>
-                    <span class="mp-turn-indicator" id="mp-turn-indicator">⏳ Waiting…</span>
+                    <!-- Turn timer lives inside own card, shown only on our turn -->
                     <div class="mp-turn-timer hidden" id="mp-turn-timer">
                         <svg class="mp-timer-ring" viewBox="0 0 24 24" aria-hidden="true">
                             <circle class="mp-timer-ring-bg"  cx="12" cy="12" r="9"/>
@@ -77,11 +57,39 @@ export default function MultiplayerGame({ myName, oppName, targetScore, gameMode
                     </div>
                 </div>
 
-                <!-- Opponent glass card -->
+                <!-- Spacer pushes opponent cards to the right -->
+                <div class="mp-hud-spacer"></div>
+
+                <!-- Opponent cards queue from the right (newest joins leftmost) -->
+                <!-- Prototype placeholders — remove when multi-player is wired -->
+                <div class="mp-player-card mp-card-empty">
+                    <span class="mp-hud-pname">Player 3</span>
+                    <div class="mp-card-score-row">
+                        <span class="mp-hud-pscore">—</span>
+                        <span class="mp-card-target">/ ${targetScore}</span>
+                    </div>
+                    <div class="mp-hud-stats">
+                        <span class="mp-hud-throws">shots: 0</span>
+                    </div>
+                </div>
+
+                <div class="mp-player-card mp-card-empty">
+                    <span class="mp-hud-pname">Player 4</span>
+                    <div class="mp-card-score-row">
+                        <span class="mp-hud-pscore">—</span>
+                        <span class="mp-card-target">/ ${targetScore}</span>
+                    </div>
+                    <div class="mp-hud-stats">
+                        <span class="mp-hud-throws">shots: 0</span>
+                    </div>
+                </div>
+
+                <!-- Direct opponent -->
                 <div class="mp-player-card" id="mp-card-theirs">
                     <span class="mp-hud-pname">${oppName}</span>
                     <div class="mp-card-score-row">
                         <span class="mp-hud-pscore" id="mp-score-theirs">0</span>
+                        <span class="mp-card-target">/ ${targetScore}</span>
                         <div id="mp-opp-hearts" class="mp-opp-hearts">
                             <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
                             <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
@@ -92,22 +100,6 @@ export default function MultiplayerGame({ myName, oppName, targetScore, gameMode
                         <span class="mp-hud-streak-val" id="mp-streak-theirs"></span>
                     </div>
                 </div>
-
-                <!-- Placeholder card (future player slot) -->
-                <div class="mp-player-card mp-card-empty">
-                    <span class="mp-hud-pname">Player 4</span>
-                    <div class="mp-card-score-row">
-                        <span class="mp-hud-pscore">—</span>
-                        <div class="mp-opp-hearts">
-                            <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
-                            <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
-                        </div>
-                    </div>
-                    <div class="mp-hud-stats">
-                        <span class="mp-hud-throws">shots: 0</span>
-                    </div>
-                </div>
-                </div> <!-- /.mp-hud-main -->
             </div>
 
             <!-- Canvas -->
