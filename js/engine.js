@@ -202,6 +202,16 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // handleMiss is a hoisted function declaration so this is safe here.
         mpCfg.forceMiss = () => handleMiss();
 
+        // Park the ghost ball at the fixed launch position. app.js calls this
+        // on every turn change so all spectators immediately see the new active
+        // player's ghost at the start spot while waiting for them to throw.
+        // (mpSpawnPos is a hoisted function declaration — safe to call here.)
+        mpCfg.parkGhostAtSpawn = () => {
+            const s = mpSpawnPos();
+            ghostX = s.x;
+            ghostY = s.y;
+        };
+
         // Replay an opponent's throw on our canvas.  Sets the ball to the
         // provided position+velocity and marks the engine in spectate mode.
         // In spectate mode handleScore / handleMiss skip all state changes and
@@ -2238,7 +2248,6 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     let accumulator = 0;
     let lastTime = 0;
     let lastScoreMultiplier = 1;
-    let prevMyTurn = false;   // MP: tracks our turn so we can detect it ending
     const prevBall = { x: ball.x, y: ball.y };
 
     animate = function(timestamp) {
@@ -2248,18 +2257,6 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         lastTime = timestamp;
         // A hitch or a backgrounded tab must not fast-forward the simulation.
         if (frameTime > 0.25) frameTime = 0.25;
-
-        // MP: the instant our turn ends, park the ghost at the launch position
-        // so the player who's up next is shown there until they actually throw
-        // (at which point spectating takes over and draws their live ball).
-        if (mpCfg) {
-            if (prevMyTurn && !mpCfg.isMyTurn) {
-                const spawn = mpSpawnPos();
-                ghostX = spawn.x;
-                ghostY = spawn.y;
-            }
-            prevMyTurn = mpCfg.isMyTurn;
-        }
 
         // Refresh the score box whenever a modifier flips the multiplier
         // (challenge activates / ends) so the "per shot · 2X" label is live

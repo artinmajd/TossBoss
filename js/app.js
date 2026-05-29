@@ -721,6 +721,9 @@ async function router() {
                 players[idx].throws   = payload.throws   ?? players[idx].throws + 1;
             }
             currentTurn = payload.nextTurn ?? ((currentTurn + 1) % players.length);
+            // Park the ghost at the launch spot so every spectator sees the new
+            // active player's ghost while waiting for them to throw.
+            multiplayerConfig.parkGhostAtSpawn?.();
             updateMpHud();
 
             setTimeout(() => {
@@ -844,6 +847,9 @@ async function router() {
 
             const nextTurn = (currentTurn + 1) % players.length;
             currentTurn = nextTurn;
+            // Park the ghost at the launch spot for the next player (shown to us
+            // too until they throw; hidden again only once it's our turn).
+            multiplayerConfig.parkGhostAtSpawn?.();
             updateMpHud();
 
             // Broadcast our finished turn (stats + whose turn is next).
