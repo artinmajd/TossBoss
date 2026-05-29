@@ -50,6 +50,7 @@ export default function Home(session) {
                 ${userSection}
             </div>
             ${installHint()}
+            <p class="home-credit">Developed by <span>Artin Majd</span></p>
         </div>
     `;
 }
