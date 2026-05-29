@@ -1910,6 +1910,21 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         setTimeout(() => toast.remove(), 1000);
     }
 
+    // Basketball: show the "stuck under the rim" heads-up while the ball is
+    // resting in the no-spawn zone under the hoop (a previous miss left it in a
+    // near-impossible spot). Shown for single-player always, and in multiplayer
+    // only while it's our turn. Hides the moment the ball is aimed/thrown or the
+    // turn ends — driven per frame so it needs no explicit show/hide wiring.
+    function updateDeadZoneMsg() {
+        const el = document.getElementById('deadzone-msg');
+        if (!el) return;
+        const inZone = gameMode === 'basketball'
+            && isResting && !isAiming && !ballReturning && !ballAbsorbed
+            && ball.x > getSpawnMaxX()
+            && (!mpCfg || mpCfg.isMyTurn);
+        el.classList.toggle('hidden', !inZone);
+    }
+
     function updateScoreDisplay() {
         const scoreEl      = document.getElementById('score-current');
         const bestEl       = document.getElementById('score-best');
@@ -2354,6 +2369,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         } else {
             draw();
         }
+
+        updateDeadZoneMsg();
 
         if (!mpCfg) director.tick(gameCtx, modifiers);
         animationId = requestAnimationFrame(animate);
