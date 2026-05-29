@@ -471,10 +471,28 @@ async function router() {
             // always visible on the left, so only opponent turns need scrolling.
             if (currentTurn !== lastScrolledTurn) {
                 lastScrolledTurn = currentTurn;
-                const activeOpp = oppCardsRow?.querySelector('.mp-player-card.mp-card-active');
-                activeOpp?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                scrollActiveCardIntoView();
             }
         };
+
+        // Centre the active opponent card in the scroll row. Computed from
+        // bounding rects (reliable regardless of flex layout / scroll range)
+        // rather than scrollIntoView, which mis-behaves on horizontal flex rows.
+        const scrollActiveCardIntoView = () => {
+            const activeOpp = oppCardsRow?.querySelector('.mp-player-card.mp-card-active');
+            if (!activeOpp || !oppCardsRow) return;
+            const rowRect  = oppCardsRow.getBoundingClientRect();
+            const cardRect = activeOpp.getBoundingClientRect();
+            const delta = (cardRect.left + cardRect.width / 2) - (rowRect.left + rowRect.width / 2);
+            oppCardsRow.scrollTo({ left: oppCardsRow.scrollLeft + delta, behavior: 'smooth' });
+        };
+
+        // Desktop: translate vertical wheel into horizontal scroll over the row.
+        oppCardsRow?.addEventListener('wheel', (e) => {
+            if (e.deltaY === 0) return;
+            oppCardsRow.scrollLeft += e.deltaY;
+            e.preventDefault();
+        }, { passive: false });
 
         // ── Small helper: show a toast inside the game canvas area ──────
         // Pass high=true for system/event toasts (tiebreaker, time's up)

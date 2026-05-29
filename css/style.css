@@ -2221,7 +2221,6 @@ button:disabled {
     min-width: 0;
     display: flex;
     align-items: flex-start;
-    justify-content: flex-end;   /* queue against the right edge when they fit */
     gap: 0.35rem;
     overflow-x: auto;
     scroll-behavior: smooth;
@@ -2229,11 +2228,17 @@ button:disabled {
     /* room for the active card's scale-up + glow without vertical clipping */
     padding: 4px 2px 8px;
     scrollbar-width: none;       /* Firefox */
+    pointer-events: auto;        /* HUD is pointer-events:none — re-enable here so it scrolls */
 }
 .mp-opp-cards-row::-webkit-scrollbar { display: none; }  /* WebKit */
 
 /* Cards must not shrink inside the scroll row, or they'd squash instead of scroll */
 .mp-opp-cards-row .mp-player-card { flex-shrink: 0; }
+
+/* Right-align the cards when they fit; when they overflow this auto-margin
+   collapses to 0, so scrolling works normally from the left edge. Avoids the
+   justify-content:flex-end scroll-range bug. */
+.mp-opp-cards-row > .mp-player-card:first-child { margin-left: auto; }
 
 .mp-player-card {
     position: relative;
