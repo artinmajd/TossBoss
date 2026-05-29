@@ -1132,6 +1132,9 @@ button:active {
 #install-hint {
     flex-shrink: 0;
     max-width: min(92vw, 440px);
+    /* Lift it clear of the iOS Safari bottom toolbar / home indicator
+       (the page uses viewport-fit=cover, so the bottom edge sits under it). */
+    margin-bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(2.5rem, 8vh, 4.5rem));
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
