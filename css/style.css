@@ -2230,26 +2230,25 @@ button:disabled {
 
 .mp-self-timer-wrap {
     position: relative;
-    display: flex;           /* inner .mp-player-card fills the wrapper */
-    --timer-color: #4ade80;  /* green → orange → red as time runs out */
+    display: flex;
+    overflow: visible;       /* ensure the ring bleeds outside without clipping */
+    --timer-color: #4ade80;
 }
 
-/* Inner card — glass effect fully preserved, no overrides needed */
+/* Inner card — glass effect fully preserved */
 .mp-self-timer-wrap .mp-player-card {
     flex: 1;
     z-index: 1;
 }
 
-/* Conic-gradient ring — masked to ONLY the 3px border strip so the
-   gradient is never painted over the card face. The mask cuts out the
-   content-box interior, leaving just the padding (border) area. This
-   means the card can remain as transparent as it likes. */
+/* Conic-gradient ring — mask cuts out the interior so only the
+   border strip is painted, never over the card face. */
 .mp-self-timer-wrap::before {
     content: '';
     position: absolute;
-    inset: -3px;
-    padding: 3px;                        /* defines the visible border width */
-    border-radius: calc(0.875rem + 3px);
+    inset: -6px;
+    padding: 6px;                        /* border strip thickness */
+    border-radius: calc(0.875rem + 6px);
     background: conic-gradient(
         from -90deg,
         var(--timer-color) 0%,
@@ -2273,9 +2272,6 @@ button:disabled {
 .mp-self-timer-wrap.timer-running::before { opacity: 1; }
 .mp-self-timer-wrap.timer-warning         { --timer-color: #fb923c; }
 .mp-self-timer-wrap.timer-danger          { --timer-color: #ef4444; }
-.mp-self-timer-wrap.timer-danger::before {
-    animation: mp-timer-pulse 0.45s ease-in-out infinite alternate;
-}
 
 /* Active turn: card scales up slightly and brightens */
 .mp-player-card.mp-card-active {
