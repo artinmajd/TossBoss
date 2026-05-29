@@ -2116,7 +2116,22 @@ button:disabled {
     gap: 0.45rem;
     width: 100%;
     margin-bottom: clamp(0.55rem, 1.8vmin, 0.9rem);
+    /* Scroll the list instead of growing the card past this height when there
+       are many players. */
+    max-height: clamp(9rem, 38vh, 20rem);
+    overflow-y: auto;
+    /* a little right padding so rows don't sit under the scrollbar */
+    padding-right: 2px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
 }
+.mp-players-list::-webkit-scrollbar { width: 5px; }
+.mp-players-list::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+/* keep rows from shrinking vertically inside the scroll area */
+.mp-players-list .mp-player-row { flex-shrink: 0; }
 
 .mp-player-row {
     display: flex;
