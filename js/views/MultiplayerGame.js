@@ -49,6 +49,21 @@ export default function MultiplayerGame({ myName, oppName, targetScore, gameMode
                     </div>
                 </div>
 
+                <!-- Placeholder card (future player slot) -->
+                <div class="mp-player-card mp-card-empty">
+                    <span class="mp-hud-pname">Player 3</span>
+                    <div class="mp-card-score-row">
+                        <span class="mp-hud-pscore">—</span>
+                        <div class="mp-opp-hearts">
+                            <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
+                            <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
+                        </div>
+                    </div>
+                    <div class="mp-hud-stats">
+                        <span class="mp-hud-throws">shots: 0</span>
+                    </div>
+                </div>
+
                 <!-- Center: target + turn label + timer -->
                 <div class="mp-hud-center-col">
                     <span class="mp-hud-target">/ ${targetScore}</span>
@@ -75,6 +90,21 @@ export default function MultiplayerGame({ myName, oppName, targetScore, gameMode
                     <div class="mp-hud-stats">
                         <span class="mp-hud-throws" id="mp-throws-theirs">shots: 0</span>
                         <span class="mp-hud-streak-val" id="mp-streak-theirs"></span>
+                    </div>
+                </div>
+
+                <!-- Placeholder card (future player slot) -->
+                <div class="mp-player-card mp-card-empty">
+                    <span class="mp-hud-pname">Player 4</span>
+                    <div class="mp-card-score-row">
+                        <span class="mp-hud-pscore">—</span>
+                        <div class="mp-opp-hearts">
+                            <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
+                            <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
+                        </div>
+                    </div>
+                    <div class="mp-hud-stats">
+                        <span class="mp-hud-throws">shots: 0</span>
                     </div>
                 </div>
                 </div> <!-- /.mp-hud-main -->

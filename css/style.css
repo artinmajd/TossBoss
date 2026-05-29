@@ -2209,7 +2209,7 @@ button:disabled {
 }
 
 .mp-player-card {
-    flex: 0 0 clamp(5.5rem, 20vw, 8.5rem);
+    flex: 0 0 clamp(4.5rem, 14vw, 7.5rem);
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -2243,6 +2243,14 @@ button:disabled {
 .mp-player-card.mp-card-active .mp-hud-pscore {
     color: #e0f2fe;
     text-shadow: 0 0 18px rgba(56, 189, 248, 0.45);
+}
+
+/* Empty / waiting player slot */
+.mp-player-card.mp-card-empty {
+    opacity: 0.4;
+    border-style: dashed;
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(15, 42, 100, 0.18);
 }
 
 /* Score digit + mini hearts side-by-side */
