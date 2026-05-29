@@ -509,6 +509,14 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         }
     }
 
+    // The fixed MP launch position (same 30 % spot every player starts from).
+    // Used for the "next player is up" ghost shown the moment our turn ends.
+    function mpSpawnPos() {
+        const minX = ball.radius * 2;
+        const maxX = getSpawnMaxX();
+        return { x: minX + (maxX - minX) * 0.30, y: height * groundLevel - ball.radius };
+    }
+
     function resetBall() {
         const minX = ball.radius * 2;
         const maxX = getSpawnMaxX();
@@ -1524,16 +1532,16 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         //     • Our saved ball → full opacity, drawn first (behind)
         //     • The flying/returning ghost ball (= main `ball`) → 50% below
         //
-        //   Our turn (not spectating):
-        //     • If ghostX is known: opponent's last resting spot → 50% behind
-        //     • Our ball → full opacity (normal render below)
+        //   Not our turn (and not spectating a live throw):
+        //     • If ghostX is known: the active/next player's ball → 50% behind
+        //   On OUR turn we hide the ghost entirely — only our ball shows.
         if (mpCfg && !ballAbsorbed) {
             const isSpec = mpCfg.isSpectating || isSpectateReturn;
             if (isSpec && mpCfg._savedBallX != null) {
                 // Show our own resting ball at full opacity during the replay
                 drawSecondaryBall(mpCfg._savedBallX, mpCfg._savedBallY, 1.0);
-            } else if (!isSpec && ghostX != null) {
-                // Show opponent's ghost at 50% opacity while we're playing
+            } else if (!isSpec && !mpCfg.isMyTurn && ghostX != null) {
+                // Not our turn — show the active/next player's ghost at 50%
                 drawSecondaryBall(ghostX, ghostY, 0.5);
             }
         }
@@ -2230,6 +2238,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     let accumulator = 0;
     let lastTime = 0;
     let lastScoreMultiplier = 1;
+    let prevMyTurn = false;   // MP: tracks our turn so we can detect it ending
     const prevBall = { x: ball.x, y: ball.y };
 
     animate = function(timestamp) {
@@ -2239,6 +2248,18 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         lastTime = timestamp;
         // A hitch or a backgrounded tab must not fast-forward the simulation.
         if (frameTime > 0.25) frameTime = 0.25;
+
+        // MP: the instant our turn ends, park the ghost at the launch position
+        // so the player who's up next is shown there until they actually throw
+        // (at which point spectating takes over and draws their live ball).
+        if (mpCfg) {
+            if (prevMyTurn && !mpCfg.isMyTurn) {
+                const spawn = mpSpawnPos();
+                ghostX = spawn.x;
+                ghostY = spawn.y;
+            }
+            prevMyTurn = mpCfg.isMyTurn;
+        }
 
         // Refresh the score box whenever a modifier flips the multiplier
         // (challenge activates / ends) so the "per shot · 2X" label is live
