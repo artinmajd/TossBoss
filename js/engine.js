@@ -1938,7 +1938,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     function deadZoneActive() {
         return gameMode === 'basketball'
             && (isResting || isAiming) && !ballReturning && !ballAbsorbed
-            && ball.x > getHoopLeftRim() - 6 * scale
+            && ball.x > getHoopLeftRim() - 20 * scale
             && (!mpCfg || mpCfg.isMyTurn);
     }
 
