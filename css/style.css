@@ -2241,36 +2241,35 @@ button:disabled {
     z-index: 1;
 }
 
-/* Conic-gradient ring — mask cuts out the interior so only the
-   border strip is painted, never over the card face. */
-.mp-self-timer-wrap::before {
-    content: '';
+/* SVG timer ring — absolutely fills the wrapper + 6px bleed on each side */
+.mp-card-timer-svg {
     position: absolute;
     inset: -6px;
-    padding: 6px;                        /* border strip thickness */
-    border-radius: calc(0.875rem + 6px);
-    background: conic-gradient(
-        from -90deg,
-        var(--timer-color) 0%,
-        var(--timer-color) var(--timer-pct, 100%),
-        transparent        var(--timer-pct, 100%) 100%
-    );
-    -webkit-mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-    -webkit-mask-composite: destination-out;
-    mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    opacity: 0;
-    z-index: 0;
+    width: calc(100% + 12px);
+    height: calc(100% + 12px);
+    overflow: visible;
     pointer-events: none;
+    z-index: 0;
+    opacity: 0;
     transition: opacity 0.4s ease;
 }
 
-.mp-self-timer-wrap.timer-running::before { opacity: 1; }
-/* --timer-color is set smoothly by JS (smoothTimerTick) — no CSS overrides */
+.mp-self-timer-wrap.timer-running .mp-card-timer-svg { opacity: 1; }
+
+/* Track (dim background ring) */
+#mp-card-timer-track {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 4;
+}
+
+/* Fill (depleting foreground) — colour + dashoffset set by JS */
+#mp-card-timer-fill {
+    fill: none;
+    stroke: #4ade80;
+    stroke-width: 4;
+    stroke-linecap: round;
+}
 
 /* Active turn: opponent cards scale and brighten directly */
 .mp-player-card.mp-card-active {

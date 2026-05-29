@@ -438,13 +438,10 @@ async function router() {
             if (timerRaf)  { cancelAnimationFrame(timerRaf); timerRaf = null; }
             timerStartedAt = null;
             const wrap = document.getElementById('mp-card-mine-wrap');
-            if (wrap) {
-                wrap.classList.remove('timer-running', 'timer-warning', 'timer-danger');
-                wrap.style.removeProperty('--timer-pct');
-            }
+            if (wrap) wrap.classList.remove('timer-running', 'timer-warning', 'timer-danger');
         };
 
-        // Called once per second by setInterval — only handles state classes.
+        // Called once per second — only updates warning/danger state classes.
         const updateTimerState = () => {
             const wrap = document.getElementById('mp-card-mine-wrap');
             if (!wrap) return;
@@ -452,25 +449,55 @@ async function router() {
             wrap.classList.toggle('timer-danger',  turnTimeLeft <= 3);
         };
 
-        // Colour stops for the timer ring: green → orange → red
+        // Colour lerp helpers
         const TIMER_GREEN  = [74,  222, 128];
         const TIMER_ORANGE = [251, 146, 60 ];
         const TIMER_RED    = [239, 68,  68 ];
         const lerpRgb = ([r1,g1,b1], [r2,g2,b2], t) =>
             `rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;
 
-        // rAF loop — updates --timer-pct and --timer-color every frame.
+        // Measures the SVG, sets <rect> geometry, returns the path perimeter.
+        let timerPerimeter = 0;
+        const initTimerSvg = () => {
+            const svg   = document.getElementById('mp-card-timer-svg');
+            const track = document.getElementById('mp-card-timer-track');
+            const fill  = document.getElementById('mp-card-timer-fill');
+            if (!svg || !track || !fill) return;
+
+            const W  = svg.clientWidth;
+            const H  = svg.clientHeight;
+            const sw = 4;           // stroke-width
+            const rx = 20;          // card border-radius (14px) + SVG bleed (6px)
+            const pad = sw / 2;     // inset rect so stroke stays inside SVG bounds
+
+            [track, fill].forEach(el => {
+                el.setAttribute('x',      pad);
+                el.setAttribute('y',      pad);
+                el.setAttribute('width',  W - sw);
+                el.setAttribute('height', H - sw);
+                el.setAttribute('rx',     rx);
+                el.setAttribute('ry',     rx);
+            });
+
+            const sW = Math.max(0, W - sw - 2 * rx);
+            const sH = Math.max(0, H - sw - 2 * rx);
+            timerPerimeter = 2 * sW + 2 * sH + 2 * Math.PI * rx;
+            fill.setAttribute('stroke-dasharray',  timerPerimeter);
+            fill.setAttribute('stroke-dashoffset', 0);
+        };
+
+        // rAF loop — updates stroke-dashoffset and stroke colour every frame.
         const smoothTimerTick = (now) => {
             if (!timerStartedAt) return;
-            const wrap = document.getElementById('mp-card-mine-wrap');
-            if (!wrap) return;
+            const fill = document.getElementById('mp-card-timer-fill');
+            if (!fill || timerPerimeter === 0) return;
+
             const elapsed   = (now - timerStartedAt) / 1000;
             const remaining = Math.max(0, TURN_SECONDS - elapsed);
 
-            wrap.style.setProperty('--timer-pct',
-                `${(remaining / TURN_SECONDS * 100).toFixed(2)}%`);
+            fill.style.strokeDashoffset =
+                (timerPerimeter * (1 - remaining / TURN_SECONDS)).toFixed(2);
 
-            // Smooth colour: green (≥6 s) → orange (6–3 s) → red (≤3 s)
             let color;
             if (remaining >= 6) {
                 color = lerpRgb(TIMER_GREEN, TIMER_ORANGE, 0);
@@ -479,15 +506,16 @@ async function router() {
             } else {
                 color = lerpRgb(TIMER_ORANGE, TIMER_RED, 1 - remaining / 3);
             }
-            wrap.style.setProperty('--timer-color', color);
+            fill.style.stroke = color;
 
             if (remaining > 0) timerRaf = requestAnimationFrame(smoothTimerTick);
         };
 
         const startTurnTimer = () => {
             clearTurnTimer();
-            turnTimeLeft  = TURN_SECONDS;
+            turnTimeLeft   = TURN_SECONDS;
             timerStartedAt = performance.now();
+            initTimerSvg();
             const wrap = document.getElementById('mp-card-mine-wrap');
             if (wrap) wrap.classList.add('timer-running');
             updateTimerState();
