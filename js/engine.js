@@ -1918,14 +1918,27 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         setTimeout(() => toast.remove(), 1000);
     }
 
-    // Basketball: true while the ball is parked in the no-spawn zone under the
-    // hoop (a previous miss left it in a near-impossible spot). Single-player
+    // Left edge of the hoop/net, computed the same way as the physics & draw.
+    // The backboard is flush against the right wall (x = width).
+    function getHoopLeftRim() {
+        const ts = gameCtx.targetScale ?? 1;
+        let hoopWidth = 140 * scale * ts;
+        if (hoopImg.complete && hoopImg.naturalHeight !== 0) {
+            const S = (320 * scale * ts) / hoopImg.naturalHeight;
+            hoopWidth = (874 - 169) * S;
+        }
+        return width - hoopWidth;
+    }
+
+    // Basketball: true while the ball is parked directly under the net — within
+    // a few px of the net's leftmost pixel (a previous miss left it in a
+    // near-impossible spot). NOT the wide spawn-safety zone. Single-player
     // always; multiplayer only on our turn. Stays true through aiming (so the
     // bubble shows behind the aiming line) and clears once the ball is thrown.
     function deadZoneActive() {
         return gameMode === 'basketball'
             && (isResting || isAiming) && !ballReturning && !ballAbsorbed
-            && ball.x > getSpawnMaxX()
+            && ball.x > getHoopLeftRim() - 6 * scale
             && (!mpCfg || mpCfg.isMyTurn);
     }
 
