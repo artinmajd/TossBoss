@@ -32,28 +32,22 @@ export default function MultiplayerGame({ myName, oppName, targetScore, gameMode
                     </svg>
                 </button>
 
-                <!-- Own card — always left, wider, contains the turn timer -->
-                <div class="mp-player-card mp-card-self" id="mp-card-mine">
-                    <span class="mp-hud-pname">${myName}</span>
-                    <div class="mp-card-score-row">
-                        <span class="mp-hud-pscore" id="mp-score-mine">0</span>
-                        <span class="mp-card-target">/ ${targetScore}</span>
-                        <div id="mp-mine-hearts" class="mp-opp-hearts">
-                            <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
-                            <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
+                <!-- Own card wrapper — carries the conic-gradient timer ring -->
+                <div class="mp-card-self mp-self-timer-wrap" id="mp-card-mine-wrap">
+                    <div class="mp-player-card" id="mp-card-mine">
+                        <span class="mp-hud-pname">${myName}</span>
+                        <div class="mp-card-score-row">
+                            <span class="mp-hud-pscore" id="mp-score-mine">0</span>
+                            <span class="mp-card-target">/ ${targetScore}</span>
+                            <div id="mp-mine-hearts" class="mp-opp-hearts">
+                                <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
+                                <img src="assets/heart.webp?v=2" alt="" class="mp-opp-heart">
+                            </div>
                         </div>
-                    </div>
-                    <div class="mp-hud-stats">
-                        <span class="mp-hud-throws" id="mp-throws-mine">shots: 0</span>
-                        <span class="mp-hud-streak-val" id="mp-streak-mine"></span>
-                    </div>
-                    <!-- Turn timer lives inside own card, shown only on our turn -->
-                    <div class="mp-turn-timer hidden" id="mp-turn-timer">
-                        <svg class="mp-timer-ring" viewBox="0 0 24 24" aria-hidden="true">
-                            <circle class="mp-timer-ring-bg"  cx="12" cy="12" r="9"/>
-                            <circle class="mp-timer-ring-arc" cx="12" cy="12" r="9" id="mp-timer-arc"/>
-                        </svg>
-                        <span class="mp-timer-num" id="mp-timer-value">15</span>
+                        <div class="mp-hud-stats">
+                            <span class="mp-hud-throws" id="mp-throws-mine">shots: 0</span>
+                            <span class="mp-hud-streak-val" id="mp-streak-mine"></span>
+                        </div>
                     </div>
                 </div>
 

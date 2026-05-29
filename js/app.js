@@ -430,30 +430,27 @@ async function router() {
 
         const clearTurnTimer = () => {
             if (turnTimer) { clearInterval(turnTimer); turnTimer = null; }
-            const el = document.getElementById('mp-turn-timer');
-            if (el) el.classList.add('hidden');
+            const wrap = document.getElementById('mp-card-mine-wrap');
+            if (wrap) {
+                wrap.classList.remove('timer-running', 'timer-warning', 'timer-danger');
+                wrap.style.removeProperty('--timer-pct');
+            }
         };
 
         const updateTimerDisplay = () => {
-            const el  = document.getElementById('mp-turn-timer');
-            const val = document.getElementById('mp-timer-value');
-            const arc = document.getElementById('mp-timer-arc');
-            if (!el || !val) return;
-            val.textContent = turnTimeLeft;
-            // Deplete the ring: offset 0 = full circle, 56.55 = empty
-            if (arc) {
-                const circumference = 56.55;
-                arc.style.strokeDashoffset =
-                    (circumference * (1 - turnTimeLeft / TURN_SECONDS)).toFixed(2);
-            }
-            el.classList.remove('hidden', 'warning', 'danger');
-            if      (turnTimeLeft <= 3) el.classList.add('danger');
-            else if (turnTimeLeft <= 6) el.classList.add('warning');
+            const wrap = document.getElementById('mp-card-mine-wrap');
+            if (!wrap) return;
+            const pct = (turnTimeLeft / TURN_SECONDS * 100).toFixed(1);
+            wrap.style.setProperty('--timer-pct', `${pct}%`);
+            wrap.classList.toggle('timer-warning', turnTimeLeft <= 6 && turnTimeLeft > 3);
+            wrap.classList.toggle('timer-danger',  turnTimeLeft <= 3);
         };
 
         const startTurnTimer = () => {
             clearTurnTimer();
             turnTimeLeft = TURN_SECONDS;
+            const wrap = document.getElementById('mp-card-mine-wrap');
+            if (wrap) wrap.classList.add('timer-running');
             updateTimerDisplay();
             turnTimer = setInterval(() => {
                 turnTimeLeft--;

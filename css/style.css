@@ -2223,9 +2223,46 @@ button:disabled {
     pointer-events: none;
 }
 
-/* Own card — wider than opponents */
+/* Own card wrapper — wider, carries the conic-gradient timer ring */
 .mp-card-self {
     flex: 0 0 clamp(5.5rem, 18vw, 9rem);
+}
+
+.mp-self-timer-wrap {
+    position: relative;
+    display: flex;           /* inner .mp-player-card fills the wrapper */
+    --timer-color: #4ade80;  /* green → orange → red as time runs out */
+}
+
+/* Inner card fills wrapper and sits above the ring layer */
+.mp-self-timer-wrap .mp-player-card {
+    flex: 1;
+    z-index: 1;
+}
+
+/* Conic-gradient ring just outside the card border */
+.mp-self-timer-wrap::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: calc(0.875rem + 3px);
+    background: conic-gradient(
+        from -90deg,
+        var(--timer-color) 0%,
+        var(--timer-color) var(--timer-pct, 100%),
+        transparent        var(--timer-pct, 100%) 100%
+    );
+    opacity: 0;
+    z-index: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+.mp-self-timer-wrap.timer-running::before { opacity: 1; }
+.mp-self-timer-wrap.timer-warning         { --timer-color: #fb923c; }
+.mp-self-timer-wrap.timer-danger          { --timer-color: #ef4444; }
+.mp-self-timer-wrap.timer-danger::before {
+    animation: mp-timer-pulse 0.45s ease-in-out infinite alternate;
 }
 
 /* Active turn: card scales up slightly and brightens */
@@ -2264,15 +2301,7 @@ button:disabled {
     flex-shrink: 0;
 }
 
-/* Turn timer inside own card — larger than old centre-col version */
-.mp-card-self .mp-turn-timer {
-    width:  clamp(2rem, 5.5vmin, 3rem);
-    height: clamp(2rem, 5.5vmin, 3rem);
-    margin-top: 0.25rem;
-}
-.mp-card-self .mp-timer-num {
-    font-size: clamp(0.5rem, 1.4vmin, 0.75rem);
-}
+/* Timer is now a border ring on the wrapper — no inner element needed */
 
 /* Empty / waiting player slot */
 .mp-player-card.mp-card-empty {
