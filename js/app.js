@@ -456,7 +456,9 @@ async function router() {
         const lerpRgb = ([r1,g1,b1], [r2,g2,b2], t) =>
             `rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;
 
-        // Measures the SVG, sets <rect> geometry, returns the path perimeter.
+        // Builds a rounded-rect path that starts at the TOP-CENTER and goes
+        // clockwise.  This means stroke-dasharray visibleLen shrinks the tail
+        // back toward the head (top-center), so the bar always ends there.
         let timerPerimeter = 0;
         const initTimerSvg = () => {
             const svg   = document.getElementById('mp-card-timer-svg');
@@ -466,37 +468,49 @@ async function router() {
 
             const W  = svg.clientWidth;
             const H  = svg.clientHeight;
-            const sw = 4;           // stroke-width
-            const rx = 20;          // card border-radius (14px) + SVG bleed (6px)
-            const pad = sw / 2;     // inset rect so stroke stays inside SVG bounds
+            const sw = 4;
+            const r  = 20;     // card border-radius (14px) + SVG inset (6px)
+            const p  = sw / 2; // half stroke-width inset from SVG edge
+            const L = p, R = W - p, T = p, B = H - p;
+            const cx = W / 2;
 
-            [track, fill].forEach(el => {
-                el.setAttribute('x',      pad);
-                el.setAttribute('y',      pad);
-                el.setAttribute('width',  W - sw);
-                el.setAttribute('height', H - sw);
-                el.setAttribute('rx',     rx);
-                el.setAttribute('ry',     rx);
-            });
+            // Clockwise path starting at top-center
+            const d = [
+                `M ${cx} ${T}`,
+                `H ${R - r}`,
+                `A ${r} ${r} 0 0 1 ${R} ${T + r}`,
+                `V ${B - r}`,
+                `A ${r} ${r} 0 0 1 ${R - r} ${B}`,
+                `H ${L + r}`,
+                `A ${r} ${r} 0 0 1 ${L} ${B - r}`,
+                `V ${T + r}`,
+                `A ${r} ${r} 0 0 1 ${L + r} ${T}`,
+                `H ${cx}`,
+            ].join(' ');
 
-            const sW = Math.max(0, W - sw - 2 * rx);
-            const sH = Math.max(0, H - sw - 2 * rx);
-            timerPerimeter = 2 * sW + 2 * sH + 2 * Math.PI * rx;
-            fill.setAttribute('stroke-dasharray',  timerPerimeter);
-            fill.setAttribute('stroke-dashoffset', 0);
+            [track, fill].forEach(el => el.setAttribute('d', d));
+
+            const sW = Math.max(0, W - sw - 2 * r);
+            const sH = Math.max(0, H - sw - 2 * r);
+            timerPerimeter = 2 * sW + 2 * sH + 2 * Math.PI * r;
+
+            // Track shows the full path as a dim guide
+            track.setAttribute('stroke-dasharray', `${timerPerimeter} ${timerPerimeter}`);
         };
 
-        // rAF loop — updates stroke-dashoffset and stroke colour every frame.
+        // rAF loop — shrinks the visible dash length and lerps the colour.
         const smoothTimerTick = (now) => {
             if (!timerStartedAt) return;
             const fill = document.getElementById('mp-card-timer-fill');
             if (!fill || timerPerimeter === 0) return;
 
-            const elapsed   = (now - timerStartedAt) / 1000;
-            const remaining = Math.max(0, TURN_SECONDS - elapsed);
+            const elapsed     = (now - timerStartedAt) / 1000;
+            const remaining   = Math.max(0, TURN_SECONDS - elapsed);
+            const visibleLen  = (timerPerimeter * (remaining / TURN_SECONDS)).toFixed(2);
 
-            fill.style.strokeDashoffset =
-                (timerPerimeter * (1 - remaining / TURN_SECONDS)).toFixed(2);
+            // Two-value dasharray: visible dash then a gap large enough to hide the rest
+            fill.style.strokeDasharray = `${visibleLen} ${timerPerimeter}`;
+            fill.style.strokeDashoffset = 0;
 
             let color;
             if (remaining >= 6) {

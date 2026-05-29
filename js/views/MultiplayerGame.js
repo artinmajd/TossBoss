@@ -37,8 +37,8 @@ export default function MultiplayerGame({ myName, oppName, targetScore, gameMode
                     <!-- SVG timer ring — stroked rounded-rect follows the card border exactly -->
                     <svg class="mp-card-timer-svg" id="mp-card-timer-svg"
                          xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <rect id="mp-card-timer-track"/>
-                        <rect id="mp-card-timer-fill"/>
+                        <path id="mp-card-timer-track"/>
+                        <path id="mp-card-timer-fill"/>
                     </svg>
                     <div class="mp-player-card" id="mp-card-mine">
                         <span class="mp-hud-pname">${myName}</span>
