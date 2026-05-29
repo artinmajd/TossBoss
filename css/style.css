@@ -2234,10 +2234,12 @@ button:disabled {
     --timer-color: #4ade80;  /* green → orange → red as time runs out */
 }
 
-/* Inner card fills wrapper and sits above the ring layer */
+/* Inner card fills wrapper, sits above the ring, and must be opaque
+   enough to block the conic-gradient from showing through the face */
 .mp-self-timer-wrap .mp-player-card {
     flex: 1;
     z-index: 1;
+    background: rgba(15, 42, 100, 0.92);
 }
 
 /* Conic-gradient ring just outside the card border */
