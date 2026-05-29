@@ -428,11 +428,15 @@ async function router() {
 
         // ── 15-second turn timer ─────────────────────────────────────────
         const TURN_SECONDS = 15;
-        let turnTimer    = null;
-        let turnTimeLeft = TURN_SECONDS;
+        let turnTimer     = null;
+        let turnTimeLeft  = TURN_SECONDS;
+        let timerRaf      = null;
+        let timerStartedAt = null; // performance.now() when current turn started
 
         const clearTurnTimer = () => {
             if (turnTimer) { clearInterval(turnTimer); turnTimer = null; }
+            if (timerRaf)  { cancelAnimationFrame(timerRaf); timerRaf = null; }
+            timerStartedAt = null;
             const wrap = document.getElementById('mp-card-mine-wrap');
             if (wrap) {
                 wrap.classList.remove('timer-running', 'timer-warning', 'timer-danger');
@@ -440,24 +444,36 @@ async function router() {
             }
         };
 
-        const updateTimerDisplay = () => {
+        // Called once per second by setInterval — only handles state classes.
+        const updateTimerState = () => {
             const wrap = document.getElementById('mp-card-mine-wrap');
             if (!wrap) return;
-            const pct = (turnTimeLeft / TURN_SECONDS * 100).toFixed(1);
-            wrap.style.setProperty('--timer-pct', `${pct}%`);
             wrap.classList.toggle('timer-warning', turnTimeLeft <= 6 && turnTimeLeft > 3);
             wrap.classList.toggle('timer-danger',  turnTimeLeft <= 3);
         };
 
+        // rAF loop — updates --timer-pct every frame for smooth depletion.
+        const smoothTimerTick = (now) => {
+            if (!timerStartedAt) return;
+            const wrap = document.getElementById('mp-card-mine-wrap');
+            if (!wrap) return;
+            const elapsed   = (now - timerStartedAt) / 1000;
+            const remaining = Math.max(0, TURN_SECONDS - elapsed);
+            wrap.style.setProperty('--timer-pct', `${(remaining / TURN_SECONDS * 100).toFixed(2)}%`);
+            if (remaining > 0) timerRaf = requestAnimationFrame(smoothTimerTick);
+        };
+
         const startTurnTimer = () => {
             clearTurnTimer();
-            turnTimeLeft = TURN_SECONDS;
+            turnTimeLeft  = TURN_SECONDS;
+            timerStartedAt = performance.now();
             const wrap = document.getElementById('mp-card-mine-wrap');
             if (wrap) wrap.classList.add('timer-running');
-            updateTimerDisplay();
+            updateTimerState();
+            timerRaf = requestAnimationFrame(smoothTimerTick);
             turnTimer = setInterval(() => {
                 turnTimeLeft--;
-                updateTimerDisplay();
+                updateTimerState();
                 if (turnTimeLeft <= 0) {
                     clearTurnTimer();
                     handleTurnTimeout();
