@@ -404,6 +404,9 @@ async function router() {
             // Scale + brighten the active player's card; shrink the other.
             if (myCard)  myCard.classList.toggle('mp-card-active',  multiplayerConfig.isMyTurn);
             if (oppCard) oppCard.classList.toggle('mp-card-active', !multiplayerConfig.isMyTurn);
+            // Scale the own-card wrapper so the timer ring scales with it.
+            const myWrap = document.getElementById('mp-card-mine-wrap');
+            if (myWrap) myWrap.classList.toggle('mp-wrap-active', multiplayerConfig.isMyTurn);
 
             // Red border on game screen while input is locked (opponent's turn).
             const locked = !multiplayerConfig.isMyTurn && !isSpectating;

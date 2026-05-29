@@ -2229,8 +2229,9 @@ button:disabled {
 .mp-self-timer-wrap {
     position: relative;
     display: flex;
-    overflow: visible;       /* ensure the ring bleeds outside without clipping */
+    overflow: visible;
     --timer-color: #4ade80;
+    transition: transform 0.3s ease;
 }
 
 /* Inner card — glass effect fully preserved */
@@ -2271,7 +2272,7 @@ button:disabled {
 .mp-self-timer-wrap.timer-warning         { --timer-color: #fb923c; }
 .mp-self-timer-wrap.timer-danger          { --timer-color: #ef4444; }
 
-/* Active turn: card scales up slightly and brightens */
+/* Active turn: opponent cards scale and brighten directly */
 .mp-player-card.mp-card-active {
     transform: scale(1.07);
     transform-origin: top center;
@@ -2283,6 +2284,17 @@ button:disabled {
         inset 0 -1px 0 rgba(0, 0, 0, 0.08),
         0 0 0 1px rgba(56, 189, 248, 0.22),
         0 6px 30px rgba(56, 189, 248, 0.20);
+}
+
+/* Own card: scale the WRAPPER so the timer ring scales with the card.
+   The inner card must not separately scale or it double-inflates. */
+.mp-self-timer-wrap.mp-wrap-active {
+    transform: scale(1.07);
+    transform-origin: top center;
+    z-index: 2;
+}
+.mp-self-timer-wrap .mp-player-card.mp-card-active {
+    transform: none;
 }
 
 .mp-player-card.mp-card-active .mp-hud-pscore {
