@@ -1,6 +1,8 @@
 // Room management — Supabase CRUD + Realtime subscriptions.
-// All room state lives in the `rooms` table. Real-time throw events
-// use a separate broadcast channel (no DB write, zero latency).
+// All room state lives in the `rooms` table. Players are stored in a single
+// JSONB `players` array (turn order = array order; host is players[0]).
+// `current_turn` is an integer index into that array.
+// Real-time throw events use a separate broadcast channel (no DB write).
 
 import { supabase } from '../supabase.js';
 
@@ -13,8 +15,13 @@ function genCode(len = 6) {
     ).join('');
 }
 
-// Create a new room. Returns { room, error }.
-export async function createRoom({ hostId, hostName, gameMode, targetScore }) {
+// Fresh player entry. Lives default to 2 (matches the engine's base lives).
+export function makePlayer(id, name) {
+    return { id, name, score: 0, streak: 0, lives: 2, maxLives: 2, throws: 0 };
+}
+
+// Create a new room. The host becomes players[0]. Returns { room, error }.
+export async function createRoom({ hostId, hostName, gameMode, targetScore, maxPlayers = 8 }) {
     for (let attempt = 0; attempt < 5; attempt++) {
         const code = genCode();
         const { data, error } = await supabase
@@ -22,11 +29,12 @@ export async function createRoom({ hostId, hostName, gameMode, targetScore }) {
             .insert({
                 code,
                 host_id:      hostId,
-                host_name:    hostName,
                 game_mode:    gameMode,
                 target_score: targetScore,
+                max_players:  maxPlayers,
                 status:       'waiting',
-                current_turn: 'host',
+                current_turn: 0,
+                players:      [makePlayer(hostId, hostName)],
             })
             .select()
             .single();
@@ -37,32 +45,25 @@ export async function createRoom({ hostId, hostName, gameMode, targetScore }) {
     return { room: null, error: new Error('Could not generate a unique room code. Try again.') };
 }
 
-// Guest joins an existing room. Returns { room, error }.
-export async function joinRoom({ code, guestId, guestName }) {
-    const { data: room, error: findErr } = await supabase
-        .from('rooms')
-        .select()
-        .eq('code', code.toUpperCase())
-        .eq('status', 'waiting')
-        .single();
+// Join an existing room. Atomic + idempotent via the join_room RPC, which
+// enforces capacity and ignores duplicate joins. Returns { room, error }.
+export async function joinRoom({ code, playerId, playerName }) {
+    const { data, error } = await supabase.rpc('join_room', {
+        p_code:   code.toUpperCase(),
+        p_player: makePlayer(playerId, playerName),
+    });
 
-    if (findErr || !room) {
-        return { room: null, error: new Error('Room not found or game already started.') };
+    if (error) {
+        // Surface the RPC's RAISE message (room full / not found) cleanly.
+        const msg = /full/i.test(error.message) ? 'Room is full.'
+                  : /not found|started/i.test(error.message) ? 'Room not found or game already started.'
+                  : error.message;
+        return { room: null, error: new Error(msg) };
     }
-    if (room.host_id === guestId) {
-        return { room: null, error: new Error('You cannot join your own room.') };
-    }
-
-    const { data, error } = await supabase
-        .from('rooms')
-        .update({ guest_id: guestId, guest_name: guestName, status: 'active' })
-        .eq('code', code.toUpperCase())
-        .eq('status', 'waiting')
-        .select()
-        .single();
-
-    if (error) return { room: null, error };
-    return { room: data, error: null };
+    // rpc returning a single row may come back as an object or 1-element array.
+    const room = Array.isArray(data) ? data[0] : data;
+    if (!room) return { room: null, error: new Error('Room not found or game already started.') };
+    return { room, error: null };
 }
 
 // Fetch a room by its code. Returns { room, error }.
