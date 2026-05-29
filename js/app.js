@@ -10,7 +10,7 @@ import { initGame } from './engine.js';
 import { supabase, getHighScores, getLeaderboard, getUserEntry } from './supabase.js';
 import { isTestUser, testerConfig } from './tester_config.js';
 import { getPlayerId, storePlayerName, getStoredPlayerName } from './multiplayer/session.js';
-import { createRoom, joinRoom, getRoomByCode, subscribeToRoom, getRoomBroadcastChannel } from './multiplayer/roomManager.js';
+import { createRoom, joinRoom, getRoomByCode, subscribeToRoom, getRoomBroadcastChannel, makePlayer } from './multiplayer/roomManager.js';
 
 let destroyGame = null;
 let destroyMp   = null;   // unsubscribe fn for the active MP room subscription
@@ -937,14 +937,12 @@ async function router() {
             sessionStorage.removeItem('mp_room_data');
 
             if (result.role === 'host') {
-                // Host: reset room scores/status and return to waiting screen.
+                // Host: reset the room to just the host in the lobby. Everyone
+                // else re-joins with the (still valid) code.
                 await supabase.from('rooms').update({
-                    host_score:   0,
-                    guest_score:  0,
+                    players:      [makePlayer(result.myId, result.myName)],
                     status:       'waiting',
-                    current_turn: 'host',
-                    guest_id:     null,
-                    guest_name:   null,
+                    current_turn: 0,
                 }).eq('code', result.code);
                 // mp_room_code and mp_role are still set to host's values
                 window.location.hash = '#mp-waiting';

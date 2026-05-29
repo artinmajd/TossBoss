@@ -2761,3 +2761,71 @@ button:disabled {
     color: var(--text-secondary);
     flex-shrink: 0;
 }
+
+/* ── N-player ranked standings ─────────────────────────────────── */
+.mp-standings {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: 100%;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.mp-standing-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.9rem;
+}
+
+.mp-standing-rank {
+    font-size: clamp(0.95rem, 2.4vmin, 1.2rem);
+    width: 1.8rem;
+    flex-shrink: 0;
+    text-align: center;
+    font-weight: 800;
+    font-family: 'Orbitron', monospace;
+    color: var(--text-secondary);
+}
+
+.mp-standing-name {
+    flex: 1;
+    text-align: left;
+    font-weight: 700;
+    font-size: clamp(0.8rem, 1.9vmin, 1rem);
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mp-standing-you {
+    color: var(--accent-color);
+    font-weight: 600;
+    font-size: 0.8em;
+}
+
+.mp-standing-score {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.05rem, 2.8vmin, 1.5rem);
+    font-weight: 900;
+    color: var(--text-primary);
+    flex-shrink: 0;
+}
+
+/* Winner row — gold accent */
+.mp-standing-winner {
+    border-color: rgba(251, 191, 36, 0.55);
+    background: rgba(251, 191, 36, 0.08);
+}
+.mp-standing-winner .mp-standing-score { color: #fbbf24; }
+
+/* This player's own row — blue glow */
+.mp-standing-me {
+    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4),
+                0 0 14px rgba(56, 189, 248, 0.25);
+}

@@ -1,18 +1,28 @@
-// Post-game result screen shown to both players.
-// outcome — 'win' | 'lose' | 'tie'
-// myScore, oppScore, myName, oppName — from sessionStorage mp_result
+// Post-game result screen — ranked standings for all players.
+// outcome   — 'win' | 'lose' | 'tie' (this player's result)
+// standings — [{ id, name, score, rank }] sorted by score desc
+// myId      — this player's id, to highlight their row
 
 const esc = s => String(s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-export default function MultiplayerResult({ outcome, myScore, oppScore, myName, oppName }) {
+const medal = rank => rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+
+export default function MultiplayerResult({ outcome, standings = [], myId }) {
     const bannerMap = {
         win:  { icon: '🏆', label: 'You Win!',    cls: 'mp-result-win'  },
         lose: { icon: '💀', label: 'You Lose…',   cls: 'mp-result-lose' },
         tie:  { icon: '🤝', label: "It's a Tie!", cls: 'mp-result-tie'  },
     };
     const { icon, label, cls } = bannerMap[outcome] ?? bannerMap.tie;
+
+    const rows = standings.map(p => `
+        <div class="mp-standing-row ${p.rank === 1 ? 'mp-standing-winner' : ''} ${p.id === myId ? 'mp-standing-me' : ''}">
+            <span class="mp-standing-rank">${medal(p.rank)}</span>
+            <span class="mp-standing-name">${esc(p.name)}${p.id === myId ? ' <span class="mp-standing-you">(You)</span>' : ''}</span>
+            <span class="mp-standing-score">${p.score}</span>
+        </div>`).join('');
 
     return `
         <div id="mp-result-screen" class="view-screen">
@@ -23,16 +33,8 @@ export default function MultiplayerResult({ outcome, myScore, oppScore, myName, 
                     <span class="mp-result-label">${label}</span>
                 </div>
 
-                <div class="mp-result-scores">
-                    <div class="mp-result-player ${outcome === 'win' ? 'mp-rs-winner' : ''}">
-                        <span class="mp-rs-name">${esc(myName)}</span>
-                        <span class="mp-rs-score">${myScore}</span>
-                    </div>
-                    <span class="mp-rs-vs">vs</span>
-                    <div class="mp-result-player ${outcome === 'lose' ? 'mp-rs-winner' : ''}">
-                        <span class="mp-rs-name">${esc(oppName)}</span>
-                        <span class="mp-rs-score">${oppScore}</span>
-                    </div>
+                <div class="mp-standings">
+                    ${rows}
                 </div>
 
                 <button id="btn-mp-play-again" class="play-btn mp-create-btn">
