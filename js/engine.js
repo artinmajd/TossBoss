@@ -2129,11 +2129,13 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
         consecutiveMisses++;
 
+        let didReset = false;
         if (consecutiveMisses >= 2 + gameCtx.extraLives) {
             const wasZero = score === 0;
             score = 0;
             consecutiveMisses = 0;
             nhsCelebratedThisRun = false;
+            didReset = !wasZero;   // an actual score-loss reset (matches the SP flash)
             if (!wasZero) showToast('💥 RESET!', 'reset');
             if (!wasZero && box) {
                 box.classList.remove('flash-reset');
@@ -2156,7 +2158,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             // After reset: consecutiveMisses=0 → lives=2
             // After first miss: consecutiveMisses=1 → lives=1
             const lives = (2 + gameCtx.extraLives) - consecutiveMisses;
-            mpCfg.onThrowComplete({ scored: false, points: 0, totalScore: score, streak: consecutiveHits, lives });
+            mpCfg.onThrowComplete({ scored: false, points: 0, totalScore: score, streak: consecutiveHits, lives, reset: didReset });
         }
     }
 

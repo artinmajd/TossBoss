@@ -2257,6 +2257,24 @@ button:disabled {
    justify-content:flex-end scroll-range bug. */
 .mp-opp-cards-row > .mp-player-card:first-child { margin-left: auto; }
 
+/* Score-reset feedback — card flashes red and shakes horizontally, then the
+   transition eases border/shadow back to normal when the class is removed.
+   Mirrors the single-player flash-reset feel; works for own + opponent cards. */
+@keyframes mp-card-reset-shake {
+    0%, 100% { transform: translateX(0); }
+    15%      { transform: translateX(-6px); }
+    30%      { transform: translateX(6px); }
+    45%      { transform: translateX(-4px); }
+    60%      { transform: translateX(4px); }
+    75%      { transform: translateX(-2px); }
+}
+.mp-player-card.mp-card-reset {
+    animation: mp-card-reset-shake 0.6s ease;
+    border-color: rgba(239, 68, 68, 0.95) !important;
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.85) !important;
+}
+.mp-player-card.mp-card-reset .mp-hud-pscore { color: #fca5a5 !important; }
+
 .mp-player-card {
     position: relative;
     flex: 0 0 clamp(4rem, 12vw, 6.5rem);

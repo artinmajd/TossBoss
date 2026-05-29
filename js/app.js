@@ -494,6 +494,16 @@ async function router() {
             e.preventDefault();
         }, { passive: false });
 
+        // Flash a card red + shake it (score-reset feedback). Works for both our
+        // own card and an opponent's card on our screen.
+        const shakeCardReset = (cardEl) => {
+            if (!cardEl) return;
+            cardEl.classList.remove('mp-card-reset');
+            void cardEl.offsetWidth;            // restart the animation
+            cardEl.classList.add('mp-card-reset');
+            setTimeout(() => cardEl.classList.remove('mp-card-reset'), 650);
+        };
+
         // ── Small helper: show a toast inside the game canvas area ──────
         // Pass high=true for system/event toasts (tiebreaker, time's up)
         // so they appear above score toasts that may fire simultaneously.
@@ -769,6 +779,11 @@ async function router() {
             if (currentTurn === myIndex) announceMyTurn();
             updateMpHud();
 
+            // Score-reset feedback: flash + shake the player's card on our screen.
+            if (payload.reset) {
+                shakeCardReset(oppCardsRow?.querySelector(`[data-pid="${payload.senderId}"]`));
+            }
+
             setTimeout(() => {
                 if (spectated) { isSpectating = false; spectateSettled = false; }
                 checkWin();
@@ -885,7 +900,7 @@ async function router() {
         };
 
         // ── onThrowComplete — called by engine after each of OUR throws ───
-        multiplayerConfig.onThrowComplete = async ({ scored, points, totalScore, streak, lives, maxLives }) => {
+        multiplayerConfig.onThrowComplete = async ({ scored, points, totalScore, streak, lives, maxLives, reset }) => {
             multiplayerConfig.isMyTurn = false;
             clearTurnTimer();
 
@@ -903,6 +918,9 @@ async function router() {
             multiplayerConfig.parkGhostAtSpawn?.();
             updateMpHud();
 
+            // Score-reset feedback on our own card (lost all lives → score wiped).
+            if (reset) shakeCardReset(document.getElementById('mp-card-mine'));
+
             // Broadcast our finished turn (stats + whose turn is next).
             bcChannel.send({
                 type:    'broadcast',
@@ -915,6 +933,7 @@ async function router() {
                     maxLives: me.maxLives,
                     throws:   me.throws,
                     nextTurn,
+                    reset:    !!reset,
                 },
             });
 
