@@ -21,7 +21,7 @@ export function makePlayer(id, name) {
 }
 
 // Create a new room. The host becomes players[0]. Returns { room, error }.
-export async function createRoom({ hostId, hostName, gameMode, targetScore, maxPlayers = 8 }) {
+export async function createRoom({ hostId, hostName, gameMode, targetScore, maxPlayers = 12 }) {
     for (let attempt = 0; attempt < 5; attempt++) {
         const code = genCode();
         const { data, error } = await supabase
