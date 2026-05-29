@@ -127,6 +127,18 @@ async function router() {
         slider.addEventListener('input', syncSlider);
         syncSlider();   // initialise fill on load
 
+        // ── Players slider (2–8) ──────────────────────────────────────────
+        const playersSlider  = document.getElementById('mp-players-slider');
+        const playersDisplay = document.getElementById('mp-players-display');
+        const syncPlayers = () => {
+            const min = +playersSlider.min, max = +playersSlider.max, val = +playersSlider.value;
+            const pct = ((val - min) / (max - min) * 100).toFixed(1) + '%';
+            playersSlider.style.setProperty('--val', pct);
+            playersDisplay.textContent = `${val} players`;
+        };
+        playersSlider.addEventListener('input', syncPlayers);
+        syncPlayers();
+
         // ── Game-mode buttons ─────────────────────────────────────────────
         let selectedMode = 'pingpong';
         document.getElementById('mp-mode-pp').addEventListener('click', () => {
@@ -155,7 +167,7 @@ async function router() {
             const playerId = await getPlayerId();
             storePlayerName(name);
 
-            const { room, error } = await joinRoom({ code, guestId: playerId, guestName: name });
+            const { room, error } = await joinRoom({ code, playerId, playerName: name });
             joinBtn.disabled = false;
             if (error) { showMpError(hubError, error.message); return; }
 
@@ -183,12 +195,13 @@ async function router() {
 
             const playerId    = await getPlayerId();
             const targetScore = +document.getElementById('mp-target-slider').value;
+            const maxPlayers  = +document.getElementById('mp-players-slider').value;
 
             storePlayerName(name);
 
             const { room, error } = await createRoom({
                 hostId: playerId, hostName: name,
-                gameMode: selectedMode, targetScore,
+                gameMode: selectedMode, targetScore, maxPlayers,
             });
 
             confirmBtn.disabled = false;

@@ -102,6 +102,18 @@ export default function Multiplayer({ session = null, storedName = '', replayCod
 
                 <div class="mp-section">
                     <div class="mp-slider-header">
+                        <label class="mp-label">Players</label>
+                        <span class="mp-slider-value" id="mp-players-display">2 players</span>
+                    </div>
+                    <input id="mp-players-slider" class="mp-slider" type="range"
+                           min="2" max="8" step="1" value="2">
+                    <div class="mp-slider-ends">
+                        <span>2</span><span>8</span>
+                    </div>
+                </div>
+
+                <div class="mp-section">
+                    <div class="mp-slider-header">
                         <label class="mp-label">Target Score</label>
                         <span class="mp-slider-value" id="mp-target-display">50 pts</span>
                     </div>
