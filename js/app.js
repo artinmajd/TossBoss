@@ -708,6 +708,18 @@ async function router() {
 
         const bcChannel = getRoomBroadcastChannel(code);
 
+        // Announce our real ball position so spectators show their ghost exactly
+        // where we'll throw from (the spawn-park is only an instant placeholder
+        // until this arrives). Called whenever it becomes our turn.
+        const announceMyTurn = () => {
+            const pos = multiplayerConfig.getBallPos?.();
+            if (pos) bcChannel.send({
+                type:    'broadcast',
+                event:   'turn_ready',
+                payload: { senderId: myId, x: pos.x, y: pos.y },
+            });
+        };
+
         // Apply a player's finished turn to local state and advance the turn.
         // `spectated` = true means we watched the throw live, so the unlock
         // pause is shorter and spectate state is cleared on unlock.
@@ -721,9 +733,11 @@ async function router() {
                 players[idx].throws   = payload.throws   ?? players[idx].throws + 1;
             }
             currentTurn = payload.nextTurn ?? ((currentTurn + 1) % players.length);
-            // Park the ghost at the launch spot so every spectator sees the new
-            // active player's ghost while waiting for them to throw.
+            // Park the ghost at the launch spot as an instant placeholder for
+            // every spectator; if the new turn is ours, broadcast our real ball
+            // position so spectators correct their ghost to where we'll throw.
             multiplayerConfig.parkGhostAtSpawn?.();
+            if (currentTurn === myIndex) announceMyTurn();
             updateMpHud();
 
             setTimeout(() => {
@@ -764,6 +778,14 @@ async function router() {
             });
             updateMpHud();
             finishGame(false); // already broadcast by the detector
+        });
+
+        // The active player announced their resting position — move our ghost
+        // there so it sits exactly where they'll throw from (not the generic
+        // spawn placeholder). Only relevant while it's not our turn.
+        bcChannel.on('broadcast', { event: 'turn_ready' }, ({ payload }) => {
+            if (payload.senderId === myId) return;
+            multiplayerConfig.setGhost?.(payload.x, payload.y);
         });
 
         // A thrower's scored ball has a confirmed return destination — start
@@ -904,6 +926,7 @@ async function router() {
                     if (currentTurn === myIndex) {
                         multiplayerConfig.isMyTurn = true;
                         startTurnTimer();
+                        announceMyTurn(); // tell spectators where our ball starts
                     }
                     updateMpHud();
                 }, 700);

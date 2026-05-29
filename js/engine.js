@@ -203,13 +203,25 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         mpCfg.forceMiss = () => handleMiss();
 
         // Park the ghost ball at the fixed launch position. app.js calls this
-        // on every turn change so all spectators immediately see the new active
-        // player's ghost at the start spot while waiting for them to throw.
+        // on every turn change as an immediate placeholder until the active
+        // player broadcasts their real position (see getBallPos / setGhost).
         // (mpSpawnPos is a hoisted function declaration — safe to call here.)
         mpCfg.parkGhostAtSpawn = () => {
             const s = mpSpawnPos();
             ghostX = s.x;
             ghostY = s.y;
+        };
+
+        // Our ball's current resting position, normalized to the playfield, so
+        // app.js can broadcast it when our turn begins. Spectators feed it to
+        // setGhost so they see exactly where the active player will throw from.
+        mpCfg.getBallPos = () => ({ x: ball.x / width, y: ball.y / height });
+
+        // Place the ghost at a normalized position received from the active
+        // player (turn_ready broadcast).
+        mpCfg.setGhost = (nx, ny) => {
+            ghostX = nx * width;
+            ghostY = ny * height;
         };
 
         // Replay an opponent's throw on our canvas.  Sets the ball to the
