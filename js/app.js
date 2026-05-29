@@ -296,7 +296,7 @@ async function router() {
                 btn.disabled = true;
                 btn.textContent = 'Starting…';
 
-                // Fetch the latest room row so we have the guest fields too.
+                // Fetch the latest room row so we have the full players[] list.
                 const { room: freshRoom } = await getRoomByCode(code);
                 const { error } = await supabase
                     .from('rooms')
