@@ -91,7 +91,7 @@ export default function blackHole() {
             const spot = pickSpot(ctx);
             x = spot.x;
             y = spot.y;
-            ctx.playSound('black_hole/appear', { volume: 0.7 });
+            ctx.playSound('black_hole/appear', { volume: 0.5 });
         },
 
         onUpdate(ctx /*, dt */) {
@@ -102,7 +102,7 @@ export default function blackHole() {
                     : elapsed() >= LIFETIME - SHRINK;
                 if (shrinking) {
                     disappearSoundPlayed = true;
-                    ctx.playSound('black_hole/disappear', { volume: 0.7 });
+                    ctx.playSound('black_hole/disappear', { volume: 0.5 });
                 }
             }
 
@@ -124,7 +124,7 @@ export default function blackHole() {
                 ballR0       = b.radius;
                 ctx.absorbBall();
                 ctx.blackHoleConsumed = true;
-                ctx.playSound('black_hole/suction', { volume: 0.5 });
+                ctx.playSound('black_hole/suction', { volume: 0.4 });
             }
         },
 
