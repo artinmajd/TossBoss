@@ -14,8 +14,10 @@ import { createRoom, joinRoom, getRoomByCode, subscribeToRoom, getRoomBroadcastC
 import audio from './audio.js';
 
 audio.preload({
-    score_basketball: 'assets/audio/score_basketball.mp3',
-    score_pingpong:   'assets/audio/score_pingpong.mp3',
+    'basketball/score':   'assets/audio/basketball/score.mp3',
+    'pingpong/score_1':   'assets/audio/pingpong/score_1.mp3',
+    'pingpong/score_2':   'assets/audio/pingpong/score_2.mp3',
+    'pingpong/score_3':   'assets/audio/pingpong/score_3.mp3',
 });
 
 let destroyGame = null;

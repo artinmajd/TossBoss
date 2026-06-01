@@ -2178,7 +2178,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         if (gameMode === 'basketball') hoopScoreAnimStart = performance.now();
 
         // Score sound — plays for own scores and spectated opponent scores.
-        audio.play(gameMode === 'basketball' ? 'score_basketball' : 'score_pingpong');
+        if (gameMode === 'basketball') {
+            audio.play('basketball/score');
+        } else {
+            audio.playOneOf(['pingpong/score_1', 'pingpong/score_2', 'pingpong/score_3']);
+        }
 
         // In spectate mode: enter spectate-return phase and let the ball
         // settle wherever it lands.  The return arc is driven exclusively

@@ -59,6 +59,11 @@ function createAudioManager() {
         src.start(0);
     }
 
+    // Pick and play a random sound from an array of names.
+    function playOneOf(names, opts) {
+        play(names[Math.floor(Math.random() * names.length)], opts);
+    }
+
     function setMuted(val) {
         muted = val;
         localStorage.setItem(MUTE_KEY, val);
@@ -66,7 +71,7 @@ function createAudioManager() {
 
     function isMuted() { return muted; }
 
-    return { unlock, preload, play, setMuted, isMuted };
+    return { unlock, preload, play, playOneOf, setMuted, isMuted };
 }
 
 const audio = createAudioManager();
