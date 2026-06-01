@@ -18,6 +18,9 @@ audio.preload({
     'pingpong/score_1':   'assets/audio/pingpong/score_1.mp3',
     'pingpong/score_2':   'assets/audio/pingpong/score_2.mp3',
     'pingpong/score_3':   'assets/audio/pingpong/score_3.mp3',
+    'pingpong/tap_1':     'assets/audio/pingpong/tap_1.mp3',
+    'pingpong/tap_2':     'assets/audio/pingpong/tap_2.mp3',
+    'pingpong/tap_3':     'assets/audio/pingpong/tap_3.mp3',
 });
 
 let destroyGame = null;

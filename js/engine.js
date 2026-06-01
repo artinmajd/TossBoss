@@ -53,6 +53,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     const HOOP_SP_RIGHT_X = 402, HOOP_SP_BACK_Y = 136;
     let hoopScoreAnimStart = null; // performance.now() when a score triggers the swish
     let hoopFrameIdx = 0;          // current frame, recomputed once per draw()
+    let lastTapTime = 0;           // rate-limits ping-pong tap sounds
 
     const cupImg = new Image();
     cupImg.src = 'assets/cup.webp';
@@ -971,6 +972,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                 
                 const dot = ball.vx * nx + ball.vy * ny;
                 if (dot < 0) {
+                    playTap(Math.hypot(ball.vx, ball.vy));
                     ball.vx = (ball.vx - 2 * dot * nx) * bounceFactor;
                     ball.vy = (ball.vy - 2 * dot * ny) * bounceFactor;
                 }
@@ -978,12 +980,13 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                 const overlap = ball.radius - distRightRim;
                 const nx = (ball.x - cupRightRim) / distRightRim;
                 const ny = (ball.y - cupRimY) / distRightRim;
-                
+
                 ball.x += nx * overlap;
                 ball.y += ny * overlap;
-                
+
                 const dot = ball.vx * nx + ball.vy * ny;
                 if (dot < 0) {
+                    playTap(Math.hypot(ball.vx, ball.vy));
                     ball.vx = (ball.vx - 2 * dot * nx) * bounceFactor;
                     ball.vy = (ball.vy - 2 * dot * ny) * bounceFactor;
                 }
@@ -1042,14 +1045,17 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                     // would otherwise be dragged along with the wall.
                     const innerPushTol = 1;   // px/sec — ignore numerical noise
                     if (ball.x - ball.radius < wallLeftX && ball.vx < -innerPushTol) {
+                        playTap(Math.abs(ball.vx));
                         ball.x = wallLeftX + ball.radius;
                         ball.vx = Math.abs(ball.vx) * 0.5;
                     }
                     if (ball.x + ball.radius > wallRightX && ball.vx > innerPushTol) {
+                        playTap(Math.abs(ball.vx));
                         ball.x = wallRightX - ball.radius;
                         ball.vx = -Math.abs(ball.vx) * 0.5;
                     }
                     if (ball.y + ball.radius > cupY) {
+                        playTap(Math.abs(ball.vy));
                         ball.y = cupY - ball.radius;
                         ball.vy = -Math.abs(ball.vy) * 0.3;
                         ball.vx *= 0.8;
@@ -1082,6 +1088,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                         // Left outer wall: overlap grows when ball moves
                         // right faster than the wall (cupDx) — i.e. ballDx > cupDx.
                         if (ballDx - cupDx > APPROACH_TOL) {
+                            playTap(Math.abs(ball.vx));
                             ball.x = wallLeftX - ball.radius;
                             ball.vx = -Math.abs(ball.vx) * bounceFactor;
                         }
@@ -1089,6 +1096,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                         // Right outer wall: overlap grows when the wall
                         // moves right faster than the ball — cupDx > ballDx.
                         if (cupDx - ballDx > APPROACH_TOL) {
+                            playTap(Math.abs(ball.vx));
                             ball.x = wallRightX + ball.radius;
                             ball.vx = Math.abs(ball.vx) * bounceFactor;
                         }
@@ -1231,6 +1239,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                 gameMode === 'basketball'
                 || ball.x <= getCupX() - (110*scale*(gameCtx.targetScale??1))/2
                 || ball.x >= getCupX() + (110*scale*(gameCtx.targetScale??1))/2)) {
+            playTap(Math.abs(ball.vy));
             ball.y = floorY - ball.radius;
             ball.vy = -ball.vy * bounceFactor;
             ball.vx *= friction;
@@ -1245,15 +1254,18 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         
         // Ceiling
         if (ball.y - ball.radius <= 0) {
+            playTap(Math.abs(ball.vy));
             ball.y = ball.radius;
             ball.vy = -ball.vy * bounceFactor;
         }
-        
+
         // Walls
         if (ball.x + ball.radius > width) {
+            playTap(Math.abs(ball.vx));
             ball.x = width - ball.radius;
             if (ball.vx > 0) ball.vx = -ball.vx * bounceFactor;
         } else if (ball.x - ball.radius < 0) {
+            playTap(Math.abs(ball.vx));
             ball.x = ball.radius;
             if (ball.vx < 0) ball.vx = -ball.vx * bounceFactor;
         }
@@ -1318,6 +1330,20 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             }
         }
         ctx.restore();
+    }
+
+    // Play a random tap sound for ping-pong collisions. Rate-limited to
+    // 60 ms so sustained contact (ball resting on a wall) doesn't machine-gun.
+    // `speed` is the relevant velocity component (px/s) — below 30*scale it's
+    // too gentle to be audible and is skipped (tiny oscillations at rest).
+    function playTap(speed) {
+        if (gameMode !== 'pingpong') return;
+        if (ballReturning || ballAbsorbed) return;
+        if (speed < 30 * scale) return;
+        const now = performance.now();
+        if (now - lastTapTime < 60) return;
+        lastTapTime = now;
+        audio.playOneOf(['pingpong/tap_1', 'pingpong/tap_2', 'pingpong/tap_3']);
     }
 
     // Resolve which swish frame to show this draw() — frame 0 at rest, stepping
