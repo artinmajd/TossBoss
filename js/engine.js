@@ -1137,6 +1137,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
                 const dot = ball.vx * nx + ball.vy * ny;
                 if (dot < 0) {
+                    playBbTap(Math.hypot(ball.vx, ball.vy), true);
                     ball.vx = (ball.vx - 2 * dot * nx) * bounceFactor;
                     ball.vy = (ball.vy - 2 * dot * ny) * bounceFactor;
                 }
@@ -1153,6 +1154,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
                 const dot = ball.vx * nx + ball.vy * ny;
                 if (dot < 0) {
+                    playBbTap(Math.hypot(ball.vx, ball.vy), true);
                     ball.vx = (ball.vx - 2 * dot * nx) * bounceFactor;
                     ball.vy = (ball.vy - 2 * dot * ny) * bounceFactor;
                 }
@@ -1162,6 +1164,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             if (ball.x + ball.radius > backboardX && ball.y > hoopRimY - 120 * scale && ball.y < hoopRimY + 40 * scale) {
                 ball.x = backboardX - ball.radius;
                 if (ball.vx > 0) {
+                    playBbTap(Math.abs(ball.vx), false);
                     ball.vx = -ball.vx * bounceFactor;
                 }
             }
@@ -1240,6 +1243,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                 || ball.x <= getCupX() - (110*scale*(gameCtx.targetScale??1))/2
                 || ball.x >= getCupX() + (110*scale*(gameCtx.targetScale??1))/2)) {
             playTap(Math.abs(ball.vy));
+            playBbTap(Math.abs(ball.vy), false);
             ball.y = floorY - ball.radius;
             ball.vy = -ball.vy * bounceFactor;
             ball.vx *= friction;
@@ -1251,10 +1255,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                 }
             }
         }
-        
+
         // Ceiling
         if (ball.y - ball.radius <= 0) {
             playTap(Math.abs(ball.vy));
+            playBbTap(Math.abs(ball.vy), false);
             ball.y = ball.radius;
             ball.vy = -ball.vy * bounceFactor;
         }
@@ -1262,10 +1267,12 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // Walls
         if (ball.x + ball.radius > width) {
             playTap(Math.abs(ball.vx));
+            playBbTap(Math.abs(ball.vx), false);
             ball.x = width - ball.radius;
             if (ball.vx > 0) ball.vx = -ball.vx * bounceFactor;
         } else if (ball.x - ball.radius < 0) {
             playTap(Math.abs(ball.vx));
+            playBbTap(Math.abs(ball.vx), false);
             ball.x = ball.radius;
             if (ball.vx < 0) ball.vx = -ball.vx * bounceFactor;
         }
@@ -1332,10 +1339,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         ctx.restore();
     }
 
-    // Play a random tap sound for ping-pong collisions. Rate-limited to
-    // 60 ms so sustained contact (ball resting on a wall) doesn't machine-gun.
-    // `speed` is the relevant velocity component (px/s) — below 30*scale it's
-    // too gentle to be audible and is skipped (tiny oscillations at rest).
+    // Play a tap/rim sound for collisions. Rate-limited to 60ms per mode so
+    // sustained contact doesn't machine-gun. Volume scales with impact speed,
+    // normalised against 600*scale (≈ a hard throw) → [0.1, 1.0], matching
+    // the ping-pong level so both modes feel equally loud.
     function playTap(speed) {
         if (gameMode !== 'pingpong') return;
         if (ballReturning || ballAbsorbed) return;
@@ -1345,6 +1352,18 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         lastTapTime = now;
         const vol = Math.min(1, Math.max(0.1, speed / (600 * scale)));
         audio.play('pingpong/tap_2', { volume: vol });
+    }
+
+    let lastBbTapTime = 0;
+    function playBbTap(speed, isRim = false) {
+        if (gameMode !== 'basketball') return;
+        if (ballReturning || ballAbsorbed) return;
+        if (speed < 30 * scale) return;
+        const now = performance.now();
+        if (now - lastBbTapTime < 60) return;
+        lastBbTapTime = now;
+        const vol = Math.min(1, Math.max(0.1, speed / (600 * scale)));
+        audio.play(isRim ? 'basketball/hit_rim' : 'basketball/tap', { volume: vol });
     }
 
     // Resolve which swish frame to show this draw() — frame 0 at rest, stepping

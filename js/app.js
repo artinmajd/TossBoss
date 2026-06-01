@@ -15,6 +15,8 @@ import audio from './audio.js';
 
 audio.preload({
     'basketball/score':   'assets/audio/basketball/score.mp3',
+    'basketball/tap':     'assets/audio/basketball/tap.mp3',
+    'basketball/hit_rim': 'assets/audio/basketball/hit_rim.mp3',
     'pingpong/score_1':   'assets/audio/pingpong/score_1.mp3',
     'pingpong/score_2':   'assets/audio/pingpong/score_2.mp3',
     'pingpong/score_3':   'assets/audio/pingpong/score_3.mp3',
