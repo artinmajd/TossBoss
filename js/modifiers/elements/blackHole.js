@@ -31,6 +31,7 @@ export default function blackHole() {
     let consumedAt = 0;
     let ballStart  = { x: 0, y: 0 };
     let ballR0     = 0;
+    let disappearSoundPlayed = false;
 
     const elapsed   = () => (performance.now() - spawnTime)   / 1000;
     const consumedT = () => (performance.now() - consumedAt)  / 1000;
@@ -94,6 +95,17 @@ export default function blackHole() {
         },
 
         onUpdate(ctx /*, dt */) {
+            // Play disappear sound once when the shrink phase starts.
+            if (!disappearSoundPlayed) {
+                const shrinking = consumed
+                    ? consumedT() >= ABSORB + POST_HOLD
+                    : elapsed() >= LIFETIME - SHRINK;
+                if (shrinking) {
+                    disappearSoundPlayed = true;
+                    ctx.playSound('black_hole/disappear', { volume: 0.7 });
+                }
+            }
+
             if (consumed) return;
             // Only consume once the hole is visibly grown — a touch in the
             // first split second of the expand animation feels unfair.
