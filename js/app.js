@@ -1343,6 +1343,9 @@ function bindAuthForm() {
 }
 
 window.addEventListener('hashchange', router);
+// Unlock audio on the very first interaction anywhere on the page.
+document.addEventListener('pointerdown', () => audio.unlock(), { once: true });
+
 window.addEventListener('DOMContentLoaded', () => {
     // A fresh launch should never open straight into the single-player game
     // view. On iOS, "Add to Home Screen" captures whatever URL was showing
