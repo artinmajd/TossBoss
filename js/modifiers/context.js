@@ -46,5 +46,6 @@ export function createGameContext({ ball, ctx2d, tester = null }) {
         drawBall: (_x, _y, _radius) => {},
         addExtraLife: () => {},
         removeExtraLife: () => {},
+        playSound: (_name, _opts) => {},
     };
 }

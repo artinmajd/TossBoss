@@ -426,6 +426,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         c.restore();
     };
 
+    gameCtx.playSound = (name, opts) => audio.play(name, opts);
+
     // Live cup/hoop positions — fold in gameCtx.targetOffset so modifiers like
     // the Moving Target challenge can shift the target without the engine
     // needing to know who's driving it. With offset = {0,0} these are the
