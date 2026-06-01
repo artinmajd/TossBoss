@@ -33,15 +33,16 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     const hoopImg = new Image();
     hoopImg.src = 'assets/hoop_transparent.png';
 
-    // Animated hoop: a 5×4 grid of 1280×720 frames (frame 0 = net at rest,
-    // frames 1→19 = the swish). Drawn in place of the static hoopImg; the
-    // static image still defines the physics rim geometry & acts as fallback.
+    // Animated hoop: a 5-column grid of uniform 1280×720 frames (frame 0 =
+    // net at rest, the rest = the swish). Drawn in place of the static
+    // hoopImg; the static image still defines the physics rim geometry &
+    // acts as fallback.
     const hoopSheet = new Image();
     hoopSheet.src = 'assets/hoop_sprite_sheet/sprite_sheet.png';
     const HOOP_SHEET_COLS = 5;
     const HOOP_FRAME_W = 1280;
     const HOOP_FRAME_H = 720;
-    const HOOP_FRAMES = 20;       // total swish frames
+    const HOOP_FRAMES = 26;       // total swish frames
     const HOOP_ANIM_DUR = 0.6;    // seconds for a full swish
     // Rim anchor pixels measured within a single 1280×720 frame:
     //   left-front rim point (454, 407), backboard/right rim x = 799,
