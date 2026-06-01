@@ -2051,7 +2051,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     // bubble shows behind the aiming line) and clears once the ball is thrown.
     function deadZoneActive() {
         return gameMode === 'basketball'
-            && (isResting || isAiming) && !ballReturning && !ballAbsorbed
+            && (isResting || isAiming) && !ballReturning && !ballAbsorbed && !scoredThisThrow
             && ball.x > getHoopLeftRim() - 20 * scale
             && (!mpCfg || mpCfg.isMyTurn);
     }
