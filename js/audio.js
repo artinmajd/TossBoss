@@ -51,6 +51,9 @@ function createAudioManager() {
     }
 
     // Fetch and decode every file in { name: url } map.
+    // After all files are ready, retry the pending bg track if unlock() already
+    // fired but the buffer wasn't available at that point (common on mobile where
+    // the first tap happens before large MP3s finish decoding).
     async function preload(map) {
         const c = getCtx();
         await Promise.all(Object.entries(map).map(async ([name, url]) => {
@@ -62,6 +65,13 @@ function createAudioManager() {
                 console.warn('[audio] failed to load', name, e);
             }
         }));
+        // If the AudioContext is already running (user tapped before preload
+        // finished) but the bg track never started, start it now.
+        if (bgName && !bgSource && ctx && ctx.state === 'running') {
+            const pending = bgName;
+            bgName = null;
+            playBg(pending, { volume: bgVolume });
+        }
     }
 
     // Play a buffered sound. Safe to call even before preload finishes
