@@ -88,7 +88,7 @@ async function router() {
 
     // Background music: game tracks during gameplay, menu track everywhere else.
     if (hash === '#game' || hash === '#mp-game') {
-        audio.playBg('background/game_background', { volume: 0.12 });
+        audio.playBg('background/game_background', { volume: 0.4 });
     } else {
         audio.playBg('background/main_menu', { volume: 0.4 });
     }
