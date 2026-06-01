@@ -2237,7 +2237,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         if (gameMode === 'basketball') {
             audio.play('basketball/score', { volume: 0.5 });
         } else {
-            setTimeout(() => audio.playOneOf(['pingpong/score_1', 'pingpong/score_2', 'pingpong/score_3'], { volume: 0.32 }), 100);
+            setTimeout(() => audio.playOneOf(['pingpong/score_1', 'pingpong/score_2', 'pingpong/score_3']), 100);
         }
 
         // In spectate mode: enter spectate-return phase and let the ball
@@ -2281,8 +2281,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             nhsCelebratedThisRun = true;
             nhsStartTime = performance.now();
             nhsParticles = null;
-            audio.play('score/new_high_score', { volume: 0.5 });
-            audio.play('score/applause', { volume: 0.5 });
+            audio.play('score/new_high_score', { volume: 0.3 });
+            audio.play('score/applause', { volume: 0.3 });
         }
 
         // Flash score box
@@ -2369,7 +2369,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             nhsCelebratedThisRun = false;
             didReset = !wasZero;   // an actual score-loss reset (matches the SP flash)
             if (!wasZero) {
-                audio.play('score/reset', { volume: 0.4 });
+                audio.play('score/reset', { volume: 0.3 });
                 showToast('💥 RESET!', 'reset');
             }
             if (!wasZero && box) {
