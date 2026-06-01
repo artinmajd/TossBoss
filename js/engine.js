@@ -2368,7 +2368,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             consecutiveMisses = 0;
             nhsCelebratedThisRun = false;
             didReset = !wasZero;   // an actual score-loss reset (matches the SP flash)
-            if (!wasZero) showToast('💥 RESET!', 'reset');
+            if (!wasZero) {
+                audio.play('score/reset', { volume: 0.6 });
+                showToast('💥 RESET!', 'reset');
+            }
             if (!wasZero && box) {
                 box.classList.remove('flash-reset');
                 void box.offsetWidth;
