@@ -2050,10 +2050,19 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     // always; multiplayer only on our turn. Stays true through aiming (so the
     // bubble shows behind the aiming line) and clears once the ball is thrown.
     function deadZoneActive() {
-        return gameMode === 'basketball'
-            && (isResting || isAiming) && !ballReturning && !ballAbsorbed && !scoredThisThrow
-            && ball.x > getHoopLeftRim() - 20 * scale
-            && (!mpCfg || mpCfg.isMyTurn);
+        if (ballReturning || ballAbsorbed || scoredThisThrow) return false;
+        if (!mpCfg || mpCfg.isMyTurn) {
+            if (gameMode === 'basketball' && (isResting || isAiming)) {
+                return ball.x > getHoopLeftRim() - 20 * scale;
+            }
+            if (gameMode === 'pingpong' && isResting) {
+                const ts = gameCtx.targetScale ?? 1;
+                const cupLeftRim = getCupX() - (110 * scale * ts) / 2;
+                return ball.x + ball.radius > cupLeftRim - 30 * scale
+                    && ball.x < cupLeftRim;
+            }
+        }
+        return false;
     }
 
     // Comic-book speech bubble drawn ON the canvas, coming out of the ball.
