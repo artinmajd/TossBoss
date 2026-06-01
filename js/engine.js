@@ -33,6 +33,24 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     const hoopImg = new Image();
     hoopImg.src = 'assets/hoop_transparent.png';
 
+    // Animated hoop: a 5×4 grid of 1280×720 frames (frame 0 = net at rest,
+    // frames 1→19 = the swish). Drawn in place of the static hoopImg; the
+    // static image still defines the physics rim geometry & acts as fallback.
+    const hoopSheet = new Image();
+    hoopSheet.src = 'assets/hoop_sprite_sheet/sprite_sheet.png';
+    const HOOP_SHEET_COLS = 5;
+    const HOOP_FRAME_W = 1280;
+    const HOOP_FRAME_H = 720;
+    const HOOP_FRAMES = 20;       // total swish frames
+    const HOOP_ANIM_DUR = 0.6;    // seconds for a full swish
+    // Rim anchor pixels measured within a single 1280×720 frame:
+    //   left-front rim point (454, 407), backboard/right rim x = 799,
+    //   back rim top y = 273. These map the sprite onto the physics rim.
+    const HOOP_SP_LEFT_X = 454, HOOP_SP_LEFT_Y = 407;
+    const HOOP_SP_RIGHT_X = 799, HOOP_SP_BACK_Y = 273;
+    let hoopScoreAnimStart = null; // performance.now() when a score triggers the swish
+    let hoopFrameIdx = 0;          // current frame, recomputed once per draw()
+
     const cupImg = new Image();
     cupImg.src = 'assets/cup.webp';
 
@@ -1299,6 +1317,41 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         ctx.restore();
     }
 
+    // Resolve which swish frame to show this draw() — frame 0 at rest, stepping
+    // through 0→19 over HOOP_ANIM_DUR after a score, then settling back to 0.
+    // Driven by render time so it stays in sync under fast-forward & spectating.
+    function updateHoopFrame() {
+        if (hoopScoreAnimStart === null) { hoopFrameIdx = 0; return; }
+        const el = (performance.now() - hoopScoreAnimStart) / 1000;
+        const idx = Math.floor(el / (HOOP_ANIM_DUR / HOOP_FRAMES));
+        if (idx >= HOOP_FRAMES) { hoopScoreAnimStart = null; hoopFrameIdx = 0; }
+        else hoopFrameIdx = idx;
+    }
+
+    // Draw the animated hoop mapped onto the physics rim. `clipFront`, when a
+    // path-defining callback, restricts drawing to the front net/rim (the 3D
+    // depth pass that renders over the ball). Returns the front-rim Y for callers.
+    function drawHoopSprite(hoopRimY, backboardX, hoopWidth, clipFront) {
+        const Ssp = hoopWidth / (HOOP_SP_RIGHT_X - HOOP_SP_LEFT_X);
+        const drawW = HOOP_FRAME_W * Ssp;
+        const drawH = HOOP_FRAME_H * Ssp;
+        const dx = backboardX - HOOP_SP_RIGHT_X * Ssp;
+        const dy = hoopRimY  - HOOP_SP_LEFT_Y  * Ssp;
+        const sx = (hoopFrameIdx % HOOP_SHEET_COLS) * HOOP_FRAME_W;
+        const sy = Math.floor(hoopFrameIdx / HOOP_SHEET_COLS) * HOOP_FRAME_H;
+        const rightRimY = hoopRimY - (HOOP_SP_LEFT_Y - HOOP_SP_BACK_Y) * Ssp;
+        if (clipFront) {
+            ctx.save();
+            clipFront(rightRimY);
+            ctx.clip();
+            ctx.drawImage(hoopSheet, sx, sy, HOOP_FRAME_W, HOOP_FRAME_H, dx, dy, drawW, drawH);
+            ctx.restore();
+        } else {
+            ctx.drawImage(hoopSheet, sx, sy, HOOP_FRAME_W, HOOP_FRAME_H, dx, dy, drawW, drawH);
+        }
+        return rightRimY;
+    }
+
     function draw() {
         const dpr = window.devicePixelRatio || 1;
 
@@ -1313,7 +1366,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         ctx.imageSmoothingQuality = 'high';
 
         ctx.clearRect(0, 0, width, height);
-        
+
+        updateHoopFrame();
+
         const floorY = height * groundLevel;
         
         // Floor markings
@@ -1412,12 +1467,15 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                 const hoopLeftRim = backboardX - hoopWidth;
                 const hoopRightRim = backboardX - 12 * scale;
                 
-                const imgWidth = hoopImg.naturalWidth * S;
-                // Align physics backboardX with image pixel 874, and hoopRimY with the LEFT RIM pixel Y (816)
-                const xOffset = backboardX - 874 * S;
-                const yOffset = hoopRimY - 816 * S;
-                
-                ctx.drawImage(hoopImg, xOffset, yOffset, imgWidth, imgHeight);
+                if (hoopSheet.complete && hoopSheet.naturalHeight !== 0) {
+                    drawHoopSprite(hoopRimY, backboardX, hoopWidth, null);
+                } else {
+                    const imgWidth = hoopImg.naturalWidth * S;
+                    // Align physics backboardX with image pixel 874, and hoopRimY with the LEFT RIM pixel Y (816)
+                    const xOffset = backboardX - 874 * S;
+                    const yOffset = hoopRimY - 816 * S;
+                    ctx.drawImage(hoopImg, xOffset, yOffset, imgWidth, imgHeight);
+                }
             } else {
                 const hoopLeftRim = backboardX - hoopWidth;
                 const hoopRightRim = backboardX;
@@ -1746,27 +1804,32 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                 hoopWidth = (874 - 169) * S;
 
                 const hoopLeftRim = backboardX - hoopWidth;
-                const imgWidth = hoopImg.naturalWidth * S;
-                const xOffset = backboardX - 874 * S;
-                const yOffset = hoopRimY - 816 * S;
-                const rightRimY = hoopRimY - 267 * S;
-                
+
                 if (isBehindNet) {
-                    // 3D Depth Illusion: Redraw only the FRONT half of the hoop image over the ball!
-                    ctx.save();
-                    ctx.beginPath();
-                    // Create a diagonal clipping mask that separates the front rim/net from the backboard/back rim
-                    ctx.moveTo(hoopLeftRim - 50 * scale, hoopRimY + 8 * scale);
-                    ctx.lineTo(backboardX + 50 * scale, rightRimY + 8 * scale);
-                    ctx.lineTo(backboardX + 200 * scale, height);
-                    ctx.lineTo(hoopLeftRim - 200 * scale, height);
-                    ctx.closePath();
-                    ctx.clip();
-                    
-                    ctx.drawImage(hoopImg, xOffset, yOffset, imgWidth, imgHeight);
-                    ctx.restore();
+                    // 3D Depth Illusion: redraw only the FRONT half of the hoop over the ball.
+                    const frontClip = (rightRimY) => {
+                        ctx.beginPath();
+                        // Diagonal mask separating the front rim/net from the backboard/back rim
+                        ctx.moveTo(hoopLeftRim - 50 * scale, hoopRimY + 8 * scale);
+                        ctx.lineTo(backboardX + 50 * scale, rightRimY + 8 * scale);
+                        ctx.lineTo(backboardX + 200 * scale, height);
+                        ctx.lineTo(hoopLeftRim - 200 * scale, height);
+                        ctx.closePath();
+                    };
+                    if (hoopSheet.complete && hoopSheet.naturalHeight !== 0) {
+                        drawHoopSprite(hoopRimY, backboardX, hoopWidth, frontClip);
+                    } else {
+                        const imgWidth = hoopImg.naturalWidth * S;
+                        const xOffset = backboardX - 874 * S;
+                        const yOffset = hoopRimY - 816 * S;
+                        ctx.save();
+                        frontClip(hoopRimY - 267 * S);
+                        ctx.clip();
+                        ctx.drawImage(hoopImg, xOffset, yOffset, imgWidth, imgHeight);
+                        ctx.restore();
+                    }
                 }
-                
+
             } else {
                 const hoopLeftRim = backboardX - hoopWidth;
                 const hoopRightRim = backboardX - 12 * scale; 
@@ -2107,6 +2170,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     }
 
     function handleScore() {
+        // Kick off the net-swish animation on any made basket (all scoring
+        // paths flow through here, including spectated throws).
+        if (gameMode === 'basketball') hoopScoreAnimStart = performance.now();
+
         // In spectate mode: enter spectate-return phase and let the ball
         // settle wherever it lands.  The return arc is driven exclusively
         // by the ball_returned broadcast — startReturn() suppresses any
