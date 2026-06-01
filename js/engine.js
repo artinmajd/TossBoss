@@ -33,22 +33,23 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     const hoopImg = new Image();
     hoopImg.src = 'assets/hoop_transparent.png';
 
-    // Animated hoop: a 5-column grid of uniform 1280×720 frames (frame 0 =
+    // Animated hoop: a 5-column grid of uniform 640×360 frames (frame 0 =
     // net at rest, the rest = the swish). Drawn in place of the static
     // hoopImg; the static image still defines the physics rim geometry &
-    // acts as fallback.
+    // acts as fallback. Frame size is kept comfortably above the on-screen
+    // hoop size — storing it larger only wastes memory & decode time.
     const hoopSheet = new Image();
     hoopSheet.src = 'assets/hoop_sprite_sheet/sprite_sheet.png';
     const HOOP_SHEET_COLS = 5;
-    const HOOP_FRAME_W = 1280;
-    const HOOP_FRAME_H = 720;
+    const HOOP_FRAME_W = 640;
+    const HOOP_FRAME_H = 360;
     const HOOP_FRAMES = 26;       // total swish frames
     const HOOP_ANIM_DUR = 0.6;    // seconds for a full swish
-    // Rim anchor pixels measured within a single 1280×720 frame:
-    //   left-front rim point (454, 407), backboard/right rim x = 799,
-    //   back rim top y = 273. These map the sprite onto the physics rim.
-    const HOOP_SP_LEFT_X = 454, HOOP_SP_LEFT_Y = 407;
-    const HOOP_SP_RIGHT_X = 799, HOOP_SP_BACK_Y = 273;
+    // Rim anchor pixels measured within a single 640×360 frame:
+    //   left-front rim point (227, 203), backboard/right rim x = 402,
+    //   back rim top y = 136. These map the sprite onto the physics rim.
+    const HOOP_SP_LEFT_X = 227, HOOP_SP_LEFT_Y = 203;
+    const HOOP_SP_RIGHT_X = 402, HOOP_SP_BACK_Y = 136;
     let hoopScoreAnimStart = null; // performance.now() when a score triggers the swish
     let hoopFrameIdx = 0;          // current frame, recomputed once per draw()
 
