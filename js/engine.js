@@ -2206,9 +2206,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
         // Score sound — plays for own scores and spectated opponent scores.
         if (gameMode === 'basketball') {
-            audio.play('basketball/score');
+            audio.play('basketball/score', { volume: 0.5 });
         } else {
-            setTimeout(() => audio.playOneOf(['pingpong/score_1', 'pingpong/score_2', 'pingpong/score_3']), 100);
+            setTimeout(() => audio.playOneOf(['pingpong/score_1', 'pingpong/score_2', 'pingpong/score_3'], { volume: 0.5 }), 100);
         }
 
         // In spectate mode: enter spectate-return phase and let the ball
