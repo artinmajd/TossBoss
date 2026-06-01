@@ -1343,7 +1343,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         const now = performance.now();
         if (now - lastTapTime < 60) return;
         lastTapTime = now;
-        setTimeout(() => audio.play('pingpong/tap_2'), 50);
+        setTimeout(() => audio.play('pingpong/tap_2'), 100);
     }
 
     // Resolve which swish frame to show this draw() — frame 0 at rest, stepping
