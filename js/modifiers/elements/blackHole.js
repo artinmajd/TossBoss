@@ -111,7 +111,7 @@ export default function blackHole() {
                 ballR0       = b.radius;
                 ctx.absorbBall();
                 ctx.blackHoleConsumed = true;
-                ctx.playSound('black_hole/suction');
+                ctx.playSound('black_hole/suction', { volume: 0.5 });
             }
         },
 
