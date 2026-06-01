@@ -2181,7 +2181,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         if (gameMode === 'basketball') {
             audio.play('basketball/score');
         } else {
-            audio.playOneOf(['pingpong/score_1', 'pingpong/score_2', 'pingpong/score_3']);
+            setTimeout(() => audio.playOneOf(['pingpong/score_1', 'pingpong/score_2', 'pingpong/score_3']), 100);
         }
 
         // In spectate mode: enter spectate-return phase and let the ball
