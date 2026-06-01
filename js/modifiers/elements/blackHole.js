@@ -90,6 +90,7 @@ export default function blackHole() {
             const spot = pickSpot(ctx);
             x = spot.x;
             y = spot.y;
+            ctx.playSound('black_hole/appear', { volume: 0.7 });
         },
 
         onUpdate(ctx /*, dt */) {

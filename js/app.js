@@ -17,6 +17,7 @@ audio.preload({
     'basketball/score':   'assets/audio/basketball/score.mp3',
     'basketball/tap':     'assets/audio/basketball/tap.mp3',
     'black_hole/suction': 'assets/audio/black_hole/suction.mp3',
+    'black_hole/appear':  'assets/audio/black_hole/appear.mp3',
     'basketball/hit_rim': 'assets/audio/basketball/hit_rim.mp3',
     'pingpong/score_1':   'assets/audio/pingpong/score_1.mp3',
     'pingpong/score_2':   'assets/audio/pingpong/score_2.mp3',
