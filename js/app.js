@@ -1258,13 +1258,58 @@ async function router() {
         helpBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const bubble = document.getElementById('help-bubble');
+            // Close settings if open
+            document.getElementById('settings-bubble').classList.remove('visible');
+            settingsBtn.classList.remove('selected');
             bubble.classList.toggle('visible');
             helpBtn.classList.toggle('selected', bubble.classList.contains('visible'));
+        });
+
+        // Settings button
+        const settingsBtn = document.getElementById('btn-settings');
+        const settingsBubble = document.getElementById('settings-bubble');
+
+        const setSettingsOpen = (open) => {
+            settingsBubble.classList.toggle('visible', open);
+            settingsBtn.classList.toggle('selected', open);
+        };
+
+        settingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Close help if open
+            document.getElementById('help-bubble').classList.remove('visible');
+            helpBtn.classList.remove('selected');
+            setSettingsOpen(!settingsBubble.classList.contains('visible'));
+        });
+
+        // Sync toggle states from current audio settings
+        const musicToggle = document.getElementById('toggle-music');
+        const sfxToggle   = document.getElementById('toggle-sfx');
+
+        const syncToggles = () => {
+            const bgOn  = !audio.isBgMuted();
+            const sfxOn = !audio.isMuted();
+            musicToggle.setAttribute('aria-checked', bgOn  ? 'true' : 'false');
+            sfxToggle.setAttribute('aria-checked',   sfxOn ? 'true' : 'false');
+        };
+        syncToggles();
+
+        musicToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            audio.setBgMuted(!audio.isBgMuted());
+            syncToggles();
+        });
+
+        sfxToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            audio.setMuted(!audio.isMuted());
+            syncToggles();
         });
 
         document.addEventListener('click', () => {
             document.getElementById('help-bubble')?.classList.remove('visible');
             helpBtn.classList.remove('selected');
+            setSettingsOpen(false);
         });
 
         requestAnimationFrame(() => {

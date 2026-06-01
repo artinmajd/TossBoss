@@ -236,6 +236,74 @@ html, body {
     display: block;
 }
 
+#settings-bubble {
+    display: none;
+    background: var(--surface-color);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border-radius: 0.75rem;
+    padding: 0.85rem 1rem;
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    min-width: 200px;
+    gap: 0.6rem;
+    flex-direction: column;
+}
+
+#settings-bubble.visible {
+    display: flex;
+}
+
+.settings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.settings-label {
+    color: var(--text-primary);
+    font-size: 0.82rem;
+}
+
+.settings-toggle {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    border-radius: 11px;
+    border: none;
+    background: rgba(255,255,255,0.15);
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    transition: background 0.25s ease;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.settings-toggle[aria-checked="true"] {
+    background: linear-gradient(135deg, #7dd3fc, #38bdf8);
+    box-shadow: 0 0 8px rgba(56,189,248,0.4);
+}
+
+.settings-toggle-knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    transition: transform 0.25s ease;
+}
+
+.settings-toggle[aria-checked="true"] .settings-toggle-knob {
+    transform: translateX(18px);
+}
+
 .help-title {
     font-size: 0.65rem;
     font-weight: 700;

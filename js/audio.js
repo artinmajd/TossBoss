@@ -7,19 +7,22 @@
 //   audio.stopBg()            — fade out and stop background track
 //   audio.setMuted(bool)      — persisted to localStorage
 
-const MUTE_KEY = 'tossboss_muted';
-const BG_FADE_MS = 800; // crossfade duration in ms
+const MUTE_KEY    = 'tossboss_muted';
+const BG_MUTE_KEY = 'tossboss_bg_muted';
+const BG_FADE_MS  = 800; // crossfade duration in ms
 
 function createAudioManager() {
     let ctx = null;
     const buffers = {};
-    let muted = localStorage.getItem(MUTE_KEY) === 'true';
+    let muted   = localStorage.getItem(MUTE_KEY)    === 'true';
+    let bgMuted = localStorage.getItem(BG_MUTE_KEY) === 'true';
 
     // Background music state
-    let bgSource   = null;
-    let bgGain     = null;
-    let bgName     = null;
-    let bgVolume   = 0.3;  // remembered so unlock() can retry the pending track
+    let bgSource      = null;
+    let bgGain        = null;
+    let bgName        = null;
+    let bgVolume      = 0.3;   // remembered so unlock() can retry the pending track
+    let bgTargetVolume = 0.3;  // the non-muted volume for the current track
 
     function getCtx() {
         if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -109,6 +112,7 @@ function createAudioManager() {
         }
 
         bgName = name;
+        bgTargetVolume = volume;
         const buf = buffers[name];
         if (!buf) { bgSource = null; bgGain = null; return; }
 
@@ -117,9 +121,9 @@ function createAudioManager() {
         src.loop   = true;
 
         const gain = c.createGain();
-        // Start silent, fade in.
-        gain.gain.setValueAtTime(muted ? 0 : 0, c.currentTime);
-        if (!muted) gain.gain.setTargetAtTime(volume, c.currentTime, fadeS / 3);
+        // Start silent, fade in (unless bg music is muted).
+        gain.gain.setValueAtTime(0, c.currentTime);
+        if (!bgMuted) gain.gain.setTargetAtTime(volume, c.currentTime, fadeS / 3);
 
         src.connect(gain);
         gain.connect(c.destination);
@@ -151,7 +155,21 @@ function createAudioManager() {
 
     function isMuted() { return muted; }
 
-    return { unlock, preload, play, playOneOf, playBg, stopBg, setMuted, isMuted };
+    function setBgMuted(val) {
+        bgMuted = val;
+        localStorage.setItem(BG_MUTE_KEY, val);
+        if (!bgGain) return;
+        const c = getCtx();
+        const fadeS = 0.3;
+        bgGain.gain.setTargetAtTime(
+            val ? 0 : bgTargetVolume,
+            c.currentTime, fadeS / 3
+        );
+    }
+
+    function isBgMuted() { return bgMuted; }
+
+    return { unlock, preload, play, playOneOf, playBg, stopBg, setMuted, isMuted, setBgMuted, isBgMuted };
 }
 
 const audio = createAudioManager();
