@@ -2285,6 +2285,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         }
 
         if (newBonus > prevBonus) {
+            audio.play('hearts/bonus_start', { volume: 0.5 });
             showToast(`+${newBonus + 1} BONUS UNLOCKED!`, 'bonus-up');
         } else if (prevBonus > 0) {
             showToast(`+${points} 🔥`, 'bonus-score');
@@ -2326,6 +2327,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         const box = document.getElementById('score-area');
 
         if (hadBonus) {
+            audio.play('hearts/bonus_end', { volume: 0.5 });
             // Bonus-loss miss doesn't count toward the reset counter — full 2 chances from scratch
             consecutiveMisses = 0;
             showToast('💔 Bonus Lost', 'bonus-lost');
