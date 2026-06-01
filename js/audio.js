@@ -16,9 +16,10 @@ function createAudioManager() {
     let muted = localStorage.getItem(MUTE_KEY) === 'true';
 
     // Background music state
-    let bgSource = null;
-    let bgGain   = null;
-    let bgName   = null;
+    let bgSource   = null;
+    let bgGain     = null;
+    let bgName     = null;
+    let bgVolume   = 0.3;  // remembered so unlock() can retry the pending track
 
     function getCtx() {
         if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -26,9 +27,24 @@ function createAudioManager() {
     }
 
     // Resume the AudioContext on first user gesture — required on iOS/Android.
+    // If background music was requested before a gesture unblocked audio,
+    // retry it now that the context is running.
     function unlock() {
         const c = getCtx();
-        if (c.state === 'suspended') c.resume();
+        if (c.state === 'suspended') {
+            c.resume().then(() => {
+                // Retry the pending bg track if nothing is currently playing.
+                if (bgName && !bgSource) {
+                    const pending = bgName;
+                    bgName = null; // reset so playBg doesn't no-op
+                    playBg(pending, { volume: bgVolume });
+                }
+            });
+        } else if (bgName && !bgSource) {
+            const pending = bgName;
+            bgName = null;
+            playBg(pending, { volume: bgVolume });
+        }
     }
 
     // Fetch and decode every file in { name: url } map.
@@ -75,6 +91,7 @@ function createAudioManager() {
     // Start a looping background track, crossfading from whatever is playing.
     // If the same track is already playing, does nothing.
     function playBg(name, { volume = 0.3 } = {}) {
+        bgVolume = volume; // remember in case unlock() needs to retry
         if (bgName === name) return;
         const c = getCtx();
         if (c.state === 'suspended') c.resume();
