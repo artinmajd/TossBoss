@@ -19,6 +19,8 @@ audio.preload({
     'black_hole/suction': 'assets/audio/black_hole/suction.mp3',
     'black_hole/appear':     'assets/audio/black_hole/appear.mp3',
     'black_hole/disappear':  'assets/audio/black_hole/disappear.mp3',
+    'background/main_menu':      'assets/audio/background/main_menu.mp3',
+    'background/game_background':'assets/audio/background/game_background.mp3',
     'score/new_high_score':  'assets/audio/score/new_high_score.mp3',
     'score/reset':           'assets/audio/score/reset.mp3',
     'score/applause':        'assets/audio/score/applause.mp3',
@@ -83,6 +85,13 @@ function buildLbHtml(rows, userId, myEntry) {
 async function router() {
     const app = document.getElementById('app');
     const hash = window.location.hash || '#home';
+
+    // Background music: game tracks during gameplay, menu track everywhere else.
+    if (hash === '#game' || hash === '#mp-game') {
+        audio.playBg('background/game_background', { volume: 0.12 });
+    } else {
+        audio.playBg('background/main_menu', { volume: 0.4 });
+    }
 
     // Engine lives on #game and #mp-game only — clean it up on all other routes.
     if (destroyGame && hash !== '#game' && hash !== '#mp-game') {

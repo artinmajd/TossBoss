@@ -1,16 +1,24 @@
 // Web Audio API sound manager.
 // Usage: import audio from './audio.js';
-//   audio.unlock()       — call once on first user gesture
-//   audio.preload(map)   — { name: 'path/to/file.mp3', ... }
-//   audio.play(name)     — fire a one-shot sound
-//   audio.setMuted(bool) — persisted to localStorage
+//   audio.unlock()            — call once on first user gesture
+//   audio.preload(map)        — { name: 'path/to/file.mp3', ... }
+//   audio.play(name)          — fire a one-shot sound
+//   audio.playBg(name, opts)  — start/switch looping background track
+//   audio.stopBg()            — fade out and stop background track
+//   audio.setMuted(bool)      — persisted to localStorage
 
 const MUTE_KEY = 'tossboss_muted';
+const BG_FADE_MS = 800; // crossfade duration in ms
 
 function createAudioManager() {
     let ctx = null;
     const buffers = {};
     let muted = localStorage.getItem(MUTE_KEY) === 'true';
+
+    // Background music state
+    let bgSource = null;
+    let bgGain   = null;
+    let bgName   = null;
 
     function getCtx() {
         if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -64,6 +72,61 @@ function createAudioManager() {
         play(names[Math.floor(Math.random() * names.length)], opts);
     }
 
+    // Start a looping background track, crossfading from whatever is playing.
+    // If the same track is already playing, does nothing.
+    function playBg(name, { volume = 0.3 } = {}) {
+        if (bgName === name) return;
+        const c = getCtx();
+        if (c.state === 'suspended') c.resume();
+        const fadeS = BG_FADE_MS / 1000;
+
+        // Fade out current track then stop it.
+        if (bgGain && bgSource) {
+            const oldGain = bgGain;
+            const oldSrc  = bgSource;
+            oldGain.gain.setTargetAtTime(0, c.currentTime, fadeS / 3);
+            setTimeout(() => {
+                try { oldSrc.stop(); } catch (_) {}
+                oldGain.disconnect();
+            }, BG_FADE_MS);
+        }
+
+        bgName = name;
+        const buf = buffers[name];
+        if (!buf) { bgSource = null; bgGain = null; return; }
+
+        const src  = c.createBufferSource();
+        src.buffer = buf;
+        src.loop   = true;
+
+        const gain = c.createGain();
+        // Start silent, fade in.
+        gain.gain.setValueAtTime(muted ? 0 : 0, c.currentTime);
+        if (!muted) gain.gain.setTargetAtTime(volume, c.currentTime, fadeS / 3);
+
+        src.connect(gain);
+        gain.connect(c.destination);
+        src.start(0);
+
+        bgSource = src;
+        bgGain   = gain;
+    }
+
+    // Fade out and stop the current background track.
+    function stopBg() {
+        if (!bgSource) return;
+        const c = getCtx();
+        const fadeS = BG_FADE_MS / 1000;
+        const oldGain = bgGain;
+        const oldSrc  = bgSource;
+        bgSource = null; bgGain = null; bgName = null;
+        oldGain.gain.setTargetAtTime(0, c.currentTime, fadeS / 3);
+        setTimeout(() => {
+            try { oldSrc.stop(); } catch (_) {}
+            oldGain.disconnect();
+        }, BG_FADE_MS);
+    }
+
     function setMuted(val) {
         muted = val;
         localStorage.setItem(MUTE_KEY, val);
@@ -71,7 +134,7 @@ function createAudioManager() {
 
     function isMuted() { return muted; }
 
-    return { unlock, preload, play, playOneOf, setMuted, isMuted };
+    return { unlock, preload, play, playOneOf, playBg, stopBg, setMuted, isMuted };
 }
 
 const audio = createAudioManager();
