@@ -2058,7 +2058,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             if (gameMode === 'pingpong' && isResting) {
                 const ts = gameCtx.targetScale ?? 1;
                 const cupLeftRim = getCupX() - (110 * scale * ts) / 2;
-                return ball.x + ball.radius >= cupLeftRim - 3 * scale && ball.x < cupLeftRim;
+                return ball.x + ball.radius >= cupLeftRim - 4 * scale && ball.x < cupLeftRim;
             }
         }
         return false;
