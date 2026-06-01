@@ -2,6 +2,7 @@ import { saveHighScore } from './supabase.js';
 import { createModifierManager } from './modifiers/manager.js';
 import { createGameContext } from './modifiers/context.js';
 import { createDirector } from './modifiers/director.js';
+import audio from './audio.js';
 
 export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, basketball: { score: 0, bestStreak: 0 } }, testerRules = null, multiplayerConfig = null) {
     const canvas = document.getElementById('simulation-canvas');
@@ -2176,6 +2177,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // paths flow through here, including spectated throws).
         if (gameMode === 'basketball') hoopScoreAnimStart = performance.now();
 
+        // Score sound — plays for own scores and spectated opponent scores.
+        audio.play(gameMode === 'basketball' ? 'score_basketball' : 'score_pingpong');
+
         // In spectate mode: enter spectate-return phase and let the ball
         // settle wherever it lands.  The return arc is driven exclusively
         // by the ball_returned broadcast — startReturn() suppresses any
@@ -2413,7 +2417,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     canvas.addEventListener('mousedown', handlePointerDown);
     canvas.addEventListener('mousemove', handlePointerMove);
     window.addEventListener('mouseup', handlePointerUp);
-    
+
+    // Unlock the AudioContext on first canvas tap — required on iOS/Android.
+    canvas.addEventListener('pointerdown', () => audio.unlock(), { once: true });
+
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     window.addEventListener('touchend', handlePointerUp);

@@ -11,6 +11,12 @@ import { supabase, getHighScores, getLeaderboard, getUserEntry } from './supabas
 import { isTestUser, testerConfig } from './tester_config.js';
 import { getPlayerId, storePlayerName, getStoredPlayerName } from './multiplayer/session.js';
 import { createRoom, joinRoom, getRoomByCode, subscribeToRoom, getRoomBroadcastChannel, makePlayer } from './multiplayer/roomManager.js';
+import audio from './audio.js';
+
+audio.preload({
+    score_basketball: 'assets/audio/score_basketball.mp3',
+    score_pingpong:   'assets/audio/score_pingpong.mp3',
+});
 
 let destroyGame = null;
 let destroyMp   = null;   // unsubscribe fn for the active MP room subscription
@@ -1113,9 +1119,11 @@ async function router() {
     if (hash === '#home') {
         app.innerHTML = Home(session);
         document.getElementById('btn-play-game').addEventListener('click', () => {
+            audio.unlock();
             window.location.hash = '#game';
         });
         document.getElementById('btn-multiplayer').addEventListener('click', () => {
+            audio.unlock();
             window.location.hash = '#multiplayer';
         });
         document.getElementById('btn-leaderboard').addEventListener('click', () => {
