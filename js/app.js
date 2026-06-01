@@ -19,6 +19,8 @@ audio.preload({
     'black_hole/suction': 'assets/audio/black_hole/suction.mp3',
     'black_hole/appear':     'assets/audio/black_hole/appear.mp3',
     'black_hole/disappear':  'assets/audio/black_hole/disappear.mp3',
+    'score/new_high_score':  'assets/audio/score/new_high_score.mp3',
+    'score/applause':        'assets/audio/score/applause.mp3',
     'hearts/bonus_start':    'assets/audio/hearts/bonus_start.mp3',
     'hearts/bonus_end':      'assets/audio/hearts/bonus_end.mp3',
     'basketball/hit_rim': 'assets/audio/basketball/hit_rim.mp3',

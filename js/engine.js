@@ -2281,6 +2281,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             nhsCelebratedThisRun = true;
             nhsStartTime = performance.now();
             nhsParticles = null;
+            audio.play('score/new_high_score');
+            audio.play('score/applause');
         }
 
         // Flash score box
