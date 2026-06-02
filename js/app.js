@@ -1013,6 +1013,38 @@ async function router() {
         setTimeout(countdownTick, 1000);
 
         // ── Quit button — delete room and go back to lobby ─────────────────
+        // MP hamburger menu
+        const mpMenuBtn    = document.getElementById('mp-btn-menu');
+        const mpMenuBubble = document.getElementById('mp-menu-bubble');
+        const setMpMenu = (open) => {
+            mpMenuBubble?.classList.toggle('visible', open);
+            mpMenuBtn?.classList.toggle('selected', open);
+        };
+        mpMenuBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setMpMenu(!mpMenuBubble?.classList.contains('visible'));
+        });
+        document.addEventListener('click', () => setMpMenu(false));
+
+        // MP audio toggles (reuse same audio manager)
+        const mpMusicToggle = document.getElementById('mp-toggle-music');
+        const mpSfxToggle   = document.getElementById('mp-toggle-sfx');
+        const syncMpToggles = () => {
+            mpMusicToggle?.setAttribute('aria-checked', !audio.isBgMuted() ? 'true' : 'false');
+            mpSfxToggle?.setAttribute('aria-checked',   !audio.isMuted()   ? 'true' : 'false');
+        };
+        syncMpToggles();
+        mpMusicToggle?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            audio.setBgMuted(!audio.isBgMuted());
+            syncMpToggles();
+        });
+        mpSfxToggle?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            audio.setMuted(!audio.isMuted());
+            syncMpToggles();
+        });
+
         document.getElementById('mp-btn-quit')?.addEventListener('click', async () => {
             clearTurnTimer();
             if (destroyMp)   { destroyMp();   destroyMp   = null; }

@@ -22,15 +22,43 @@ export default function MultiplayerGame({ myName, targetScore, gameMode }) {
 
             <!-- ── MP top HUD ───────────────────────────────────────────── -->
             <div id="mp-game-hud">
-                <button id="mp-btn-quit" class="mode-btn mp-quit-btn" title="Quit game">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                         style="width:16px;height:16px;">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                        <polyline points="16 17 21 12 16 7"/>
-                        <line x1="21" y1="12" x2="9" y2="12"/>
-                    </svg>
-                </button>
+                <!-- Hamburger menu — quit + audio settings -->
+                <div class="mp-quit-btn" style="position:relative;">
+                    <button id="mp-btn-menu" class="mode-btn" title="Menu">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                             stroke-linecap="round" style="width:18px;height:18px;">
+                            <line x1="3" y1="6" x2="21" y2="6"/>
+                            <line x1="3" y1="12" x2="21" y2="12"/>
+                            <line x1="3" y1="18" x2="21" y2="18"/>
+                        </svg>
+                    </button>
+                    <div id="mp-menu-bubble" class="mp-menu-bubble">
+                        <div class="help-title">Menu</div>
+                        <div class="settings-row">
+                            <span class="settings-label">Music</span>
+                            <button class="settings-toggle" id="mp-toggle-music" role="switch" aria-checked="true">
+                                <span class="settings-toggle-knob"></span>
+                            </button>
+                        </div>
+                        <div class="settings-row">
+                            <span class="settings-label">Sound Effects</span>
+                            <button class="settings-toggle" id="mp-toggle-sfx" role="switch" aria-checked="true">
+                                <span class="settings-toggle-knob"></span>
+                            </button>
+                        </div>
+                        <div class="mp-menu-divider"></div>
+                        <button id="mp-btn-quit" class="mp-menu-quit-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                                 style="width:14px;height:14px;flex-shrink:0;">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                <polyline points="16 17 21 12 16 7"/>
+                                <line x1="21" y1="12" x2="9" y2="12"/>
+                            </svg>
+                            Quit Game
+                        </button>
+                    </div>
+                </div>
 
                 <!-- Own card wrapper — carries the conic-gradient timer ring -->
                 <div class="mp-card-self mp-self-timer-wrap" id="mp-card-mine-wrap">
