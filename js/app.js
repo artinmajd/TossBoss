@@ -802,6 +802,9 @@ async function router() {
                 players[idx].throws   = payload.throws   ?? players[idx].throws + 1;
             }
             currentTurn = payload.nextTurn ?? ((currentTurn + 1) % players.length);
+            // Update active player name for ghost label.
+            multiplayerConfig.activePlayerName = currentTurn !== myIndex
+                ? (players[currentTurn]?.name ?? '') : '';
             // Park the ghost at the launch spot as an instant placeholder for
             // every spectator; if the new turn is ours, broadcast our real ball
             // position so spectators correct their ghost to where we'll throw.
@@ -859,6 +862,8 @@ async function router() {
         // spawn placeholder). Only relevant while it's not our turn.
         bcChannel.on('broadcast', { event: 'turn_ready' }, ({ payload }) => {
             if (payload.senderId === myId) return;
+            const senderIdx = players.findIndex(p => p.id === payload.senderId);
+            multiplayerConfig.activePlayerName = players[senderIdx]?.name ?? '';
             multiplayerConfig.setGhost?.(payload.x, payload.y);
         });
 

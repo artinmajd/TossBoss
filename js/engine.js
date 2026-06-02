@@ -135,6 +135,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     // lastMpFF          — last FF state we broadcast; for change detection only.
     let ghostX             = null;
     let ghostY             = null;
+    let ghostAlpha         = 0;      // 0..0.5, driven by fade in/out
+    let ghostFadeDir       = 0;      // +1 = fading in, -1 = fading out, 0 = stable
+    let ghostLabelVisible  = false;  // arrow + name shown until throw starts
+    const GHOST_FADE_DUR   = 0.35;   // seconds for full fade
     let isSpectateReturn   = false;
     let spectateArcActive  = false;
     let pendingGhostReturn = null; // ball_returned payload buffered while bg-throttled
@@ -236,6 +240,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             const s = mpSpawnPos();
             ghostX = s.x;
             ghostY = s.y;
+            ghostFadeDir = 1;
+            ghostLabelVisible = true;
         };
 
         // Our ball's current resting position, normalized to the playfield, so
@@ -248,6 +254,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         mpCfg.setGhost = (nx, ny) => {
             ghostX = nx * width;
             ghostY = ny * height;
+            ghostFadeDir = 1;     // fade in when ghost position is updated
+            ghostLabelVisible = true;
         };
 
         // Replay an opponent's throw on our canvas.  Sets the ball to the
@@ -255,6 +263,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // In spectate mode handleScore / handleMiss skip all state changes and
         // instead call mpCfg.onSpectateComplete when the ball settles.
         mpCfg.spectateThrow = ({ vx, vy, x, y }) => {
+            ghostLabelVisible = false; // opponent threw — hide arrow + name
             // Save our ball's current resting position so we can restore it
             // exactly after the replay — the opponent's physics must never
             // alter the player's own ball state.
@@ -1679,9 +1688,12 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             if (isSpec && mpCfg._savedBallX != null) {
                 // Show our own resting ball at full opacity during the replay
                 drawSecondaryBall(mpCfg._savedBallX, mpCfg._savedBallY, 1.0);
-            } else if (!isSpec && !mpCfg.isMyTurn && ghostX != null) {
-                // Not our turn — show the active/next player's ghost at 50%
-                drawSecondaryBall(ghostX, ghostY, 0.5);
+            } else if (!isSpec && !mpCfg.isMyTurn && ghostX != null && ghostAlpha > 0) {
+                // Not our turn — show the active/next player's ghost, faded.
+                drawSecondaryBall(ghostX, ghostY, ghostAlpha);
+                if (ghostLabelVisible && ghostAlpha > 0.05) {
+                    drawGhostLabel(ghostX, ghostY, ghostAlpha / 0.5);
+                }
             }
         }
 
@@ -2062,6 +2074,54 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             }
         }
         return false;
+    }
+
+    // Arrow + name label drawn above the ghost ball while waiting for the
+    // opponent to throw. alpha is 0..1 (mapped from ghostAlpha/0.5).
+    function drawGhostLabel(gx, gy, alpha) {
+        const name = mpCfg?.activePlayerName || '';
+        const r  = ball.radius;
+        const fpx = Math.max(10, 13 * scale);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+
+        // Bouncing arrow
+        const bounce = Math.sin(performance.now() / 300) * 3 * scale;
+        const arrowTip = gy - r * 1.8 - bounce;
+        const arrowLen = 9 * scale;
+        ctx.beginPath();
+        ctx.moveTo(gx, arrowTip);
+        ctx.lineTo(gx - arrowLen * 0.6, arrowTip - arrowLen);
+        ctx.lineTo(gx + arrowLen * 0.6, arrowTip - arrowLen);
+        ctx.closePath();
+        ctx.fillStyle = '#38bdf8';
+        ctx.shadowColor = 'rgba(56,189,248,0.7)';
+        ctx.shadowBlur  = 8 * scale;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Name label
+        if (name) {
+            ctx.font = `700 ${fpx}px 'Orbitron', 'Inter', sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            const textY = arrowTip - arrowLen - 4 * scale;
+            // Subtle backdrop
+            ctx.fillStyle = 'rgba(0,0,0,0.45)';
+            const tw = ctx.measureText(name).width;
+            const pad = 6 * scale;
+            const bh = fpx + pad;
+            ctx.beginPath();
+            ctx.roundRect(gx - tw / 2 - pad, textY - bh + pad * 0.5, tw + pad * 2, bh, 4 * scale);
+            ctx.fill();
+            // Text
+            ctx.fillStyle = '#7dd3fc';
+            ctx.shadowColor = 'rgba(56,189,248,0.5)';
+            ctx.shadowBlur  = 6 * scale;
+            ctx.fillText(name.toUpperCase(), gx, textY);
+        }
+
+        ctx.restore();
     }
 
     // Comic-book speech bubble drawn ON the canvas, coming out of the ball.
@@ -2501,14 +2561,33 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     let lastTime = 0;
     let lastScoreMultiplier = 1;
     const prevBall = { x: ball.x, y: ball.y };
+    let prevIsMyTurn = mpCfg?.isMyTurn ?? true;
 
     animate = function(timestamp) {
         syncContext();
+
+        // Detect isMyTurn transitions to drive ghost fade.
+        if (mpCfg) {
+            if (!prevIsMyTurn && mpCfg.isMyTurn) {
+                // Our turn started — fade out the ghost.
+                ghostFadeDir = -1;
+            }
+            prevIsMyTurn = mpCfg.isMyTurn;
+        }
         if (!lastTime) lastTime = timestamp;
         let frameTime = (timestamp - lastTime) / 1000;   // real seconds elapsed
         lastTime = timestamp;
         // A hitch or a backgrounded tab must not fast-forward the simulation.
         if (frameTime > 0.25) frameTime = 0.25;
+
+        // Advance ghost fade — render-time so it's smooth regardless of FF.
+        if (ghostFadeDir !== 0) {
+            ghostAlpha += ghostFadeDir * (0.5 / GHOST_FADE_DUR) * frameTime;
+            ghostAlpha = Math.max(0, Math.min(0.5, ghostAlpha));
+            if ((ghostFadeDir > 0 && ghostAlpha >= 0.5) || (ghostFadeDir < 0 && ghostAlpha <= 0)) {
+                ghostFadeDir = 0;
+            }
+        }
 
         // Refresh the score box whenever a modifier flips the multiplier
         // (challenge activates / ends) so the "per shot · 2X" label is live
