@@ -6,14 +6,24 @@
 //   audio.playBg(name, opts)  — start/switch looping background track
 //   audio.stopBg()            — fade out and stop background track
 //   audio.setMuted(bool)      — persisted to localStorage
+//
+// iOS-safe design: the AudioContext is created ONLY inside unlock(), which
+// must be called from a user gesture. preload() only fetches raw bytes —
+// decoding happens after unlock() so iOS never sees a pre-gesture context.
 
 const MUTE_KEY    = 'tossboss_muted';
 const BG_MUTE_KEY = 'tossboss_bg_muted';
-const BG_FADE_MS  = 800; // crossfade duration in ms
+const BG_FADE_MS  = 800;
 
 function createAudioManager() {
-    let ctx = null;
+    let ctx     = null;
+    let unlocked = false;
+
+    // Raw bytes fetched during preload, keyed by name.
+    const rawBuffers = {};
+    // Decoded AudioBuffers, populated after unlock().
     const buffers = {};
+
     let muted   = localStorage.getItem(MUTE_KEY)    === 'true';
     let bgMuted = localStorage.getItem(BG_MUTE_KEY) === 'true';
 
@@ -21,67 +31,72 @@ function createAudioManager() {
     let bgSource      = null;
     let bgGain        = null;
     let bgName        = null;
-    let bgVolume      = 0.3;   // remembered so unlock() can retry the pending track
-    let bgTargetVolume = 0.3;  // the non-muted volume for the current track
+    let bgVolume      = 0.3;
+    let bgTargetVolume = 0.3;
 
     function getCtx() {
         if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
         return ctx;
     }
 
-    // Resume the AudioContext on first user gesture — required on iOS/Android.
-    // If background music was requested before a gesture unblocked audio,
-    // retry it now that the context is running.
-    function unlock() {
+    // Decode all fetched raw buffers using the (now live) AudioContext.
+    async function decodeAll() {
         const c = getCtx();
-        if (c.state === 'suspended') {
-            c.resume().then(() => {
-                // Retry the pending bg track if nothing is currently playing.
-                if (bgName && !bgSource) {
-                    const pending = bgName;
-                    bgName = null; // reset so playBg doesn't no-op
-                    playBg(pending, { volume: bgVolume });
-                }
-            });
-        } else if (bgName && !bgSource) {
+        await Promise.all(Object.entries(rawBuffers).map(async ([name, ab]) => {
+            if (buffers[name]) return;
+            try {
+                // slice() because decodeAudioData transfers/consumes the buffer
+                buffers[name] = await c.decodeAudioData(ab.slice(0));
+            } catch (e) {
+                console.warn('[audio] failed to decode', name, e);
+            }
+        }));
+    }
+
+    // Must be called from a user gesture (touchstart / click / pointerdown).
+    // Creates the AudioContext, decodes all pre-fetched buffers, then starts
+    // any pending background track.
+    async function unlock() {
+        if (unlocked) return;
+        unlocked = true;
+        const c = getCtx();
+        if (c.state === 'suspended') await c.resume();
+        await decodeAll();
+        if (bgName && !bgSource) {
             const pending = bgName;
             bgName = null;
             playBg(pending, { volume: bgVolume });
         }
     }
 
-    // Fetch and decode every file in { name: url } map.
-    // After all files are ready, retry the pending bg track if unlock() already
-    // fired but the buffer wasn't available at that point (common on mobile where
-    // the first tap happens before large MP3s finish decoding).
+    // Fetch all files immediately (no gesture needed — just HTTP).
+    // Decoding is deferred to unlock() so iOS never sees a pre-gesture context.
     async function preload(map) {
-        const c = getCtx();
         await Promise.all(Object.entries(map).map(async ([name, url]) => {
             try {
                 const resp = await fetch(url);
-                const ab   = await resp.arrayBuffer();
-                buffers[name] = await c.decodeAudioData(ab);
+                rawBuffers[name] = await resp.arrayBuffer();
             } catch (e) {
-                console.warn('[audio] failed to load', name, e);
+                console.warn('[audio] failed to fetch', name, e);
             }
         }));
-        // If the AudioContext is already running (user tapped before preload
-        // finished) but the bg track never started, start it now.
-        if (bgName && !bgSource && ctx && ctx.state === 'running') {
-            const pending = bgName;
-            bgName = null;
-            playBg(pending, { volume: bgVolume });
+        // If the user already tapped before preload finished, decode now and
+        // start any pending background track.
+        if (unlocked) {
+            await decodeAll();
+            if (bgName && !bgSource) {
+                const pending = bgName;
+                bgName = null;
+                playBg(pending, { volume: bgVolume });
+            }
         }
     }
 
-    // Play a buffered sound. Safe to call even before preload finishes
-    // (buffer just won't exist yet and the call silently no-ops).
     function play(name, { volume = 1, rate = 1 } = {}) {
         if (muted) return;
         const buf = buffers[name];
         if (!buf) return;
         const c = getCtx();
-        if (c.state === 'suspended') c.resume();
         const src = c.createBufferSource();
         src.buffer = buf;
         src.playbackRate.value = rate;
@@ -96,25 +111,20 @@ function createAudioManager() {
         src.start(0);
     }
 
-    // Pick and play a random sound from an array of names.
     function playOneOf(names, opts) {
         play(names[Math.floor(Math.random() * names.length)], opts);
     }
 
-    // Start a looping background track, crossfading from whatever is playing.
-    // If the same track is already playing, does nothing.
     function playBg(name, { volume = 0.3 } = {}) {
-        bgVolume = volume; // remember in case unlock() needs to retry
+        bgVolume = volume;
         if (bgName === name) return;
-        const c = getCtx();
-        if (c.state === 'suspended') c.resume();
         const fadeS = BG_FADE_MS / 1000;
 
-        // Fade out current track then stop it.
+        // Fade out current track.
         if (bgGain && bgSource) {
             const oldGain = bgGain;
             const oldSrc  = bgSource;
-            oldGain.gain.setTargetAtTime(0, c.currentTime, fadeS / 3);
+            if (ctx) oldGain.gain.setTargetAtTime(0, ctx.currentTime, fadeS / 3);
             setTimeout(() => {
                 try { oldSrc.stop(); } catch (_) {}
                 oldGain.disconnect();
@@ -126,12 +136,12 @@ function createAudioManager() {
         const buf = buffers[name];
         if (!buf) { bgSource = null; bgGain = null; return; }
 
-        const src  = c.createBufferSource();
+        const c   = getCtx();
+        const src = c.createBufferSource();
         src.buffer = buf;
         src.loop   = true;
 
         const gain = c.createGain();
-        // Start silent, fade in (unless bg music is muted).
         gain.gain.setValueAtTime(0, c.currentTime);
         if (!bgMuted) gain.gain.setTargetAtTime(volume, c.currentTime, fadeS / 3);
 
@@ -143,15 +153,12 @@ function createAudioManager() {
         bgGain   = gain;
     }
 
-    // Fade out and stop the current background track.
     function stopBg() {
-        if (!bgSource) return;
-        const c = getCtx();
+        if (!bgSource || !ctx) return;
         const fadeS = BG_FADE_MS / 1000;
-        const oldGain = bgGain;
-        const oldSrc  = bgSource;
+        const oldGain = bgGain, oldSrc = bgSource;
         bgSource = null; bgGain = null; bgName = null;
-        oldGain.gain.setTargetAtTime(0, c.currentTime, fadeS / 3);
+        oldGain.gain.setTargetAtTime(0, ctx.currentTime, fadeS / 3);
         setTimeout(() => {
             try { oldSrc.stop(); } catch (_) {}
             oldGain.disconnect();
@@ -168,12 +175,10 @@ function createAudioManager() {
     function setBgMuted(val) {
         bgMuted = val;
         localStorage.setItem(BG_MUTE_KEY, val);
-        if (!bgGain) return;
-        const c = getCtx();
-        const fadeS = 0.3;
+        if (!bgGain || !ctx) return;
         bgGain.gain.setTargetAtTime(
             val ? 0 : bgTargetVolume,
-            c.currentTime, fadeS / 3
+            ctx.currentTime, 0.1
         );
     }
 
