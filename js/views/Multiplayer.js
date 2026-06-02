@@ -73,14 +73,6 @@ export default function Multiplayer({ session = null, storedName = '', replayCod
 
             <!-- ── Panel B: Create Form ───────────────── -->
             <div class="home-content" id="mp-create" hidden>
-                <button id="btn-mp-create-back" class="mp-text-back">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                         style="width:14px;height:14px;flex-shrink:0;">
-                        <path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>
-                    </svg>
-                    Back
-                </button>
                 <h1 class="logo-title">New Room</h1>
                 <p class="subtitle">Configure Your Game</p>
 
@@ -115,6 +107,7 @@ export default function Multiplayer({ session = null, storedName = '', replayCod
                 <button id="btn-mp-create-confirm" class="play-btn mp-create-btn">
                     Create Room
                 </button>
+                <button id="btn-mp-create-back" class="play-btn secondary-btn">Back</button>
                 <p id="mp-create-error" class="mp-error" hidden></p>
             </div>
 
