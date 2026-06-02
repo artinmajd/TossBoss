@@ -2323,6 +2323,7 @@ button:disabled {
     position: absolute;
     top: calc(100% + 0.4rem);
     left: 0;
+    pointer-events: auto;
     background: var(--surface-color);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -2348,6 +2349,7 @@ button:disabled {
     top: calc(100% + 0.4rem);
     left: 0;
     z-index: 101;
+    pointer-events: auto;
     background: var(--surface-color);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
