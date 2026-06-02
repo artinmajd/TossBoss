@@ -434,14 +434,14 @@ button {
 }
 
 @media (hover: hover) {
-    button:hover {
+    button:not(.settings-toggle):hover {
         background: linear-gradient(135deg, #7dd3fc, #38bdf8);
         transform: translateY(-2px);
         box-shadow: 0 8px 25px rgba(56, 189, 248, 0.5);
     }
 }
 
-button:active {
+button:not(.settings-toggle):active {
     transform: translateY(1px);
     box-shadow: 0 2px 10px rgba(56, 189, 248, 0.4);
 }
