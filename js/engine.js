@@ -237,11 +237,11 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // player broadcasts their real position (see getBallPos / setGhost).
         // (mpSpawnPos is a hoisted function declaration — safe to call here.)
         mpCfg.parkGhostAtSpawn = () => {
-            const s = mpSpawnPos();
-            ghostX = s.x;
-            ghostY = s.y;
-            // No fade — just a silent position placeholder until setGhost
-            // arrives with the real position and triggers the fade-in.
+            // Position update intentionally deferred to setGhost (turn_ready).
+            // Moving the position here would teleport the ghost while it's
+            // still fading out, which is visible. The spawn placeholder is
+            // never shown (alpha=0 until setGhost triggers fade-in), so
+            // there's nothing to set here.
         };
 
         // Fade out the current ghost (called when a turn ends, before the
