@@ -36,19 +36,45 @@ export default function Home(session) {
            <button id="btn-play-game" class="play-btn">Play</button>
            <button id="btn-multiplayer" class="play-btn secondary-btn">Multiplayer</button>
            <button id="btn-leaderboard" class="play-btn secondary-btn">Leaderboard</button>
+           <button id="btn-home-settings" class="play-btn secondary-btn">Settings</button>
            <button id="btn-logout" class="play-btn secondary-btn">Sign Out</button>`
         : `<button id="btn-play-game" class="play-btn">Play as Guest</button>
            <button id="btn-multiplayer" class="play-btn secondary-btn">Multiplayer</button>
            <button id="btn-leaderboard" class="play-btn secondary-btn">Leaderboard</button>
+           <button id="btn-home-settings" class="play-btn secondary-btn">Settings</button>
            <button id="btn-signin" class="play-btn secondary-btn">Sign In / Sign Up</button>`;
 
     return `
         <div id="home-screen" class="view-screen">
-            <div class="home-content">
+
+            <!-- ── Panel A: Main menu ─────────────────── -->
+            <div class="home-content" id="home-main">
                 <h1 class="logo-title">TossBoss</h1>
                 <p class="subtitle">Sink Shots. Stack Streaks.</p>
                 ${userSection}
             </div>
+
+            <!-- ── Panel B: Settings ─────────────────── -->
+            <div class="home-content" id="home-settings" hidden>
+                <h1 class="logo-title">Settings</h1>
+                <p class="subtitle">Audio</p>
+
+                <div class="home-settings-row">
+                    <span class="home-settings-label">Music</span>
+                    <button class="settings-toggle" id="home-toggle-music" role="switch" aria-checked="true">
+                        <span class="settings-toggle-knob"></span>
+                    </button>
+                </div>
+                <div class="home-settings-row">
+                    <span class="home-settings-label">Sound Effects</span>
+                    <button class="settings-toggle" id="home-toggle-sfx" role="switch" aria-checked="true">
+                        <span class="settings-toggle-knob"></span>
+                    </button>
+                </div>
+
+                <button id="btn-home-settings-back" class="play-btn secondary-btn">Back</button>
+            </div>
+
             ${installHint()}
             <p class="home-credit">Developed by <span>Artin Majd</span></p>
         </div>

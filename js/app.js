@@ -1204,6 +1204,35 @@ async function router() {
         document.getElementById('btn-leaderboard').addEventListener('click', () => {
             window.location.hash = '#leaderboard';
         });
+        // Settings panel switching
+        const homeMain     = document.getElementById('home-main');
+        const homeSettings = document.getElementById('home-settings');
+        document.getElementById('btn-home-settings')?.addEventListener('click', () => {
+            homeMain.hidden     = true;
+            homeSettings.hidden = false;
+            syncHomeToggles();
+        });
+        document.getElementById('btn-home-settings-back')?.addEventListener('click', () => {
+            homeSettings.hidden = true;
+            homeMain.hidden     = false;
+        });
+
+        const homeMusicToggle = document.getElementById('home-toggle-music');
+        const homeSfxToggle   = document.getElementById('home-toggle-sfx');
+        const syncHomeToggles = () => {
+            homeMusicToggle?.setAttribute('aria-checked', !audio.isBgMuted() ? 'true' : 'false');
+            homeSfxToggle?.setAttribute('aria-checked',   !audio.isMuted()   ? 'true' : 'false');
+        };
+        syncHomeToggles();
+        homeMusicToggle?.addEventListener('click', () => {
+            audio.setBgMuted(!audio.isBgMuted());
+            syncHomeToggles();
+        });
+        homeSfxToggle?.addEventListener('click', () => {
+            audio.setMuted(!audio.isMuted());
+            syncHomeToggles();
+        });
+
         if (session) {
             document.getElementById('btn-logout')?.addEventListener('click', async () => {
                 await supabase.auth.signOut();

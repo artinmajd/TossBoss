@@ -269,6 +269,21 @@ html, body {
     font-size: 0.82rem;
 }
 
+/* Home screen settings panel rows — wider label, full card width */
+.home-settings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 0.3rem 0;
+}
+
+.home-settings-label {
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 500;
+}
+
 .settings-toggle {
     position: relative;
     width: 40px;
