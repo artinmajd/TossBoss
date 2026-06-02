@@ -426,16 +426,18 @@ async function router() {
             oppCardsRow.innerHTML = players
                 .filter(p => p.id !== myId)
                 .map(p => `
-                    <div class="mp-player-card" data-pid="${p.id}">
-                        <span class="mp-hud-pname">${escHtml(p.name)}</span>
-                        <div class="mp-card-score-row">
-                            <span class="mp-hud-pscore mp-card-score">${p.score}</span>
-                            <span class="mp-card-target">/ ${targetScore}</span>
-                            <div class="mp-opp-hearts mp-card-hearts">${heartImgs(p.maxLives)}</div>
-                        </div>
-                        <div class="mp-hud-stats">
-                            <span class="mp-hud-throws mp-card-throws">shots: ${p.throws}</span>
-                            <span class="mp-hud-streak-val mp-card-streak"></span>
+                    <div class="mp-opp-card-wrap" data-pid="${p.id}">
+                        <div class="mp-player-card">
+                            <span class="mp-hud-pname">${escHtml(p.name)}</span>
+                            <div class="mp-card-score-row">
+                                <span class="mp-hud-pscore mp-card-score">${p.score}</span>
+                                <span class="mp-card-target">/ ${targetScore}</span>
+                                <div class="mp-opp-hearts mp-card-hearts">${heartImgs(p.maxLives)}</div>
+                            </div>
+                            <div class="mp-hud-stats">
+                                <span class="mp-hud-throws mp-card-throws">shots: ${p.throws}</span>
+                                <span class="mp-hud-streak-val mp-card-streak"></span>
+                            </div>
                         </div>
                     </div>`).join('');
         };
@@ -471,8 +473,9 @@ async function router() {
             // Opponent cards
             players.forEach((p, idx) => {
                 if (p.id === myId) return;
-                const card = oppCardsRow?.querySelector(`[data-pid="${p.id}"]`);
-                if (!card) return;
+                const wrap = oppCardsRow?.querySelector(`.mp-opp-card-wrap[data-pid="${p.id}"]`);
+                const card = wrap?.querySelector('.mp-player-card');
+                if (!wrap || !card) return;
                 const sc = card.querySelector('.mp-card-score');
                 const th = card.querySelector('.mp-card-throws');
                 const st = card.querySelector('.mp-card-streak');
@@ -811,7 +814,7 @@ async function router() {
 
             // Score-reset feedback: flash + shake the player's card on our screen.
             if (payload.reset) {
-                shakeCardReset(oppCardsRow?.querySelector(`[data-pid="${payload.senderId}"]`));
+                shakeCardReset(oppCardsRow?.querySelector(`.mp-opp-card-wrap[data-pid="${payload.senderId}"] .mp-player-card`))
             }
 
             setTimeout(() => {

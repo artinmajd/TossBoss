@@ -2338,7 +2338,15 @@ button:disabled {
 }
 .mp-opp-cards-row::-webkit-scrollbar { display: none; }  /* WebKit */
 
-/* Cards must not shrink inside the scroll row, or they'd squash instead of scroll */
+/* Wrapper prevents the scroll container from clipping the scaled card.
+   overflow:visible (default) lets the 1.07x scale bleed into the padding. */
+.mp-opp-card-wrap {
+    flex-shrink: 0;
+    padding: 4px 8px 8px;
+    overflow: visible;
+}
+
+/* The card itself doesn't need to be a flex item anymore */
 .mp-opp-cards-row .mp-player-card { flex-shrink: 0; }
 
 /* Right-align the cards when they fit; when they overflow this auto-margin
@@ -2442,15 +2450,16 @@ button:disabled {
 
 /* Active turn: opponent cards scale and brighten directly */
 .mp-player-card.mp-card-active {
+    transform: scale(1.07);
+    transform-origin: top center;
     z-index: 1;
     background: rgb(22, 60, 140);
-    border-color: rgba(56, 189, 248, 0.9);
+    border-color: rgba(56, 189, 248, 0.68);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.20),
         inset 0 -1px 0 rgba(0, 0, 0, 0.08),
-        0 0 0 2px rgba(56, 189, 248, 0.5),
-        0 0 20px rgba(56, 189, 248, 0.45),
-        0 6px 30px rgba(56, 189, 248, 0.25);
+        0 0 0 1px rgba(56, 189, 248, 0.22),
+        0 6px 30px rgba(56, 189, 248, 0.20);
 }
 
 /* Own card: scale the WRAPPER so the timer ring scales with the card.
