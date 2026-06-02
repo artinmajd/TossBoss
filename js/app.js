@@ -1389,7 +1389,13 @@ function bindAuthForm() {
 
 window.addEventListener('hashchange', router);
 // Unlock audio on the very first interaction anywhere on the page.
-document.addEventListener('pointerdown', () => audio.unlock(), { once: true });
+// Listen on multiple event types — iOS Safari doesn't always honour
+// pointerdown as a valid AudioContext gesture, but touchstart and click work.
+let _audioUnlocked = false;
+const _unlockOnce = () => { if (_audioUnlocked) return; _audioUnlocked = true; audio.unlock(); };
+document.addEventListener('touchstart',  _unlockOnce, { once: true, passive: true });
+document.addEventListener('pointerdown', _unlockOnce, { once: true });
+document.addEventListener('click',       _unlockOnce, { once: true });
 
 window.addEventListener('DOMContentLoaded', () => {
     // A fresh launch should never open straight into the single-player game
