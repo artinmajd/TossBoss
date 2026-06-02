@@ -240,8 +240,15 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             const s = mpSpawnPos();
             ghostX = s.x;
             ghostY = s.y;
-            ghostFadeDir = 1;
-            ghostLabelVisible = true;
+            // No fade — just a silent position placeholder until setGhost
+            // arrives with the real position and triggers the fade-in.
+        };
+
+        // Fade out the current ghost (called when a turn ends, before the
+        // new player's position is known).
+        mpCfg.fadeOutGhost = () => {
+            if (ghostAlpha > 0) ghostFadeDir = -1;
+            ghostLabelVisible = false;
         };
 
         // Our ball's current resting position, normalized to the playfield, so
@@ -254,7 +261,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         mpCfg.setGhost = (nx, ny) => {
             ghostX = nx * width;
             ghostY = ny * height;
-            ghostFadeDir = 1;     // fade in when ghost position is updated
+            // Snap alpha to 0 first so we always fade-in from invisible at
+            // the correct position — never teleport from old position.
+            ghostAlpha = 0;
+            ghostFadeDir = 1;
             ghostLabelVisible = true;
         };
 
@@ -2569,8 +2579,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         // Detect isMyTurn transitions to drive ghost fade.
         if (mpCfg) {
             if (!prevIsMyTurn && mpCfg.isMyTurn) {
-                // Our turn started — fade out the ghost.
-                ghostFadeDir = -1;
+                // Our turn started — fade out the ghost and hide label.
+                if (ghostAlpha > 0) ghostFadeDir = -1;
+                ghostLabelVisible = false;
             }
             prevIsMyTurn = mpCfg.isMyTurn;
         }

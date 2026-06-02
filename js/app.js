@@ -802,12 +802,14 @@ async function router() {
                 players[idx].throws   = payload.throws   ?? players[idx].throws + 1;
             }
             currentTurn = payload.nextTurn ?? ((currentTurn + 1) % players.length);
+            // Fade out the old ghost before the new player's position arrives.
+            multiplayerConfig.fadeOutGhost?.();
             // Update active player name for ghost label.
             multiplayerConfig.activePlayerName = currentTurn !== myIndex
                 ? (players[currentTurn]?.name ?? '') : '';
-            // Park the ghost at the launch spot as an instant placeholder for
-            // every spectator; if the new turn is ours, broadcast our real ball
-            // position so spectators correct their ghost to where we'll throw.
+            // Park the ghost at the launch spot as an invisible placeholder;
+            // setGhost (from turn_ready) will snap it to the real position and
+            // trigger the fade-in.
             multiplayerConfig.parkGhostAtSpawn?.();
             if (currentTurn === myIndex) announceMyTurn();
             updateMpHud();
