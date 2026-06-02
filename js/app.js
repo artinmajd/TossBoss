@@ -1013,20 +1013,39 @@ async function router() {
         setTimeout(countdownTick, 1000);
 
         // ── Quit button — delete room and go back to lobby ─────────────────
-        // MP hamburger menu
-        const mpMenuBtn    = document.getElementById('mp-btn-menu');
-        const mpMenuBubble = document.getElementById('mp-menu-bubble');
-        const setMpMenu = (open) => {
-            mpMenuBubble?.classList.toggle('visible', open);
-            mpMenuBtn?.classList.toggle('selected', open);
+        // MP hamburger menu — mirrors single-player #top-left / menu-open pattern
+        const mpTopLeft      = document.getElementById('mp-top-left');
+        const mpMenuBtn      = document.getElementById('mp-btn-menu');
+        const mpSettingsBtn  = document.getElementById('mp-btn-settings');
+        const mpSettingsBubble = document.getElementById('mp-settings-bubble');
+
+        const closeMpMenu = () => {
+            mpTopLeft?.classList.remove('mp-menu-open');
+            mpMenuBtn?.classList.remove('selected');
         };
+        const closeMpSettings = () => {
+            mpSettingsBubble?.classList.remove('visible');
+            mpSettingsBtn?.classList.remove('selected');
+        };
+
         mpMenuBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
-            setMpMenu(!mpMenuBubble?.classList.contains('visible'));
+            closeMpSettings();
+            const isOpen = mpTopLeft?.classList.toggle('mp-menu-open');
+            mpMenuBtn.classList.toggle('selected', isOpen);
         });
-        document.addEventListener('click', () => setMpMenu(false));
 
-        // MP audio toggles (reuse same audio manager)
+        mpSettingsBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeMpMenu();
+            const isOpen = !mpSettingsBubble?.classList.contains('visible');
+            mpSettingsBubble?.classList.toggle('visible', isOpen);
+            mpSettingsBtn.classList.toggle('selected', isOpen);
+        });
+
+        document.addEventListener('click', () => { closeMpMenu(); closeMpSettings(); });
+
+        // MP audio toggles
         const mpMusicToggle = document.getElementById('mp-toggle-music');
         const mpSfxToggle   = document.getElementById('mp-toggle-sfx');
         const syncMpToggles = () => {

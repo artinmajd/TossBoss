@@ -2314,14 +2314,40 @@ button:disabled {
 .mp-quit-btn {
     pointer-events: auto;
     flex-shrink: 0;
+    position: relative;
 }
 
-.mp-menu-bubble {
+/* MP nav-bar — same glass pill as single-player #nav-bar */
+#mp-nav-bar {
     display: none;
     position: absolute;
     top: calc(100% + 0.4rem);
     left: 0;
+    background: var(--surface-color);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    border-radius: 1rem;
+    padding: 0.5rem;
+    flex-direction: column;
+    gap: 0.4rem;
+    align-items: center;
     z-index: 100;
+}
+
+#mp-top-left.mp-menu-open #mp-nav-bar {
+    display: flex;
+    animation: hud-pop-in 0.15s ease forwards;
+}
+
+/* Settings bubble anchored below the nav-bar */
+.mp-settings-bubble {
+    display: none;
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    left: 0;
+    z-index: 101;
     background: var(--surface-color);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -2334,34 +2360,8 @@ button:disabled {
     gap: 0.6rem;
 }
 
-.mp-menu-bubble.visible {
+.mp-settings-bubble.visible {
     display: flex;
-}
-
-.mp-menu-divider {
-    height: 1px;
-    background: var(--border-color);
-    margin: 0.2rem 0;
-}
-
-.mp-menu-quit-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 100%;
-    background: rgba(239, 68, 68, 0.12);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    border-radius: 0.5rem;
-    color: #fca5a5;
-    font-size: 0.82rem;
-    font-weight: 600;
-    padding: 0.4rem 0.6rem;
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.mp-menu-quit-btn:hover {
-    background: rgba(239, 68, 68, 0.22);
 }
 
 /* ── Player glass cards ────────────────────────────────────────── */
