@@ -2338,15 +2338,7 @@ button:disabled {
 }
 .mp-opp-cards-row::-webkit-scrollbar { display: none; }  /* WebKit */
 
-/* Wrapper prevents the scroll container from clipping the scaled card.
-   overflow:visible (default) lets the 1.07x scale bleed into the padding. */
-.mp-opp-card-wrap {
-    flex-shrink: 0;
-    padding: 4px 8px 8px;
-    overflow: visible;
-}
-
-/* The card itself doesn't need to be a flex item anymore */
+/* Cards must not shrink inside the scroll row, or they'd squash instead of scroll */
 .mp-opp-cards-row .mp-player-card { flex-shrink: 0; }
 
 /* Right-align the cards when they fit; when they overflow this auto-margin
@@ -2460,6 +2452,12 @@ button:disabled {
         inset 0 -1px 0 rgba(0, 0, 0, 0.08),
         0 0 0 1px rgba(56, 189, 248, 0.22),
         0 6px 30px rgba(56, 189, 248, 0.20);
+}
+
+/* Give the scroll row enough padding that the 1.07x scaled card
+   (which overflows its layout box by ~4px per side) is not clipped. */
+.mp-opp-cards-row {
+    padding: 6px 12px 10px 2px;
 }
 
 /* Own card: scale the WRAPPER so the timer ring scales with the card.
