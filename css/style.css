@@ -2332,7 +2332,7 @@ button:disabled {
     /* No top padding so opponent cards align with the own card's top; the
        active card scales DOWNWARD (transform-origin top), so only the bottom
        needs room. */
-    padding: 0 2px 8px;
+    padding: 0 12px 8px 2px;
     scrollbar-width: none;       /* Firefox */
     pointer-events: auto;        /* HUD is pointer-events:none — re-enable here so it scrolls */
 }
