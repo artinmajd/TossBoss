@@ -76,6 +76,15 @@ export default function MultiplayerWaiting({ room, role }) {
         <div id="mp-waiting-screen" class="view-screen">
             <div class="home-content mp-waiting-card">
 
+                <button id="btn-mp-leave" class="mp-text-back">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                         style="width:14px;height:14px;flex-shrink:0;">
+                        <path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>
+                    </svg>
+                    Back
+                </button>
+
                 <p class="mp-sub-label">Room Code</p>
                 <div class="mp-code-badge">
                     <span id="mp-code-text">${room.code}</span>
@@ -108,7 +117,6 @@ export default function MultiplayerWaiting({ room, role }) {
                     Start Game
                 </button>` : ''}
 
-                <button id="btn-mp-leave" class="play-btn secondary-btn">Leave Room</button>
             </div>
         </div>
     `;
