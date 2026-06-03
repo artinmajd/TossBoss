@@ -1,4 +1,4 @@
-import { saveHighScore } from './supabase.js';
+import { saveHighScore, recordShot } from './supabase.js';
 import { createModifierManager } from './modifiers/manager.js';
 import { createGameContext } from './modifiers/context.js';
 import { createDirector } from './modifiers/director.js';
@@ -2330,10 +2330,13 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         const prevBonus = Math.floor(consecutiveHits / 3);
         const basePoints = 1 + prevBonus;
         // Active challenge (e.g. Moving Target) sets a multiplier > 1.
-        const points = Math.round(basePoints * (gameCtx.scoreMultiplier || 1));
+        const multiplier = gameCtx.scoreMultiplier || 1;
+        const points = Math.round(basePoints * multiplier);
         score += points;
         consecutiveHits++;
         consecutiveMisses = 0;
+        // Record shot for server-side validation (single-player only; fire-and-forget).
+        if (!mpCfg && !gameCtx.tester) recordShot(gameMode, true, multiplier);
         const newBonus = Math.floor(consecutiveHits / 3);
 
         const streakImproved = consecutiveHits > bestStreaks[gameMode];
@@ -2410,6 +2413,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             audio.play('hearts/bonus_end', { volume: 0.5 });
             // Bonus-loss miss doesn't count toward the reset counter — full 2 chances from scratch
             consecutiveMisses = 0;
+            if (!mpCfg && !gameCtx.tester) recordShot(gameMode, false);
             showToast('💔 Bonus Lost', 'bonus-lost');
             if (box) {
                 box.classList.remove('flash-bonus-lost');
@@ -2437,7 +2441,8 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             score = 0;
             consecutiveMisses = 0;
             nhsCelebratedThisRun = false;
-            didReset = !wasZero;   // an actual score-loss reset (matches the SP flash)
+            didReset = !wasZero;
+            if (!mpCfg && !gameCtx.tester) recordShot(gameMode, false, 1, didReset);
             if (!wasZero) {
                 audio.play('score/reset', { volume: 0.3 });
                 showToast('💥 RESET!', 'reset');
@@ -2452,6 +2457,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
             getHearts().forEach(h => h.classList.add('heart-dim'));
             setTimeout(refillLives, 280);
         } else {
+            if (!mpCfg && !gameCtx.tester) recordShot(gameMode, false);
             updateLives();   // first miss: dim one heart
         }
 

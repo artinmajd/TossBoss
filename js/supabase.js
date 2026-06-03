@@ -19,6 +19,23 @@ export async function getHighScores() {
     return result;
 }
 
+// Called on every shot — lets the DB validate the increment before persisting.
+// Fire-and-forget: gameplay must never wait on a network round-trip.
+// Guests (no session) are silently skipped.
+export function recordShot(mode, scored, challengeMultiplier = 1, reset = false) {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user) return;
+        supabase.rpc('record_shot', {
+            p_mode:                  mode,
+            p_scored:                scored,
+            p_challenge_multiplier:  Math.round(challengeMultiplier),
+            p_reset:                 reset,
+        }).then(({ data, error }) => {
+            if (error) console.warn('[record_shot]', error.message);
+        });
+    });
+}
+
 export async function saveHighScore(mode, score, bestStreak) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
