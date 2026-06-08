@@ -1223,7 +1223,13 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                 }
             }
 
-            if (ball.y + ball.radius < hoopRimY) {
+            // Only count the ball as "above the rim" when it is also within
+            // the hoop's horizontal opening (±ball.radius buffer to cover
+            // rim-clippers and backboard shots without letting a ball that
+            // was never near the hoop set this flag).
+            if (ball.y + ball.radius < hoopRimY
+                && ball.x > hoopLeftRim - ball.radius
+                && ball.x < hoopRightRim + ball.radius) {
                 wasAboveRim = true;
             }
             const clearDepth = 120 * scale * ts;
