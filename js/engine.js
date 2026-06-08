@@ -398,7 +398,14 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         const extra = hearts[hearts.length - 1];
         if (!extra) return;
         extra.classList.remove('heart-extra-in');
-        extra.classList.add('heart-extra-out');
+        extra.classList.add('heart-extra-out');   // excluded from getHearts() now
+        // Forgive one banked miss to match the life slot being removed. Losing
+        // the extra life lowers the reset threshold by 1; without this, a miss
+        // taken *during* the challenge (under the higher threshold) would be
+        // retroactively counted against the lower one and could trigger a reset
+        // a miss earlier than the player's visible heart count implies.
+        consecutiveMisses = Math.max(0, consecutiveMisses - 1);
+        updateLives();   // refresh the remaining hearts to the corrected count
         setTimeout(() => extra.remove(), 500);
     };
 
