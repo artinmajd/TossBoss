@@ -701,11 +701,16 @@ async function router() {
         let resultPending  = false; // prevent double-fire
         let tiebreakActive = false; // true once a tiebreaker round has started
 
-        // Players ranked by score (desc). Used for the overlay + result screen.
-        const computeStandings = () =>
-            [...players]
-                .sort((a, b) => b.score - a.score)
-                .map((p, i) => ({ id: p.id, name: p.name, score: p.score, rank: i + 1 }));
+        // Players ranked by score (desc). Tied scores share the same rank;
+        // the next rank skips accordingly (e.g. 1, 2, 2, 4).
+        const computeStandings = () => {
+            const sorted = [...players].sort((a, b) => b.score - a.score);
+            let rank = 1;
+            return sorted.map((p, i) => {
+                if (i > 0 && p.score < sorted[i - 1].score) rank = i + 1;
+                return { id: p.id, name: p.name, score: p.score, rank };
+            });
+        };
 
         // End the game. Idempotent. `broadcast` = also tell everyone else
         // (the detector broadcasts; receivers of game_over call with false).
