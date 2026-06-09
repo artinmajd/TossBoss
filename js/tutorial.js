@@ -28,12 +28,12 @@ export function initTutorial() {
     const ballXPercent = 0.25; // Left quarter of screen
     const ballYPercent = 0.85; // groundLevel from engine.js
 
-    // Start point (where finger starts, at ball)
-    const startX = ballXPercent;
-    const startY = ballYPercent;
-    // End point (drag BACKWARDS to aim forward)
-    const endX = ballXPercent - 0.2;
-    const endY = ballYPercent + 0.15;
+    // Finger starts higher up on screen (where user would tap)
+    const fingerStartX = 0.5;
+    const fingerStartY = 0.4;
+    // Drag BACKWARDS (down and left) to aim forward
+    const fingerEndX = 0.3;
+    const fingerEndY = 0.65;
 
     // Speech bubble message
     const message = 'Drag from ANYWHERE on the screen to start aiming and power';
@@ -108,33 +108,37 @@ export function initTutorial() {
 
         const scale = Math.min(canvas.width, canvas.height) / 800;
 
-        // Ball position (start point)
-        const ballX = startX * canvas.width;
-        const ballY = startY * canvas.height;
+        // Ball position (actual game ball)
+        const ballX = ballXPercent * canvas.width;
+        const ballY = ballYPercent * canvas.height;
 
         // Only draw during the drag phase (0% to 45% of cycle)
         if (progress <= 0.45) {
             const dragProgress = progress / 0.45; // 0 to 1 during drag
 
-            // Interpolate finger position (dragging BACKWARDS)
-            const currentX = startX + (endX - startX) * dragProgress;
-            const currentY = startY + (endY - startY) * dragProgress;
+            // Interpolate finger position (dragging BACKWARDS from higher on screen)
+            const fingerCurrentX = fingerStartX + (fingerEndX - fingerStartX) * dragProgress;
+            const fingerCurrentY = fingerStartY + (fingerEndY - fingerStartY) * dragProgress;
 
-            const pixelCurrentX = currentX * canvas.width;
-            const pixelCurrentY = currentY * canvas.height;
+            const pixelFingerCurrentX = fingerCurrentX * canvas.width;
+            const pixelFingerCurrentY = fingerCurrentY * canvas.height;
 
-            // aimStart is where finger started (ball position)
+            // Finger start position
+            const pixelFingerStartX = fingerStartX * canvas.width;
+            const pixelFingerStartY = fingerStartY * canvas.height;
+
+            // aimStart is where finger started
             // aimCurrent is where finger is now
             // We drag BACKWARDS to aim forward
-            const aimStartX = ballX;
-            const aimStartY = ballY;
-            const aimCurrentX = pixelCurrentX;
-            const aimCurrentY = pixelCurrentY;
+            const aimStartX = pixelFingerStartX;
+            const aimStartY = pixelFingerStartY;
+            const aimCurrentX = pixelFingerCurrentX;
+            const aimCurrentY = pixelFingerCurrentY;
 
             const dx = aimStartX - aimCurrentX;
             const dy = aimStartY - aimCurrentY;
 
-            // Draw trajectory prediction (simplified, matching engine.js logic)
+            // Draw trajectory prediction starting from the BALL
             const powerMultiplier = 8;
             let simVx = dx * powerMultiplier;
             let simVy = dy * powerMultiplier;
@@ -146,6 +150,7 @@ export function initTutorial() {
                 simVy = (simVy / speed) * maxSpeed;
             }
 
+            // Trajectory starts from the actual ball position
             let simX = ballX;
             let simY = ballY;
 
