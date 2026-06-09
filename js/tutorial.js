@@ -236,6 +236,24 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
             const bounceFactor = 0.7;
             const friction = 0.9;
 
+            // Cup blocking (ping pong mode - cup on the right)
+            const cupScale = 1; // Assume no modifier scaling in tutorial
+            const cupWidthTop = 110 * (transform.height / 650) * cupScale;
+            const cupWidthBottom = 70 * (transform.height / 650) * cupScale;
+            const cupHeight = 130 * (transform.height / 650) * cupScale;
+            const cupX = transform.width * 0.85; // Cup positioned on right side
+            const floorY = transform.height * 0.85;
+            const cupRimY = floorY - cupHeight;
+
+            const isCupBlocking = (px, py) => {
+                if (py >= cupRimY && py <= floorY) {
+                    const t = (py - cupRimY) / cupHeight;
+                    const halfW = cupWidthTop / 2 * (1 - t) + cupWidthBottom / 2 * t;
+                    if (px > cupX - halfW && px < cupX + halfW) return true;
+                }
+                return false;
+            };
+
             ctx.beginPath();
             ctx.moveTo(simX, simY);
 
@@ -248,7 +266,6 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
                 simX += simVx * dt;
                 simY += simVy * dt;
 
-                const floorY = transform.height * 0.85;
                 if (simY + 12 >= floorY) {
                     simY = floorY - 12;
                     simVy = -simVy * bounceFactor;
@@ -265,6 +282,9 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
                     simX = 12;
                     simVx = -simVx * bounceFactor;
                 }
+
+                // Stop drawing if blocked by cup
+                if (isCupBlocking(simX, simY)) break;
 
                 ctx.lineTo(simX, simY);
             }
