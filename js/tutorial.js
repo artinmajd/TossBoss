@@ -193,10 +193,10 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
                 // Normal sine wave for first 3/4
                 verticalAdjust = Math.sin(adjustProgress * Math.PI * 2) * transform.height * 0.08;
             } else {
-                // Final upward movement with ease-out (smooth deceleration)
+                // Final upward movement with deceleration only (ease-out cubic for stronger effect)
                 const finalProgress = (adjustProgress - 0.75) / 0.25; // 0 to 1
-                // Ease-out quad: decelerates smoothly to stop
-                const eased = 1 - (1 - finalProgress) * (1 - finalProgress);
+                // Ease-out cubic: stronger deceleration, no initial acceleration
+                const eased = 1 - Math.pow(1 - finalProgress, 3);
                 // Start at bottom (-0.08 * height), end at center (0)
                 verticalAdjust = -transform.height * 0.08 * (1 - eased);
             }
