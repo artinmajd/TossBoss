@@ -1847,6 +1847,22 @@ button:not(.settings-toggle):active {
     #leaderboard-screen .lb-name {
         font-size: 0.85rem;
     }
+
+    /* Match header column widths to data columns */
+    #leaderboard-screen .lb-col-rank {
+        width: 1.5rem;
+        font-size: 0.7rem;
+    }
+
+    #leaderboard-screen .lb-col-score,
+    #leaderboard-screen .lb-col-streak {
+        width: 3.5rem;
+        font-size: 0.7rem;
+    }
+
+    #leaderboard-screen .lb-col-name {
+        font-size: 0.7rem;
+    }
 }
 
 /* Auth Screen */
