@@ -129,9 +129,15 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
         const fingerStartX = transform.width * 0.2;
         const fingerStartY = transform.height * 0.35;
 
-        // Only draw during the drag phase (0% to 45% of cycle)
-        if (progress <= 0.45) {
-            const dragProgress = progress / 0.45; // 0 to 1 during drag
+        // Animation phases: drag (0-40%), tap (45-70%), rest (70-100%)
+        let fingerCurrentX, fingerCurrentY;
+        let aimStartX, aimStartY, aimCurrentX, aimCurrentY;
+        let shouldDraw = false;
+
+        if (progress <= 0.4) {
+            // DRAG PHASE: pull back to aim
+            shouldDraw = true;
+            const dragProgress = progress / 0.4;
 
             // Drag straight back to build power (0-60% of drag)
             // Then adjust angle at the end (60-100% of drag)
@@ -149,17 +155,34 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
                 yOffset = transform.height * (0.2 + 0.02 * t);
             }
 
-            const fingerCurrentX = fingerStartX + xOffset;
-            const fingerCurrentY = fingerStartY + yOffset;
+            fingerCurrentX = fingerStartX + xOffset;
+            fingerCurrentY = fingerStartY + yOffset;
 
-            // aimStart is where finger started
-            // aimCurrent is where finger is now
-            // We drag BACKWARDS to aim forward
-            const aimStartX = fingerStartX;
-            const aimStartY = fingerStartY;
-            const aimCurrentX = fingerCurrentX;
-            const aimCurrentY = fingerCurrentY;
+            aimStartX = fingerStartX;
+            aimStartY = fingerStartY;
+            aimCurrentX = fingerCurrentX;
+            aimCurrentY = fingerCurrentY;
+        } else if (progress > 0.45 && progress <= 0.7) {
+            // TAPPING PHASE: finger goes up and down a few times
+            shouldDraw = true;
+            const tapProgress = (progress - 0.45) / 0.25; // 0 to 1 during tap phase
 
+            // Create 3 bounces using sine wave
+            const bounces = Math.sin(tapProgress * Math.PI * 6);
+            const bounceHeight = transform.height * 0.08 * (1 - tapProgress); // Diminish over time
+
+            fingerCurrentX = fingerStartX;
+            fingerCurrentY = fingerStartY - bounceHeight * Math.abs(bounces);
+
+            // No aim line during tapping
+            aimStartX = fingerStartX;
+            aimStartY = fingerStartY;
+            aimCurrentX = fingerStartX;
+            aimCurrentY = fingerStartY;
+
+        }
+
+        if (shouldDraw) {
             const dx = aimStartX - aimCurrentX;
             const dy = aimStartY - aimCurrentY;
 
@@ -250,8 +273,10 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
             // Position fingertip on the dot (finger is rotated -20deg)
             // Adjust both X and Y to account for rotation
             fingerEl.style.transform = 'translate(-35%, -15%)';
-        } else {
-            // Hide finger when not in drag phase (synced with circle/line)
+        }
+
+        if (!shouldDraw) {
+            // Hide finger when not in active phase
             fingerEl.style.opacity = '0';
         }
 
