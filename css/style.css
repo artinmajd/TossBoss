@@ -1859,7 +1859,7 @@ button:not(.settings-toggle):active {
 
     /* Add spacing between BEST SCORE and BEST STREAK */
     #leaderboard-screen .lb-col-streak {
-        margin-left: 0.4rem;
+        margin-left: 0.7rem;
     }
 
     /* Shift sortable headers left when arrow appears */
