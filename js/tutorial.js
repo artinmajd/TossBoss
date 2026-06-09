@@ -133,21 +133,23 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
         if (progress <= 0.45) {
             const dragProgress = progress / 0.45; // 0 to 1 during drag
 
-            // Create a curved path with easing for more realistic motion
-            // Use quadratic easing for natural acceleration/deceleration
-            const eased = dragProgress < 0.5
-                ? 2 * dragProgress * dragProgress
-                : 1 - Math.pow(-2 * dragProgress + 2, 2) / 2;
+            // Drag straight back to build power (0-60% of drag)
+            // Then adjust angle at the end (60-100% of drag)
+            let xOffset, yOffset;
 
-            // Add some horizontal and vertical variation during drag
-            // Start going down-left, then curve more downward
-            const xOffset = -transform.width * 0.15 * eased;
-            const yOffset = transform.height * (0.12 * dragProgress + 0.08 * eased);
+            if (dragProgress < 0.6) {
+                // First part: pull straight down and slightly left
+                const t = dragProgress / 0.6;
+                xOffset = -transform.width * 0.08 * t;
+                yOffset = transform.height * 0.2 * t;
+            } else {
+                // Second part: adjust angle by moving more left
+                const t = (dragProgress - 0.6) / 0.4;
+                xOffset = -transform.width * (0.08 + 0.1 * t);
+                yOffset = transform.height * (0.2 + 0.02 * t);
+            }
 
-            // Add slight horizontal wobble for realism
-            const wobble = Math.sin(dragProgress * Math.PI) * transform.width * 0.02;
-
-            const fingerCurrentX = fingerStartX + xOffset + wobble;
+            const fingerCurrentX = fingerStartX + xOffset;
             const fingerCurrentY = fingerStartY + yOffset;
 
             // aimStart is where finger started
