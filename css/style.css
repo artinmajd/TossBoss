@@ -1341,71 +1341,77 @@ button:not(.settings-toggle):active {
 
 .lb-modal-card {
     position: relative;
-    background: rgba(15, 23, 42, 0.92);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 1.25rem;
-    padding: 1.25rem 1.25rem 1rem;
-    width: min(420px, 95vw);
-    max-height: 85vh;
+    background: var(--surface-color);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-color);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    width: 90%;
+    max-width: 460px;
+    max-height: 90vh;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    text-align: center;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
 }
 
 /* Landscape mobile (phones held sideways) — match standalone leaderboard compact style */
 @media (max-height: 500px) and (orientation: landscape) {
     .lb-modal-card {
-        width: min(580px, 97vw);
-        max-height: 96vh;
-        padding: 0.6rem 0.85rem 0.55rem;
-        gap: 0.35rem;
+        padding: 0.6rem 0.9rem 0.6rem;
+        width: min(560px, 97vw);
+        max-width: none;
+        max-height: 97vh;
+        border-radius: 1rem;
     }
     .lb-modal-card .logo-title {
-        font-size: 0.85rem;
-        margin-bottom: 0.2rem;
+        font-size: 0.9rem;
+        letter-spacing: 0.08em;
+        margin-bottom: 0;
+        animation: none;
     }
     .lb-modal-close {
-        top: 0.4rem;
-        right: 0.4rem;
-        padding: 0.2rem;
+        top: 0.5rem;
+        right: 0.5rem;
     }
     .lb-modal-close svg {
-        width: 16px;
-        height: 16px;
-    }
-    .lb-modal-tabs {
-        gap: 0.35rem;
-        margin: -0.25rem 0 0;
-    }
-    .lb-modal-tabs .tab-btn {
-        font-size: 0.7rem;
-        padding: 0.3rem 0.5rem;
-        gap: 0.3rem;
-    }
-    .lb-modal-tabs .tab-icon {
         width: 14px;
         height: 14px;
     }
-    .lb-table-header {
+    .lb-modal-card .leaderboard-tabs {
+        margin: 0.35rem 0 0.35rem;
+        gap: 0.35rem;
+    }
+    .lb-modal-card .leaderboard-tabs .tab-btn {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    .lb-modal-card .leaderboard-tabs .tab-icon {
+        width: 14px;
+        height: 14px;
+    }
+    .lb-modal-card .lb-table-header {
         padding: 0 0.7rem 0.3rem;
-        margin-bottom: 0.25rem;
-        font-size: 0.65rem;
+        margin-bottom: 0.35rem;
+        font-size: 0.68rem;
     }
-    .lb-col-score,
-    .lb-col-streak {
+    .lb-modal-card .lb-col-score,
+    .lb-modal-card .lb-col-streak {
         width: 4.5rem;
-        font-size: 0.65rem;
+        font-size: 0.68rem;
     }
-    .lb-col-rank {
+    .lb-modal-card .lb-col-rank {
         width: 1.75rem;
+        font-size: 0.68rem;
+    }
+    .lb-modal-card .lb-col-name {
+        font-size: 0.68rem;
     }
     #lb-modal-list {
-        gap: 0.25rem;
+        gap: 0.3rem;
     }
-    .lb-row {
+    .lb-modal-card .lb-row {
         padding: 0.4rem 0.7rem;
         gap: 0.5rem;
     }
@@ -1414,66 +1420,32 @@ button:not(.settings-toggle):active {
 /* Portrait mobile or narrow screens */
 @media (max-width: 700px) {
     .lb-modal-card {
-        padding: 0.9rem 0.85rem 0.7rem;
-        gap: 0.45rem;
-        max-height: 90vh;
-    }
-    .lb-modal-card .logo-title {
-        font-size: 0.85rem;
-        margin-bottom: 0.2rem;
+        padding: 1.5rem;
+        width: 95%;
     }
     .lb-modal-close {
-        top: 0.5rem;
-        right: 0.5rem;
-        padding: 0.2rem;
+        top: 0.75rem;
+        right: 0.75rem;
     }
     .lb-modal-close svg {
         width: 16px;
         height: 16px;
     }
-    .lb-modal-tabs {
-        gap: 0.35rem;
-        margin: -0.3rem 0 0;
-    }
-    .lb-modal-tabs .tab-btn {
-        font-size: 0.7rem;
-        padding: 0.35rem 0.55rem;
-        gap: 0.3rem;
-    }
-    .lb-modal-tabs .tab-icon {
-        width: 14px;
-        height: 14px;
-    }
-    .lb-table-header {
-        padding: 0 0.7rem 0.35rem;
-        margin-bottom: 0.3rem;
-        font-size: 0.72rem;
-    }
-    /* Narrow score/streak columns to give names more room */
-    .lb-col-score,
-    .lb-col-streak {
-        width: 4rem;
-        font-size: 0.7rem;
-    }
-    .lb-col-rank {
-        width: 1.75rem;
-    }
 }
 
 .lb-modal-card .logo-title {
-    text-align: center;
     margin-bottom: clamp(0.25rem, 1.2vmin, 0.7rem);
 }
 
 .lb-modal-close {
     position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
+    top: 1rem;
+    right: 1rem;
     background: none;
     border: none;
-    padding: 0.25rem;
+    padding: 0;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.4);
     transition: color 0.2s ease;
     display: flex;
     align-items: center;
@@ -1481,14 +1453,23 @@ button:not(.settings-toggle):active {
 }
 
 .lb-modal-close svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
 }
 
 @media (hover: hover) {
     .lb-modal-close:hover {
-        color: rgba(255, 255, 255, 0.9);
+        color: rgba(255, 255, 255, 0.7);
     }
+}
+
+.lb-modal-card .leaderboard-tabs {
+    margin: 1.25rem 0 1rem;
+}
+
+.lb-modal-card .lb-table-header {
+    padding: 0 1rem 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
 .lb-modal-tabs {
