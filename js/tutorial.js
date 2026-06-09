@@ -239,7 +239,7 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
             fingerEl.style.top = screenY + 'px';
             // Position fingertip on the dot (finger is rotated -20deg)
             // Adjust both X and Y to account for rotation
-            fingerEl.style.transform = 'translate(-65%, -15%)';
+            fingerEl.style.transform = 'translate(-35%, -15%)';
         } else {
             // Hide finger when not dragging
             fingerEl.style.opacity = '0';
