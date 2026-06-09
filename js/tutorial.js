@@ -51,9 +51,9 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
         const bh = lines.length * lineH + padY * 2;
         const r = 13 * scale;
 
-        // Bubble sits above the ball
+        // Bubble sits above the ball (pushed higher with extra offset)
         let bx = ballX;
-        let bottom = ballY - ballRadius - 22 * scale;
+        let bottom = ballY - ballRadius - 40 * scale;
         let top = bottom - bh;
         let left = bx - bw / 2;
 
