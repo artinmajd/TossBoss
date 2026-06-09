@@ -204,7 +204,28 @@ export function initTutorial() {
             ctx.fill();
         }
 
-        // Always draw speech bubble
+        // Draw ball
+        const ballRadius = 25;
+        const ballGradient = ctx.createRadialGradient(
+            ballX - ballRadius * 0.3,
+            ballY - ballRadius * 0.3,
+            0,
+            ballX,
+            ballY,
+            ballRadius
+        );
+        ballGradient.addColorStop(0, '#ffffff');
+        ballGradient.addColorStop(1, '#e0e0e0');
+
+        ctx.beginPath();
+        ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = ballGradient;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Always draw speech bubble above ball
         drawSpeechBubble(ballX, ballY, scale);
 
         animationFrame = requestAnimationFrame(animate);
