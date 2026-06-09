@@ -15,6 +15,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     let scale = 1;
 
     // View transform: maps the virtual playfield onto the real canvas.
+    let dpr = window.devicePixelRatio || 1;
     let viewScale = 1;
     let viewOffsetX = 0;
     let viewOffsetY = 0;
@@ -724,7 +725,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         const winH = window.innerHeight;
 
         // High-DPI support — the backing store covers the whole window.
-        const dpr = window.devicePixelRatio || 1;
+        dpr = window.devicePixelRatio || 1;
         canvas.width = winW * dpr;
         canvas.height = winH * dpr;
         canvas.style.width = winW + 'px';
@@ -1440,8 +1441,6 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     }
 
     function draw() {
-        const dpr = window.devicePixelRatio || 1;
-
         // Clear the whole canvas, then map virtual coordinates onto the
         // (centered) playfield via the view transform.
         ctx.setTransform(1, 0, 0, 1, 0, 0);
