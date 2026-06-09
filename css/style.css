@@ -1599,6 +1599,7 @@ button:not(.settings-toggle):active {
     text-align: right;
     white-space: nowrap;
     flex-shrink: 0;
+    margin-left: 0.5rem;
 }
 
 .lb-sortable {
@@ -1744,6 +1745,7 @@ button:not(.settings-toggle):active {
     width: 5.5rem;
     text-align: right;
     flex-shrink: 0;
+    margin-left: 0.5rem;
 }
 
 /* ── Leaderboard: landscape-phone compact layout ────────────────────────────
