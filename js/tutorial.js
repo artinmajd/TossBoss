@@ -124,10 +124,11 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
         const ballY = ballPos.y;
 
         // Finger position is FIXED on screen (not relative to ball)
-        const fingerStartX = transform.width * 0.45;
+        // Start at 20% from right edge (80% from left)
+        const fingerStartX = transform.width * 0.8;
         const fingerStartY = transform.height * 0.35;
         // Drag BACKWARDS (down and left) to aim forward
-        const fingerEndX = transform.width * 0.25;
+        const fingerEndX = transform.width * 0.6;
         const fingerEndY = transform.height * 0.55;
 
         // Only draw during the drag phase (0% to 45% of cycle)
