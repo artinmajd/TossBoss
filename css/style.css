@@ -1340,6 +1340,7 @@ button:not(.settings-toggle):active {
 }
 
 .lb-modal-card {
+    position: relative;
     background: rgba(15, 23, 42, 0.92);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -1362,8 +1363,19 @@ button:not(.settings-toggle):active {
         padding: 0.6rem 0.85rem 0.55rem;
         gap: 0.35rem;
     }
-    .lb-modal-title {
+    .lb-modal-card .logo-title {
         font-size: 0.85rem;
+        margin-bottom: 0.2rem;
+    }
+    .lb-modal-close {
+        top: 0.5rem;
+        right: 0.5rem;
+        width: 2rem;
+        height: 2rem;
+    }
+    .lb-modal-close svg {
+        width: 16px !important;
+        height: 16px !important;
     }
     .lb-modal-tabs {
         gap: 0.35rem;
@@ -1407,8 +1419,19 @@ button:not(.settings-toggle):active {
         gap: 0.45rem;
         max-height: 90vh;
     }
-    .lb-modal-title {
+    .lb-modal-card .logo-title {
         font-size: 0.85rem;
+        margin-bottom: 0.2rem;
+    }
+    .lb-modal-close {
+        top: 0.6rem;
+        right: 0.6rem;
+        width: 2rem;
+        height: 2rem;
+    }
+    .lb-modal-close svg {
+        width: 16px !important;
+        height: 16px !important;
     }
     .lb-modal-tabs {
         gap: 0.35rem;
@@ -1439,26 +1462,34 @@ button:not(.settings-toggle):active {
     }
 }
 
-.lb-modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+.lb-modal-card .logo-title {
+    text-align: center;
+    margin-bottom: clamp(0.25rem, 1.2vmin, 0.7rem);
 }
 
-.lb-modal-title {
-    font-family: 'Orbitron', sans-serif;
-    font-size: clamp(1.6rem, 5.4vmin, 2.75rem);
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: #f0f9ff;
-    text-shadow:
-        0 0 0.09em #fff,
-        0 0 0.27em #7dd3fc,
-        0 0 0.55em #38bdf8,
-        0 0 1.05em #0ea5e9,
-        0 0 1.82em #0284c7;
-    animation: neon-flicker 3.2s ease-in-out infinite;
+.lb-modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+@media (hover: hover) {
+    .lb-modal-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+        transform: scale(1.05);
+    }
 }
 
 .lb-modal-tabs {

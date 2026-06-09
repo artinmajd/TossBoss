@@ -123,12 +123,10 @@ export default function Game(session) {
 
             <div id="lb-modal" class="lb-modal-overlay" style="display:none;">
                 <div class="lb-modal-card">
-                    <div class="lb-modal-header">
-                        <span class="lb-modal-title">Leaderboard</span>
-                        <button id="btn-lb-modal-close" class="mode-btn" title="Close">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
-                    </div>
+                    <button id="btn-lb-modal-close" class="lb-modal-close" title="Close">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                    <h1 class="logo-title">Leaderboard</h1>
                     <div class="leaderboard-tabs lb-modal-tabs">
                         <button id="lb-modal-tab-pingpong" class="tab-btn active">
                             <div class="pingpong-icon tab-icon"></div>
