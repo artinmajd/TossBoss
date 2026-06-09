@@ -12,6 +12,7 @@ import { isTestUser, testerConfig } from './tester_config.js';
 import { getPlayerId, storePlayerName, getStoredPlayerName } from './multiplayer/session.js';
 import { createRoom, joinRoom, getRoomByCode, subscribeToRoom, getRoomBroadcastChannel, makePlayer } from './multiplayer/roomManager.js';
 import audio from './audio.js';
+import { initTutorial, hideTutorial } from './tutorial.js';
 
 audio.preload({
     'basketball/score':   'assets/audio/basketball/score.mp3',
@@ -1414,6 +1415,19 @@ async function router() {
         requestAnimationFrame(() => {
             destroyGame = initGame(highScores, testerRules);
         });
+
+        // Initialize tutorial (always show for now, first-time detection later)
+        const cleanupTutorial = initTutorial();
+
+        // Close tutorial on any tap/click
+        const tutorialOverlay = document.getElementById('tutorial-overlay');
+        const closeTutorial = () => {
+            hideTutorial();
+            if (cleanupTutorial) cleanupTutorial();
+            tutorialOverlay?.removeEventListener('click', closeTutorial);
+        };
+        tutorialOverlay?.addEventListener('click', closeTutorial);
+        tutorialOverlay.style.pointerEvents = 'auto'; // Enable clicks on overlay to dismiss
     }
 }
 
