@@ -139,8 +139,13 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
             shouldDraw = true;
             const dragProgress = progress / 0.15;
 
+            // Apply ease-in-out for smooth acceleration and deceleration
+            const eased = dragProgress < 0.5
+                ? 2 * dragProgress * dragProgress
+                : 1 - Math.pow(-2 * dragProgress + 2, 2) / 2;
+
             // Pull at 45-degree angle (equal X and Y offset)
-            const distance = transform.height * 0.2 * dragProgress;
+            const distance = transform.height * 0.2 * eased;
             const xOffset = -distance * Math.cos(Math.PI / 4); // 45 degrees
             const yOffset = distance * Math.sin(Math.PI / 4);
 
