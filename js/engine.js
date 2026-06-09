@@ -1066,7 +1066,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
                         && wasThrown
                         && !isResting
                         && ball.vy > 0
-                        && ball.y > cupRimY + ball.radius * 0.8
+                        && ball.y > cupRimY + ball.radius * 1.8
                         && wasAboveCupRim) {
                         scoredThisThrow = true;
                         wasThrown = false;
