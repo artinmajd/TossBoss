@@ -129,15 +129,15 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
         const fingerStartX = transform.width * 0.2;
         const fingerStartY = transform.height * 0.35;
 
-        // Animation phases: drag (0-35%), angle adjust (40-65%), rest (65-100%)
+        // Animation phases: drag (0-30%), angle adjust (30-70%), rest (70-100%)
         let fingerCurrentX, fingerCurrentY;
         let aimStartX, aimStartY, aimCurrentX, aimCurrentY;
         let shouldDraw = false;
 
-        if (progress <= 0.35) {
+        if (progress <= 0.3) {
             // DRAG PHASE: pull back at 45-degree angle to build power
             shouldDraw = true;
-            const dragProgress = progress / 0.35;
+            const dragProgress = progress / 0.3;
 
             // Pull at 45-degree angle (equal X and Y offset)
             const distance = transform.height * 0.2 * dragProgress;
@@ -151,18 +151,18 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
             aimStartY = fingerStartY;
             aimCurrentX = fingerCurrentX;
             aimCurrentY = fingerCurrentY;
-        } else if (progress > 0.4 && progress <= 0.65) {
+        } else if (progress <= 0.7) {
             // ANGLE ADJUSTMENT PHASE: move finger up/down vertically to adjust aim
             shouldDraw = true;
-            const adjustProgress = (progress - 0.4) / 0.25; // 0 to 1 during adjust phase
+            const adjustProgress = (progress - 0.3) / 0.4; // 0 to 1 during adjust phase
 
             // Keep finger at end of drag position
             const distance = transform.height * 0.2;
             const baseXOffset = -distance * Math.cos(Math.PI / 4);
             const baseYOffset = distance * Math.sin(Math.PI / 4);
 
-            // Move up and down 2-3 times
-            const verticalAdjust = Math.sin(adjustProgress * Math.PI * 5) * transform.height * 0.08;
+            // Move up and down 2 times slowly
+            const verticalAdjust = Math.sin(adjustProgress * Math.PI * 2) * transform.height * 0.08;
 
             fingerCurrentX = fingerStartX + baseXOffset;
             fingerCurrentY = fingerStartY + baseYOffset + verticalAdjust;
