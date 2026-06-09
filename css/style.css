@@ -1833,10 +1833,34 @@ button:not(.settings-toggle):active {
 /* ── Leaderboard: portrait phone layout ─────────────────────────────────────
    Reduce score/streak column widths to give more space for player names.    */
 @media (max-width: 700px) and (orientation: portrait) {
-    #leaderboard-screen .lb-score,
-    #leaderboard-screen .lb-streak {
+    /* Compact table header - match landscape styling */
+    #leaderboard-screen .lb-table-header {
+        padding: 0 0.75rem 0.3rem;
+        margin-bottom: 0.25rem;
+        gap: 0.5rem;
+    }
+
+    #leaderboard-screen .lb-col-rank,
+    #leaderboard-screen .lb-col-name,
+    #leaderboard-screen .lb-col-score,
+    #leaderboard-screen .lb-col-streak {
+        font-size: 0.62rem;
+        letter-spacing: 0.03em;
+    }
+
+    #leaderboard-screen .lb-col-rank {
+        width: 1.5rem;
+    }
+
+    #leaderboard-screen .lb-col-score,
+    #leaderboard-screen .lb-col-streak {
         width: 3.5rem;
-        font-size: 0.9rem;
+    }
+
+    /* Compact rows */
+    #leaderboard-screen .lb-row {
+        padding: 0.5rem 0.75rem;
+        gap: 0.5rem;
     }
 
     #leaderboard-screen .lb-rank {
@@ -1848,20 +1872,10 @@ button:not(.settings-toggle):active {
         font-size: 0.85rem;
     }
 
-    /* Match header column widths to data columns */
-    #leaderboard-screen .lb-col-rank {
-        width: 1.5rem;
-        font-size: 0.7rem;
-    }
-
-    #leaderboard-screen .lb-col-score,
-    #leaderboard-screen .lb-col-streak {
+    #leaderboard-screen .lb-score,
+    #leaderboard-screen .lb-streak {
         width: 3.5rem;
-        font-size: 0.7rem;
-    }
-
-    #leaderboard-screen .lb-col-name {
-        font-size: 0.7rem;
+        font-size: 0.9rem;
     }
 }
 
