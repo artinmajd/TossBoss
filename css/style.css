@@ -1857,6 +1857,15 @@ button:not(.settings-toggle):active {
         width: 3.5rem;
     }
 
+    /* Shift sortable headers left when arrow appears */
+    #leaderboard-screen .lb-sortable {
+        transition: transform 0.2s ease, color 0.15s;
+    }
+
+    #leaderboard-screen .lb-sortable.active-sort {
+        transform: translateX(-0.3rem);
+    }
+
     /* Compact rows */
     #leaderboard-screen .lb-row {
         padding: 0.5rem 0.75rem;
