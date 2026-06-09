@@ -1447,10 +1447,18 @@ button:not(.settings-toggle):active {
 
 .lb-modal-title {
     font-family: 'Orbitron', sans-serif;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--accent-color);
-    letter-spacing: 0.05em;
+    font-size: clamp(1.6rem, 5.4vmin, 2.75rem);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #f0f9ff;
+    text-shadow:
+        0 0 0.09em #fff,
+        0 0 0.27em #7dd3fc,
+        0 0 0.55em #38bdf8,
+        0 0 1.05em #0ea5e9,
+        0 0 1.82em #0284c7;
+    animation: neon-flicker 3.2s ease-in-out infinite;
 }
 
 .lb-modal-tabs {
