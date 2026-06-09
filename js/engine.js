@@ -804,6 +804,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         const anyOpen = _topLeft?.classList.contains('menu-open');
         _topLeft?.classList.remove('menu-open');
         document.getElementById('menu-toggle')?.classList.remove('selected');
+        document.getElementById('help-bubble')?.classList.remove('visible');
+        document.getElementById('settings-bubble')?.classList.remove('visible');
+        document.getElementById('btn-help')?.classList.remove('selected');
+        document.getElementById('btn-settings')?.classList.remove('selected');
         if (anyOpen) return;
         
         const pos = getPointerPos(e);
@@ -2521,6 +2525,10 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         e.stopPropagation();
         topLeft?.classList.remove('menu-open');
         menuToggle?.classList.remove('selected');
+        document.getElementById('help-bubble')?.classList.remove('visible');
+        document.getElementById('settings-bubble')?.classList.remove('visible');
+        document.getElementById('btn-help')?.classList.remove('selected');
+        document.getElementById('btn-settings')?.classList.remove('selected');
         scoreArea.classList.toggle('score-open');
     });
     
