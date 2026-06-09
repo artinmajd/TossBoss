@@ -27,7 +27,7 @@
     height: 60px;
     pointer-events: none;
     z-index: 201;
-    /* Position controlled by JS, not CSS animation */
+    transition: opacity 0.3s ease-out;
 }
 
 .tutorial-finger::before {
