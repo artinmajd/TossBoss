@@ -761,9 +761,14 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         const gameScreen = document.getElementById('game-screen');
         if (gameScreen) {
             const bgBottom = winH - (viewOffsetY + height * viewScale);
+            // Calculate midpoint between ground line (85%) and bottom edge (100%)
+            // Ground is at height * 0.85, bottom is at height * 1.0
+            // Midpoint distance from bottom = (1.0 - 0.85) / 2 = 0.075 = 7.5% of game height
+            const heartsOffset = height * 0.075 * viewScale;
             gameScreen.style.setProperty('--bg-left', viewOffsetX + 'px');
             gameScreen.style.setProperty('--bg-right', viewOffsetX + 'px');
             gameScreen.style.setProperty('--bg-bottom', bgBottom + 'px');
+            gameScreen.style.setProperty('--hearts-bottom', heartsOffset.toFixed(2) + 'px');
             gameScreen.style.setProperty('--game-scale', (scale * viewScale).toFixed(4));
         }
 

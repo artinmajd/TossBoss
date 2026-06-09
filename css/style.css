@@ -566,7 +566,7 @@ button:not(.settings-toggle):active {
    into its place (see :fullscreen and the max-width:900px media query). */
 #heart-decor {
     position: absolute;
-    bottom: calc(var(--bg-bottom, 0px) + max(0.5rem, env(safe-area-inset-bottom, 0.5rem)));
+    bottom: calc(var(--bg-bottom, 0px) + var(--hearts-bottom, 0px) + max(0rem, env(safe-area-inset-bottom, 0rem)));
     right: calc(var(--bg-right, 0px) + max(0.75rem, env(safe-area-inset-right, 0.75rem)));
     height: calc(74px * var(--game-scale, 1));
     z-index: 99;
