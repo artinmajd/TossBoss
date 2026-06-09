@@ -31,7 +31,7 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
     window.addEventListener('resize', resizeCanvas);
 
     // Tutorial drag animation parameters
-    const cycleTime = 3000; // 3 seconds per cycle
+    const cycleTime = 5000; // 5 seconds per cycle for slower, clearer demonstration
 
     // Speech bubble message
     const message = 'Drag from ANYWHERE on the screen to start aiming and power';
