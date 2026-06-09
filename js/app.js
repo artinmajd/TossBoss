@@ -1423,15 +1423,20 @@ async function router() {
                         destroyGame.getCanvasTransform
                     );
 
-                    // Close tutorial on any tap/click
+                    // Close tutorial on any tap/click on the canvas
                     const tutorialOverlay = document.getElementById('tutorial-overlay');
-                    const closeTutorial = () => {
+                    const canvas = document.getElementById('simulation-canvas');
+
+                    const closeTutorial = (e) => {
                         hideTutorial();
                         if (cleanupTutorial) cleanupTutorial();
-                        tutorialOverlay?.removeEventListener('click', closeTutorial);
+                        canvas?.removeEventListener('pointerdown', closeTutorial);
+                        // Don't prevent default - let the click pass through to start dragging
                     };
-                    tutorialOverlay?.addEventListener('click', closeTutorial);
-                    tutorialOverlay.style.pointerEvents = 'auto';
+
+                    canvas?.addEventListener('pointerdown', closeTutorial);
+                    // Keep tutorial overlay non-interactive so clicks pass through
+                    tutorialOverlay.style.pointerEvents = 'none';
                 }
             }, 100);
         });
