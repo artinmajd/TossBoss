@@ -40,15 +40,12 @@
     filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
 }
 
-/* Fade in/out during animation cycle */
+/* Fade in/out synced with canvas drawing (0-45% visible) */
 @keyframes tutorial-finger-fade {
     0%, 45% {
         opacity: 1;
     }
-    50% {
-        opacity: 0.3;
-    }
-    55%, 60% {
+    50%, 60% {
         opacity: 0;
     }
     65%, 100% {

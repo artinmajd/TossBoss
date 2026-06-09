@@ -15,9 +15,6 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
 
     const ctx = canvas.getContext('2d');
 
-    // Apply fade animation to finger
-    fingerEl.style.animation = 'tutorial-finger-fade 3s ease-in-out infinite';
-
     // Match tutorial canvas to game canvas dimensions
     const resizeCanvas = () => {
         canvas.width = gameCanvas.width;
@@ -237,11 +234,12 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
 
             fingerEl.style.left = screenX + 'px';
             fingerEl.style.top = screenY + 'px';
+            fingerEl.style.opacity = '1';
             // Position fingertip on the dot (finger is rotated -20deg)
             // Adjust both X and Y to account for rotation
             fingerEl.style.transform = 'translate(-35%, -15%)';
         } else {
-            // Hide finger when not dragging
+            // Hide finger when not in drag phase (synced with circle/line)
             fingerEl.style.opacity = '0';
         }
 
