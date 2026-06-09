@@ -1414,20 +1414,25 @@ async function router() {
 
         requestAnimationFrame(() => {
             destroyGame = initGame(highScores, testerRules);
+
+            // Initialize tutorial after game is ready
+            setTimeout(() => {
+                if (destroyGame && destroyGame.getBallPosition) {
+                    const cleanupTutorial = initTutorial(destroyGame.getBallPosition);
+
+                    // Close tutorial on any tap/click
+                    const tutorialOverlay = document.getElementById('tutorial-overlay');
+                    const closeTutorial = () => {
+                        hideTutorial();
+                        if (cleanupTutorial) cleanupTutorial();
+                        tutorialOverlay?.removeEventListener('click', closeTutorial);
+                    };
+                    tutorialOverlay?.addEventListener('click', closeTutorial);
+                    tutorialOverlay.style.pointerEvents = 'auto';
+                }
+            }, 100);
         });
 
-        // Initialize tutorial (always show for now, first-time detection later)
-        const cleanupTutorial = initTutorial();
-
-        // Close tutorial on any tap/click
-        const tutorialOverlay = document.getElementById('tutorial-overlay');
-        const closeTutorial = () => {
-            hideTutorial();
-            if (cleanupTutorial) cleanupTutorial();
-            tutorialOverlay?.removeEventListener('click', closeTutorial);
-        };
-        tutorialOverlay?.addEventListener('click', closeTutorial);
-        tutorialOverlay.style.pointerEvents = 'auto'; // Enable clicks on overlay to dismiss
     }
 }
 

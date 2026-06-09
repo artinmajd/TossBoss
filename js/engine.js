@@ -2724,7 +2724,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     // start loop
     animationId = requestAnimationFrame(animate);
 
-    return function destroyGame() {
+    const destroyGame = () => {
         cancelAnimationFrame(animationId);
         stopChallengeTimer();
         if (challengeBadgeHideTimer) { clearTimeout(challengeBadgeHideTimer); challengeBadgeHideTimer = null; }
@@ -2740,4 +2740,9 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         window.removeEventListener('mouseup', handlePointerUp);
         window.removeEventListener('touchend', handlePointerUp);
     };
+
+    const getBallPosition = () => ({ x: ball.x, y: ball.y, radius: ball.radius });
+
+    destroyGame.getBallPosition = getBallPosition;
+    return destroyGame;
 }

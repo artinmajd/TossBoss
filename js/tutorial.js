@@ -5,35 +5,32 @@
 let animationFrame = null;
 let startTime = null;
 
-export function initTutorial() {
+export function initTutorial(getBallPosition) {
     const overlay = document.getElementById('tutorial-overlay');
     const canvas = document.getElementById('tutorial-canvas');
+    const gameCanvas = document.getElementById('simulation-canvas');
 
-    if (!overlay || !canvas) return;
+    if (!overlay || !canvas || !gameCanvas) return;
 
     const ctx = canvas.getContext('2d');
 
-    // Resize canvas to match viewport
+    // Match tutorial canvas to game canvas dimensions
     const resizeCanvas = () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        canvas.width = gameCanvas.width;
+        canvas.height = gameCanvas.height;
+        // Position tutorial canvas to overlay game canvas exactly
+        const rect = gameCanvas.getBoundingClientRect();
+        canvas.style.position = 'absolute';
+        canvas.style.left = rect.left + 'px';
+        canvas.style.top = rect.top + 'px';
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
     };
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
     // Tutorial drag animation parameters
     const cycleTime = 3000; // 3 seconds per cycle
-
-    // Ball position matches game initial position (left side, 85% down)
-    const ballXPercent = 0.25; // Left quarter of screen
-    const ballYPercent = 0.85; // groundLevel from engine.js
-
-    // Finger starts higher up on screen (where user would tap)
-    const fingerStartX = 0.5;
-    const fingerStartY = 0.4;
-    // Drag BACKWARDS (down and left) to aim forward
-    const fingerEndX = 0.3;
-    const fingerEndY = 0.65;
 
     // Speech bubble message
     const message = 'Drag from ANYWHERE on the screen to start aiming and power';
@@ -108,9 +105,19 @@ export function initTutorial() {
 
         const scale = Math.min(canvas.width, canvas.height) / 800;
 
-        // Ball position (actual game ball)
-        const ballX = ballXPercent * canvas.width;
-        const ballY = ballYPercent * canvas.height;
+        // Get actual ball position from game
+        const ballPos = getBallPosition ? getBallPosition() : null;
+        if (!ballPos) return;
+
+        const ballX = ballPos.x;
+        const ballY = ballPos.y;
+
+        // Finger starts higher and to the right of ball
+        const fingerStartX = ballX + canvas.width * 0.25;
+        const fingerStartY = ballY - canvas.height * 0.15;
+        // Drag BACKWARDS (down and left) to aim forward
+        const fingerEndX = ballX - canvas.width * 0.05;
+        const fingerEndY = ballY + canvas.height * 0.1;
 
         // Only draw during the drag phase (0% to 45% of cycle)
         if (progress <= 0.45) {
@@ -120,20 +127,13 @@ export function initTutorial() {
             const fingerCurrentX = fingerStartX + (fingerEndX - fingerStartX) * dragProgress;
             const fingerCurrentY = fingerStartY + (fingerEndY - fingerStartY) * dragProgress;
 
-            const pixelFingerCurrentX = fingerCurrentX * canvas.width;
-            const pixelFingerCurrentY = fingerCurrentY * canvas.height;
-
-            // Finger start position
-            const pixelFingerStartX = fingerStartX * canvas.width;
-            const pixelFingerStartY = fingerStartY * canvas.height;
-
             // aimStart is where finger started
             // aimCurrent is where finger is now
             // We drag BACKWARDS to aim forward
-            const aimStartX = pixelFingerStartX;
-            const aimStartY = pixelFingerStartY;
-            const aimCurrentX = pixelFingerCurrentX;
-            const aimCurrentY = pixelFingerCurrentY;
+            const aimStartX = fingerStartX;
+            const aimStartY = fingerStartY;
+            const aimCurrentX = fingerCurrentX;
+            const aimCurrentY = fingerCurrentY;
 
             const dx = aimStartX - aimCurrentX;
             const dy = aimStartY - aimCurrentY;
