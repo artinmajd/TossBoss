@@ -9,10 +9,14 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
     const overlay = document.getElementById('tutorial-overlay');
     const canvas = document.getElementById('tutorial-canvas');
     const gameCanvas = document.getElementById('simulation-canvas');
+    const fingerEl = document.querySelector('.tutorial-finger');
 
-    if (!overlay || !canvas || !gameCanvas) return;
+    if (!overlay || !canvas || !gameCanvas || !fingerEl) return;
 
     const ctx = canvas.getContext('2d');
+
+    // Apply fade animation to finger
+    fingerEl.style.animation = 'tutorial-finger-fade 3s ease-in-out infinite';
 
     // Match tutorial canvas to game canvas dimensions
     const resizeCanvas = () => {
@@ -224,6 +228,19 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
             ctx.arc(aimCurrentX, aimCurrentY, 15 * scale, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
             ctx.fill();
+
+            // Position finger element over the aimCurrent position
+            const gameRect = gameCanvas.getBoundingClientRect();
+            // Convert virtual coordinates to screen coordinates
+            const screenX = gameRect.left + (aimCurrentX * transform.viewScale * transform.dpr + transform.viewOffsetX * transform.dpr) / transform.dpr;
+            const screenY = gameRect.top + (aimCurrentY * transform.viewScale * transform.dpr + transform.viewOffsetY * transform.dpr) / transform.dpr;
+
+            fingerEl.style.left = screenX + 'px';
+            fingerEl.style.top = screenY + 'px';
+            fingerEl.style.transform = 'translate(-50%, -50%)';
+        } else {
+            // Hide finger when not dragging
+            fingerEl.style.opacity = '0';
         }
 
         // Draw speech bubble above the real game ball

@@ -27,7 +27,7 @@
     height: 60px;
     pointer-events: none;
     z-index: 201;
-    animation: tutorial-drag 3s ease-in-out infinite;
+    /* Position controlled by JS, not CSS animation */
 }
 
 .tutorial-finger::before {
@@ -40,35 +40,18 @@
     filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
 }
 
-/* Drag backwards to aim forward */
-@keyframes tutorial-drag {
-    0%, 100% {
-        left: 50%;
-        top: 50%;
-        opacity: 1;
-    }
-    5% {
-        opacity: 1;
-    }
-    45% {
-        left: 30%;
-        top: 65%;
+/* Fade in/out during animation cycle */
+@keyframes tutorial-finger-fade {
+    0%, 45% {
         opacity: 1;
     }
     50% {
-        left: 30%;
-        top: 65%;
         opacity: 0.3;
     }
-    55% {
-        left: 50%;
-        top: 50%;
+    55%, 60% {
         opacity: 0;
     }
-    60% {
-        opacity: 0;
-    }
-    65% {
+    65%, 100% {
         opacity: 1;
     }
 }
