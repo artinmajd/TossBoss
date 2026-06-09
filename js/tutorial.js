@@ -238,7 +238,8 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
             fingerEl.style.left = screenX + 'px';
             fingerEl.style.top = screenY + 'px';
             // Position fingertip on the dot (finger points up, so tip is at top)
-            fingerEl.style.transform = 'translate(-50%, -85%)';
+            // Less negative = move down, more negative = move up
+            fingerEl.style.transform = 'translate(-50%, -15%)';
         } else {
             // Hide finger when not dragging
             fingerEl.style.opacity = '0';
