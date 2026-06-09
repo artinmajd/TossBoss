@@ -1381,6 +1381,15 @@ button:not(.settings-toggle):active {
         margin-bottom: 0.3rem;
         font-size: 0.72rem;
     }
+    /* Narrow score/streak columns to give names more room */
+    .lb-col-score,
+    .lb-col-streak {
+        width: 4rem;
+        font-size: 0.7rem;
+    }
+    .lb-col-rank {
+        width: 1.75rem;
+    }
 }
 
 .lb-modal-header {
