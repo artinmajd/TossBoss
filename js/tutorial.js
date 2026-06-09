@@ -35,7 +35,7 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
     // Speech bubble message
     const message = 'Drag from ANYWHERE on the screen to start aiming and power';
 
-    const drawSpeechBubble = (ballX, ballY, scale, virtualWidth, virtualHeight) => {
+    const drawSpeechBubble = (ballX, ballY, ballRadius, scale, virtualWidth, virtualHeight) => {
         const lines = [message];
         ctx.save();
         const fpx = Math.max(14, Math.round(22 * scale));
@@ -49,7 +49,6 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
         const bw = maxW + padX * 2;
         const bh = lines.length * lineH + padY * 2;
         const r = 13 * scale;
-        const ballRadius = 25;
 
         // Bubble sits above the ball
         let bx = ballX;
@@ -227,7 +226,11 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
         }
 
         // Draw speech bubble above the real game ball
-        drawSpeechBubble(ballX, ballY, scale, transform.width, transform.height);
+        try {
+            drawSpeechBubble(ballX, ballY, ballPos.radius, scale, transform.width, transform.height);
+        } catch (e) {
+            console.error('Speech bubble error:', e);
+        }
 
         animationFrame = requestAnimationFrame(animate);
     };
