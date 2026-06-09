@@ -129,31 +129,20 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
         const fingerStartX = transform.width * 0.2;
         const fingerStartY = transform.height * 0.35;
 
-        // Animation phases: drag (0-40%), tap (45-70%), rest (70-100%)
+        // Animation phases: drag (0-35%), angle adjust (40-65%), rest (65-100%)
         let fingerCurrentX, fingerCurrentY;
         let aimStartX, aimStartY, aimCurrentX, aimCurrentY;
         let shouldDraw = false;
 
-        if (progress <= 0.4) {
-            // DRAG PHASE: pull back to aim
+        if (progress <= 0.35) {
+            // DRAG PHASE: pull back at 45-degree angle to build power
             shouldDraw = true;
-            const dragProgress = progress / 0.4;
+            const dragProgress = progress / 0.35;
 
-            // Drag straight back to build power (0-60% of drag)
-            // Then adjust angle at the end (60-100% of drag)
-            let xOffset, yOffset;
-
-            if (dragProgress < 0.6) {
-                // First part: pull straight down and slightly left
-                const t = dragProgress / 0.6;
-                xOffset = -transform.width * 0.08 * t;
-                yOffset = transform.height * 0.2 * t;
-            } else {
-                // Second part: adjust angle by moving more left
-                const t = (dragProgress - 0.6) / 0.4;
-                xOffset = -transform.width * (0.08 + 0.1 * t);
-                yOffset = transform.height * (0.2 + 0.02 * t);
-            }
+            // Pull at 45-degree angle (equal X and Y offset)
+            const distance = transform.height * 0.2 * dragProgress;
+            const xOffset = -distance * Math.cos(Math.PI / 4); // 45 degrees
+            const yOffset = distance * Math.sin(Math.PI / 4);
 
             fingerCurrentX = fingerStartX + xOffset;
             fingerCurrentY = fingerStartY + yOffset;
@@ -162,23 +151,26 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
             aimStartY = fingerStartY;
             aimCurrentX = fingerCurrentX;
             aimCurrentY = fingerCurrentY;
-        } else if (progress > 0.45 && progress <= 0.7) {
-            // TAPPING PHASE: finger goes up and down a few times
+        } else if (progress > 0.4 && progress <= 0.65) {
+            // ANGLE ADJUSTMENT PHASE: move finger up/down vertically to adjust aim
             shouldDraw = true;
-            const tapProgress = (progress - 0.45) / 0.25; // 0 to 1 during tap phase
+            const adjustProgress = (progress - 0.4) / 0.25; // 0 to 1 during adjust phase
 
-            // Create 3 bounces using sine wave
-            const bounces = Math.sin(tapProgress * Math.PI * 6);
-            const bounceHeight = transform.height * 0.08 * (1 - tapProgress); // Diminish over time
+            // Keep finger at end of drag position
+            const distance = transform.height * 0.2;
+            const baseXOffset = -distance * Math.cos(Math.PI / 4);
+            const baseYOffset = distance * Math.sin(Math.PI / 4);
 
-            fingerCurrentX = fingerStartX;
-            fingerCurrentY = fingerStartY - bounceHeight * Math.abs(bounces);
+            // Move up and down 2-3 times
+            const verticalAdjust = Math.sin(adjustProgress * Math.PI * 5) * transform.height * 0.08;
 
-            // No aim line during tapping
+            fingerCurrentX = fingerStartX + baseXOffset;
+            fingerCurrentY = fingerStartY + baseYOffset + verticalAdjust;
+
             aimStartX = fingerStartX;
             aimStartY = fingerStartY;
-            aimCurrentX = fingerStartX;
-            aimCurrentY = fingerStartY;
+            aimCurrentX = fingerCurrentX;
+            aimCurrentY = fingerCurrentY;
 
         }
 
