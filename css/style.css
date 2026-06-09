@@ -1368,14 +1368,13 @@ button:not(.settings-toggle):active {
         margin-bottom: 0.2rem;
     }
     .lb-modal-close {
-        top: 0.5rem;
-        right: 0.5rem;
-        width: 2rem;
-        height: 2rem;
+        top: 0.4rem;
+        right: 0.4rem;
+        padding: 0.2rem;
     }
     .lb-modal-close svg {
-        width: 16px !important;
-        height: 16px !important;
+        width: 16px;
+        height: 16px;
     }
     .lb-modal-tabs {
         gap: 0.35rem;
@@ -1424,14 +1423,13 @@ button:not(.settings-toggle):active {
         margin-bottom: 0.2rem;
     }
     .lb-modal-close {
-        top: 0.6rem;
-        right: 0.6rem;
-        width: 2rem;
-        height: 2rem;
+        top: 0.5rem;
+        right: 0.5rem;
+        padding: 0.2rem;
     }
     .lb-modal-close svg {
-        width: 16px !important;
-        height: 16px !important;
+        width: 16px;
+        height: 16px;
     }
     .lb-modal-tabs {
         gap: 0.35rem;
@@ -1469,26 +1467,27 @@ button:not(.settings-toggle):active {
 
 .lb-modal-close {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    width: 2.5rem;
-    height: 2.5rem;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.5);
+    transition: color 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-    color: var(--text-secondary);
-    transition: all 0.2s ease;
+}
+
+.lb-modal-close svg {
+    width: 20px;
+    height: 20px;
 }
 
 @media (hover: hover) {
     .lb-modal-close:hover {
-        background: rgba(255, 255, 255, 0.1);
-        color: var(--text-primary);
-        transform: scale(1.05);
+        color: rgba(255, 255, 255, 0.9);
     }
 }
 
