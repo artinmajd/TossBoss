@@ -2,11 +2,7 @@
 #tutorial-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.85);
     z-index: 200;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     pointer-events: none;
 }
 
@@ -14,56 +10,6 @@
     position: relative;
     width: 100%;
     height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.tutorial-bubble {
-    position: absolute;
-    top: 15%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 2px solid rgba(56, 189, 248, 0.5);
-    border-radius: 1.25rem;
-    padding: 1.5rem 2rem;
-    max-width: min(500px, 85vw);
-    box-shadow:
-        0 0 20px rgba(56, 189, 248, 0.3),
-        0 10px 40px rgba(0, 0, 0, 0.6);
-    animation: tutorial-pulse 2s ease-in-out infinite;
-}
-
-.tutorial-bubble p {
-    font-size: clamp(1rem, 3vmin, 1.25rem);
-    color: var(--text-primary);
-    text-align: center;
-    line-height: 1.5;
-    margin: 0;
-}
-
-.tutorial-bubble strong {
-    color: var(--accent-color);
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-@keyframes tutorial-pulse {
-    0%, 100% {
-        box-shadow:
-            0 0 20px rgba(56, 189, 248, 0.3),
-            0 10px 40px rgba(0, 0, 0, 0.6);
-    }
-    50% {
-        box-shadow:
-            0 0 30px rgba(56, 189, 248, 0.5),
-            0 10px 40px rgba(0, 0, 0, 0.6);
-    }
 }
 
 #tutorial-canvas {
@@ -94,28 +40,29 @@
     filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
 }
 
+/* Drag backwards to aim forward */
 @keyframes tutorial-drag {
     0%, 100% {
-        left: 30%;
-        top: 45%;
+        left: 50%;
+        top: 50%;
         opacity: 1;
     }
     5% {
         opacity: 1;
     }
     45% {
-        left: 55%;
-        top: 30%;
+        left: 30%;
+        top: 65%;
         opacity: 1;
     }
     50% {
-        left: 55%;
-        top: 30%;
+        left: 30%;
+        top: 65%;
         opacity: 0.3;
     }
     55% {
-        left: 30%;
-        top: 45%;
+        left: 50%;
+        top: 50%;
         opacity: 0;
     }
     60% {
@@ -123,16 +70,5 @@
     }
     65% {
         opacity: 1;
-    }
-}
-
-@media (max-width: 700px) {
-    .tutorial-bubble {
-        top: 10%;
-        padding: 1rem 1.5rem;
-    }
-
-    .tutorial-bubble p {
-        font-size: clamp(0.9rem, 2.5vmin, 1.1rem);
     }
 }

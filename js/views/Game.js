@@ -155,9 +155,6 @@ export default function Game(session) {
 
             <div id="tutorial-overlay">
                 <div class="tutorial-content">
-                    <div class="tutorial-bubble">
-                        <p>Drag from <strong>ANYWHERE</strong> on the screen to start aiming and power</p>
-                    </div>
                     <canvas id="tutorial-canvas"></canvas>
                     <div class="tutorial-finger"></div>
                 </div>
