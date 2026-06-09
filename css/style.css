@@ -1443,6 +1443,15 @@ button:not(.settings-toggle):active {
     margin-bottom: 0.5rem;
 }
 
+.lb-signin-note {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin: 0.75rem 0 0;
+    padding: 0 1rem;
+    line-height: 1.4;
+}
+
 .lb-col-rank {
     width: 2rem;
     flex-shrink: 0;

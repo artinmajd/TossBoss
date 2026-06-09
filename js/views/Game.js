@@ -1,4 +1,4 @@
-export default function Game() {
+export default function Game(session) {
     return `
         <div id="game-screen" class="view-screen bg-pingpong">
             <div id="orientation-warning">
@@ -146,6 +146,7 @@ export default function Game() {
                         <span class="lb-col-streak lb-sortable" id="lb-modal-sort-streak">Best Streak</span>
                     </div>
                     <div id="lb-modal-list"></div>
+                    ${!session ? '<p class="lb-signin-note">Sign in to save your scores to the leaderboard</p>' : ''}
                 </div>
             </div>
 

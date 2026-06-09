@@ -1,4 +1,4 @@
-export default function Leaderboard() {
+export default function Leaderboard(session) {
     return `
         <div id="leaderboard-screen" class="view-screen">
             <div class="leaderboard-content">
@@ -23,6 +23,8 @@ export default function Leaderboard() {
                 </div>
 
                 <div id="leaderboard-list"></div>
+
+                ${!session ? '<p class="lb-signin-note">Sign in to save your scores to the leaderboard</p>' : ''}
 
                 <button id="btn-lb-back" class="play-btn secondary-btn" style="margin-top:1.25rem;">Back</button>
             </div>

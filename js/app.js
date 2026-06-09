@@ -1146,7 +1146,7 @@ async function router() {
     }
 
     if (hash === '#leaderboard') {
-        app.innerHTML = Leaderboard();
+        app.innerHTML = Leaderboard(session);
         document.getElementById('btn-lb-back').addEventListener('click', () => {
             window.location.hash = '#home';
         });
@@ -1256,7 +1256,7 @@ async function router() {
             });
         }
     } else if (hash === '#game') {
-        app.innerHTML = Game();
+        app.innerHTML = Game(session);
         document.getElementById('btn-home').addEventListener('click', () => {
             window.location.hash = '#home';
         });
