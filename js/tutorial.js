@@ -24,12 +24,16 @@ export function initTutorial() {
     // Tutorial drag animation parameters
     const cycleTime = 3000; // 3 seconds per cycle
 
-    // Start point (where finger starts, ball position)
-    const startX = 0.5;
-    const startY = 0.5;
+    // Ball position matches game initial position (left side, 85% down)
+    const ballXPercent = 0.25; // Left quarter of screen
+    const ballYPercent = 0.85; // groundLevel from engine.js
+
+    // Start point (where finger starts, at ball)
+    const startX = ballXPercent;
+    const startY = ballYPercent;
     // End point (drag BACKWARDS to aim forward)
-    const endX = 0.3;
-    const endY = 0.65;
+    const endX = ballXPercent - 0.2;
+    const endY = ballYPercent + 0.15;
 
     // Speech bubble message
     const message = 'Drag from ANYWHERE on the screen to start aiming and power';
@@ -204,28 +208,7 @@ export function initTutorial() {
             ctx.fill();
         }
 
-        // Draw ball
-        const ballRadius = 25;
-        const ballGradient = ctx.createRadialGradient(
-            ballX - ballRadius * 0.3,
-            ballY - ballRadius * 0.3,
-            0,
-            ballX,
-            ballY,
-            ballRadius
-        );
-        ballGradient.addColorStop(0, '#ffffff');
-        ballGradient.addColorStop(1, '#e0e0e0');
-
-        ctx.beginPath();
-        ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
-        ctx.fillStyle = ballGradient;
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Always draw speech bubble above ball
+        // Draw speech bubble above the real game ball
         drawSpeechBubble(ballX, ballY, scale);
 
         animationFrame = requestAnimationFrame(animate);
