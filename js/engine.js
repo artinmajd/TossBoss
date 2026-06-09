@@ -1002,22 +1002,26 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
 
             const distLeftRim = Math.hypot(ball.x - cupLeftRim, ball.y - cupRimY);
             const distRightRim = Math.hypot(ball.x - cupRightRim, ball.y - cupRimY);
-            
-            if (distLeftRim < ball.radius) {
+
+            // Skip rim collision if ball is already below rim and inside cup mouth
+            // (prevents diagonal entries from being pushed out by rim collision)
+            const ballInsideCupMouth = ball.y >= cupRimY && ball.x > cupLeftRim && ball.x < cupRightRim;
+
+            if (distLeftRim < ball.radius && !ballInsideCupMouth) {
                 const overlap = ball.radius - distLeftRim;
                 const nx = (ball.x - cupLeftRim) / distLeftRim;
                 const ny = (ball.y - cupRimY) / distLeftRim;
-                
+
                 ball.x += nx * overlap;
                 ball.y += ny * overlap;
-                
+
                 const dot = ball.vx * nx + ball.vy * ny;
                 if (dot < 0) {
                     playTap(Math.hypot(ball.vx, ball.vy));
                     ball.vx = (ball.vx - 2 * dot * nx) * bounceFactor;
                     ball.vy = (ball.vy - 2 * dot * ny) * bounceFactor;
                 }
-            } else if (distRightRim < ball.radius) {
+            } else if (distRightRim < ball.radius && !ballInsideCupMouth) {
                 const overlap = ball.radius - distRightRim;
                 const nx = (ball.x - cupRightRim) / distRightRim;
                 const ny = (ball.y - cupRimY) / distRightRim;
