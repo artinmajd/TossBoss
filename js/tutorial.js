@@ -129,7 +129,7 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
         const fingerStartX = transform.width * 0.2;
         const fingerStartY = transform.height * 0.35;
 
-        // Animation phases: drag (0-15%), hold (15-25%), angle adjust (25-90%), rest (90-100%)
+        // Animation phases: drag (0-15%), hold (15-25%), angle adjust (25-85%), final hold (85-95%), fade (95-100%)
         let fingerCurrentX, fingerCurrentY;
         let aimStartX, aimStartY, aimCurrentX, aimCurrentY;
         let shouldDraw = false;
@@ -171,10 +171,10 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
             aimStartY = fingerStartY;
             aimCurrentX = fingerCurrentX;
             aimCurrentY = fingerCurrentY;
-        } else if (progress <= 0.9) {
+        } else if (progress <= 0.85) {
             // ANGLE ADJUSTMENT PHASE: move finger up/down vertically to adjust aim
             shouldDraw = true;
-            const adjustProgress = (progress - 0.25) / 0.65; // 0 to 1 during adjust phase
+            const adjustProgress = (progress - 0.25) / 0.6; // 0 to 1 during adjust phase
 
             // Keep finger at end of drag position
             const distance = transform.height * 0.2;
@@ -186,6 +186,21 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
 
             fingerCurrentX = fingerStartX + baseXOffset;
             fingerCurrentY = fingerStartY + baseYOffset + verticalAdjust;
+
+            aimStartX = fingerStartX;
+            aimStartY = fingerStartY;
+            aimCurrentX = fingerCurrentX;
+            aimCurrentY = fingerCurrentY;
+        } else if (progress <= 0.95) {
+            // FINAL HOLD PHASE: stay still before fading out
+            shouldDraw = true;
+
+            const distance = transform.height * 0.2;
+            const baseXOffset = -distance * Math.cos(Math.PI / 4);
+            const baseYOffset = distance * Math.sin(Math.PI / 4);
+
+            fingerCurrentX = fingerStartX + baseXOffset;
+            fingerCurrentY = fingerStartY + baseYOffset;
 
             aimStartX = fingerStartX;
             aimStartY = fingerStartY;
