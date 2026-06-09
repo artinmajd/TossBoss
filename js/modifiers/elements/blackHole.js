@@ -110,6 +110,8 @@ export default function blackHole() {
             // Only consume once the hole is visibly grown — a touch in the
             // first split second of the expand animation feels unfair.
             if (elapsed() < EXPAND * 0.5) return;
+            // Don't absorb ball during respawn animation — unfair
+            if (ctx.ballReturning) return;
 
             const b = ctx.ball;
             if (!b) return;

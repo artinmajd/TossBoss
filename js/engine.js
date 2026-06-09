@@ -484,6 +484,7 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
         gameCtx.scale = scale;
         gameCtx.dt = dt;
         gameCtx.floorY = height * groundLevel;
+        gameCtx.ballReturning = ballReturning;
         // The active target (cup / hoop) with a keep-clear radius — used by
         // modifiers that must not spawn on top of it.
         if (gameMode === 'pingpong') {
