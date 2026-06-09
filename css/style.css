@@ -1354,6 +1354,53 @@ button:not(.settings-toggle):active {
     box-shadow: 0 8px 40px rgba(0,0,0,0.5);
 }
 
+/* Landscape mobile (phones held sideways) — match standalone leaderboard compact style */
+@media (max-height: 500px) and (orientation: landscape) {
+    .lb-modal-card {
+        width: min(580px, 97vw);
+        max-height: 96vh;
+        padding: 0.6rem 0.85rem 0.55rem;
+        gap: 0.35rem;
+    }
+    .lb-modal-title {
+        font-size: 0.85rem;
+    }
+    .lb-modal-tabs {
+        gap: 0.35rem;
+        margin: -0.25rem 0 0;
+    }
+    .lb-modal-tabs .tab-btn {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.5rem;
+        gap: 0.3rem;
+    }
+    .lb-modal-tabs .tab-icon {
+        width: 14px;
+        height: 14px;
+    }
+    .lb-table-header {
+        padding: 0 0.7rem 0.3rem;
+        margin-bottom: 0.25rem;
+        font-size: 0.65rem;
+    }
+    .lb-col-score,
+    .lb-col-streak {
+        width: 4.5rem;
+        font-size: 0.65rem;
+    }
+    .lb-col-rank {
+        width: 1.75rem;
+    }
+    #lb-modal-list {
+        gap: 0.25rem;
+    }
+    .lb-row {
+        padding: 0.4rem 0.7rem;
+        gap: 0.5rem;
+    }
+}
+
+/* Portrait mobile or narrow screens */
 @media (max-width: 700px) {
     .lb-modal-card {
         padding: 0.9rem 0.85rem 0.7rem;
