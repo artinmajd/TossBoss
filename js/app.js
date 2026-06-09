@@ -38,6 +38,7 @@ audio.preload({
 
 let destroyGame = null;
 let destroyMp   = null;   // unsubscribe fn for the active MP room subscription
+let hasSeenTutorial = false; // Track if tutorial shown this session (resets on page refresh)
 
 // Show / hide an .mp-error element.
 function showMpError(el, msg) {
@@ -1415,9 +1416,11 @@ async function router() {
         requestAnimationFrame(() => {
             destroyGame = initGame(highScores, testerRules);
 
-            // Initialize tutorial after game is ready
+            // Initialize tutorial after game is ready (only first time per session)
             setTimeout(() => {
-                if (destroyGame && destroyGame.getBallPosition && destroyGame.getCanvasTransform) {
+                if (!hasSeenTutorial && destroyGame && destroyGame.getBallPosition && destroyGame.getCanvasTransform) {
+                    hasSeenTutorial = true; // Mark as seen for this session
+
                     const cleanupTutorial = initTutorial(
                         destroyGame.getBallPosition,
                         destroyGame.getCanvasTransform
@@ -1437,6 +1440,9 @@ async function router() {
                     canvas?.addEventListener('pointerdown', closeTutorial);
                     // Keep tutorial overlay non-interactive so clicks pass through
                     tutorialOverlay.style.pointerEvents = 'none';
+                } else if (hasSeenTutorial) {
+                    // Hide tutorial overlay if already seen this session
+                    hideTutorial();
                 }
             }, 100);
         });
