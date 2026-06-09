@@ -35,7 +35,7 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
     // Speech bubble message
     const message = 'Drag from ANYWHERE on the screen to start aiming and power';
 
-    const drawSpeechBubble = (ballX, ballY, scale) => {
+    const drawSpeechBubble = (ballX, ballY, scale, virtualWidth, virtualHeight) => {
         const lines = [message];
         ctx.save();
         const fpx = Math.max(14, Math.round(22 * scale));
@@ -57,9 +57,9 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
         let top = bottom - bh;
         let left = bx - bw / 2;
 
-        // Clamp inside viewport
+        // Clamp inside virtual playfield
         if (left < 6 * scale) { left = 6 * scale; bx = left + bw / 2; }
-        if (left + bw > canvas.width - 6 * scale) { left = canvas.width - 6 * scale - bw; bx = left + bw / 2; }
+        if (left + bw > virtualWidth - 6 * scale) { left = virtualWidth - 6 * scale - bw; bx = left + bw / 2; }
         if (top < 6 * scale) { top = 6 * scale; bottom = top + bh; }
 
         // Tail
@@ -227,7 +227,7 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
         }
 
         // Draw speech bubble above the real game ball
-        drawSpeechBubble(ballX, ballY, scale);
+        drawSpeechBubble(ballX, ballY, scale, transform.width, transform.height);
 
         animationFrame = requestAnimationFrame(animate);
     };
