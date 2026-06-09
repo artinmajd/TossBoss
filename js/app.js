@@ -1417,8 +1417,11 @@ async function router() {
 
             // Initialize tutorial after game is ready
             setTimeout(() => {
-                if (destroyGame && destroyGame.getBallPosition) {
-                    const cleanupTutorial = initTutorial(destroyGame.getBallPosition);
+                if (destroyGame && destroyGame.getBallPosition && destroyGame.getCanvasTransform) {
+                    const cleanupTutorial = initTutorial(
+                        destroyGame.getBallPosition,
+                        destroyGame.getCanvasTransform
+                    );
 
                     // Close tutorial on any tap/click
                     const tutorialOverlay = document.getElementById('tutorial-overlay');

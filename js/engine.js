@@ -2742,7 +2742,16 @@ export function initGame(initialData = { pingpong: { score: 0, bestStreak: 0 }, 
     };
 
     const getBallPosition = () => ({ x: ball.x, y: ball.y, radius: ball.radius });
+    const getCanvasTransform = () => ({
+        dpr,
+        viewScale,
+        viewOffsetX,
+        viewOffsetY,
+        width,
+        height
+    });
 
     destroyGame.getBallPosition = getBallPosition;
+    destroyGame.getCanvasTransform = getCanvasTransform;
     return destroyGame;
 }

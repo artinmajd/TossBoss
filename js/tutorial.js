@@ -5,7 +5,7 @@
 let animationFrame = null;
 let startTime = null;
 
-export function initTutorial(getBallPosition) {
+export function initTutorial(getBallPosition, getCanvasTransform) {
     const overlay = document.getElementById('tutorial-overlay');
     const canvas = document.getElementById('tutorial-canvas');
     const gameCanvas = document.getElementById('simulation-canvas');
@@ -101,23 +101,35 @@ export function initTutorial(getBallPosition) {
         const elapsed = timestamp - startTime;
         const progress = (elapsed % cycleTime) / cycleTime;
 
+        // Get game transform and ball position
+        const transform = getCanvasTransform ? getCanvasTransform() : null;
+        const ballPos = getBallPosition ? getBallPosition() : null;
+        if (!ballPos || !transform) return;
+
+        // Clear with identity transform
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        const scale = Math.min(canvas.width, canvas.height) / 800;
+        // Apply same transform as game canvas (letterbox)
+        ctx.setTransform(
+            transform.dpr * transform.viewScale, 0,
+            0, transform.dpr * transform.viewScale,
+            transform.dpr * transform.viewOffsetX,
+            transform.dpr * transform.viewOffsetY
+        );
 
-        // Get actual ball position from game
-        const ballPos = getBallPosition ? getBallPosition() : null;
-        if (!ballPos) return;
+        const scale = Math.min(transform.width, transform.height) / 800;
 
+        // Ball position in virtual coordinates
         const ballX = ballPos.x;
         const ballY = ballPos.y;
 
-        // Finger starts higher and to the right of ball
-        const fingerStartX = ballX + canvas.width * 0.25;
-        const fingerStartY = ballY - canvas.height * 0.15;
+        // Finger starts higher and to the right of ball (in virtual coordinates)
+        const fingerStartX = ballX + transform.width * 0.25;
+        const fingerStartY = ballY - transform.height * 0.15;
         // Drag BACKWARDS (down and left) to aim forward
-        const fingerEndX = ballX - canvas.width * 0.05;
-        const fingerEndY = ballY + canvas.height * 0.1;
+        const fingerEndX = ballX - transform.width * 0.05;
+        const fingerEndY = ballY + transform.height * 0.1;
 
         // Only draw during the drag phase (0% to 45% of cycle)
         if (progress <= 0.45) {
@@ -173,8 +185,9 @@ export function initTutorial(getBallPosition) {
                 simX += simVx * dt;
                 simY += simVy * dt;
 
-                if (simY + 12 >= canvas.height) {
-                    simY = canvas.height - 12;
+                const floorY = transform.height * 0.85;
+                if (simY + 12 >= floorY) {
+                    simY = floorY - 12;
                     simVy = -simVy * bounceFactor;
                     simVx *= friction;
                 }
@@ -182,8 +195,8 @@ export function initTutorial(getBallPosition) {
                     simY = 12;
                     simVy = -simVy * bounceFactor;
                 }
-                if (simX + 12 >= canvas.width) {
-                    simX = canvas.width - 12;
+                if (simX + 12 >= transform.width) {
+                    simX = transform.width - 12;
                     simVx = -simVx * bounceFactor;
                 } else if (simX - 12 <= 0) {
                     simX = 12;
