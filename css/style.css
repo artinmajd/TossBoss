@@ -1397,7 +1397,7 @@ button:not(.settings-toggle):active {
 }
 
 .lb-modal-tabs {
-    margin: 0;
+    margin: -0.25rem 0 0;
 }
 
 #lb-modal-list {
