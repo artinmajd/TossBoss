@@ -187,18 +187,21 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
             // Move up and down 2 times very slowly
             let verticalAdjust;
 
-            // Apply smooth deceleration only to the final upward movement (last 25%)
-            // At 0.75, sine is at bottom (-0.08), final movement goes from bottom to center (0)
-            if (adjustProgress < 0.75) {
-                // Normal sine wave for first 3/4
+            // Apply smooth deceleration only to the final DOWNWARD movement (0.5 to 0.75)
+            // At 0.5, sine is at center (0), movement goes down to bottom (-0.08)
+            if (adjustProgress < 0.5) {
+                // Normal sine wave for first half
                 verticalAdjust = Math.sin(adjustProgress * Math.PI * 2) * transform.height * 0.08;
-            } else {
-                // Final upward movement with deceleration only (ease-out cubic for stronger effect)
-                const finalProgress = (adjustProgress - 0.75) / 0.25; // 0 to 1
-                // Ease-out cubic: stronger deceleration, no initial acceleration
+            } else if (adjustProgress < 0.75) {
+                // Final downward movement with deceleration (0.5 to 0.75)
+                const finalProgress = (adjustProgress - 0.5) / 0.25; // 0 to 1
+                // Ease-out cubic: decelerates as it goes down
                 const eased = 1 - Math.pow(1 - finalProgress, 3);
-                // Start at bottom (-0.08 * height), end at center (0)
-                verticalAdjust = -transform.height * 0.08 * (1 - eased);
+                // Start at center (0), end at bottom (-0.08)
+                verticalAdjust = -eased * transform.height * 0.08;
+            } else {
+                // After final downward movement, return up to center with normal sine
+                verticalAdjust = Math.sin(adjustProgress * Math.PI * 2) * transform.height * 0.08;
             }
 
             fingerCurrentX = fingerStartX + baseXOffset;
