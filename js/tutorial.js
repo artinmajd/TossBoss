@@ -129,15 +129,15 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
         const fingerStartX = transform.width * 0.2;
         const fingerStartY = transform.height * 0.35;
 
-        // Animation phases: drag (0-15%), hold (15-25%), angle adjust (25-85%), final hold (85-95%), fade (95-100%)
+        // Animation phases: drag (0-25%), hold (25-35%), angle adjust (35-85%), final hold (85-95%), fade (95-100%)
         let fingerCurrentX, fingerCurrentY;
         let aimStartX, aimStartY, aimCurrentX, aimCurrentY;
         let shouldDraw = false;
 
-        if (progress <= 0.15) {
+        if (progress <= 0.25) {
             // DRAG PHASE: pull back at 45-degree angle to build power
             shouldDraw = true;
-            const dragProgress = progress / 0.15;
+            const dragProgress = progress / 0.25;
 
             // Apply ease-in-out for smooth acceleration and deceleration
             const eased = dragProgress < 0.5
@@ -156,7 +156,7 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
             aimStartY = fingerStartY;
             aimCurrentX = fingerCurrentX;
             aimCurrentY = fingerCurrentY;
-        } else if (progress <= 0.25) {
+        } else if (progress <= 0.35) {
             // HOLD PHASE: stay at dragged position for a moment
             shouldDraw = true;
 
@@ -174,7 +174,7 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
         } else if (progress <= 0.85) {
             // ANGLE ADJUSTMENT PHASE: move finger up/down vertically to adjust aim
             shouldDraw = true;
-            const adjustProgress = (progress - 0.25) / 0.6; // 0 to 1 during adjust phase
+            const adjustProgress = (progress - 0.35) / 0.5; // 0 to 1 during adjust phase
 
             // Keep finger at end of drag position
             const distance = transform.height * 0.2;
