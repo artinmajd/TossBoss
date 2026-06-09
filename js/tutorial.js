@@ -13,6 +13,9 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
 
     if (!overlay || !canvas || !gameCanvas || !fingerEl) return;
 
+    // Show the overlay
+    overlay.style.display = 'block';
+
     const ctx = canvas.getContext('2d');
 
     // Match tutorial canvas to game canvas dimensions

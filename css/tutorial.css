@@ -4,6 +4,7 @@
     inset: 0;
     z-index: 200;
     pointer-events: none;
+    display: none; /* Hidden by default, shown by JS when tutorial is active */
 }
 
 .tutorial-content {
