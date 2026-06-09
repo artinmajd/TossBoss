@@ -176,8 +176,8 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
             const baseXOffset = -distance * Math.cos(Math.PI / 4);
             const baseYOffset = distance * Math.sin(Math.PI / 4);
 
-            // Move up and down 4 times slowly
-            const verticalAdjust = Math.sin(adjustProgress * Math.PI * 4) * transform.height * 0.08;
+            // Move up and down 2 times very slowly
+            const verticalAdjust = Math.sin(adjustProgress * Math.PI * 2) * transform.height * 0.08;
 
             fingerCurrentX = fingerStartX + baseXOffset;
             fingerCurrentY = fingerStartY + baseYOffset + verticalAdjust;
