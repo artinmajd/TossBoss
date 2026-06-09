@@ -1055,6 +1055,9 @@ async function router() {
             mpSettingsBtn.classList.toggle('selected', isOpen);
         });
 
+        // Stop clicks inside the settings bubble from closing it
+        mpSettingsBubble?.addEventListener('click', (e) => e.stopPropagation());
+
         document.addEventListener('click', () => { closeMpMenu(); closeMpSettings(); });
 
         // MP audio toggles
