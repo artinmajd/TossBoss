@@ -1830,6 +1830,25 @@ button:not(.settings-toggle):active {
     }
 }
 
+/* ── Leaderboard: portrait phone layout ─────────────────────────────────────
+   Reduce score/streak column widths to give more space for player names.    */
+@media (max-width: 700px) and (orientation: portrait) {
+    #leaderboard-screen .lb-score,
+    #leaderboard-screen .lb-streak {
+        width: 3.5rem;
+        font-size: 0.9rem;
+    }
+
+    #leaderboard-screen .lb-rank {
+        width: 1.5rem;
+        font-size: 0.85rem;
+    }
+
+    #leaderboard-screen .lb-name {
+        font-size: 0.85rem;
+    }
+}
+
 /* Auth Screen */
 #auth-screen {
     display: flex;
