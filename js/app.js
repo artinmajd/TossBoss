@@ -1377,6 +1377,10 @@ async function router() {
             setSettingsOpen(!settingsBubble.classList.contains('visible'));
         });
 
+        settingsBubble.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
         // Sync toggle states from current audio settings
         const musicToggle = document.getElementById('toggle-music');
         const sfxToggle   = document.getElementById('toggle-sfx');
