@@ -185,7 +185,20 @@ export function initTutorial(getBallPosition, getCanvasTransform) {
             const baseYOffset = distance * Math.sin(Math.PI / 4);
 
             // Move up and down 2 times very slowly
-            const verticalAdjust = Math.sin(adjustProgress * Math.PI * 2) * transform.height * 0.08;
+            let verticalAdjust;
+
+            // Apply smooth deceleration only to the final downward movement (last 25%)
+            if (adjustProgress < 0.75) {
+                // Normal sine wave for first 3/4
+                verticalAdjust = Math.sin(adjustProgress * Math.PI * 2) * transform.height * 0.08;
+            } else {
+                // Final downward movement with ease-out (smooth deceleration)
+                const finalProgress = (adjustProgress - 0.75) / 0.25; // 0 to 1
+                // Ease-out quad: decelerates smoothly to stop
+                const eased = 1 - (1 - finalProgress) * (1 - finalProgress);
+                // Start at peak (0.08 * height), end at 0
+                verticalAdjust = (1 - eased) * transform.height * 0.08;
+            }
 
             fingerCurrentX = fingerStartX + baseXOffset;
             fingerCurrentY = fingerStartY + baseYOffset + verticalAdjust;
